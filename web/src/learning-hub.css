@@ -1,0 +1,227 @@
+.learning-hub {
+  padding-bottom: 40px;
+}
+.hub-heading,
+.hub-content,
+.hub-practice-controls {
+  max-width: 1240px;
+  margin: auto;
+  padding: 32px 30px;
+}
+.hub-heading h1 {
+  font-size: clamp(29px, 4vw, 45px);
+  margin: 15px 0;
+}
+.hub-heading p,
+.hub-content p {
+  line-height: 1.9;
+}
+.hub-heading nav {
+  display: flex;
+  gap: 9px;
+  flex-wrap: wrap;
+  margin-top: 25px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 15px;
+}
+.hub-heading nav a {
+  padding: 10px 15px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: 13px;
+  text-decoration: none;
+  color: var(--text);
+  background: var(--panel);
+}
+.hub-heading nav a[aria-current="page"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+}
+.hub-content h2 {
+  font-size: 25px;
+}
+.hub-note {
+  font-size: 12px;
+  color: var(--muted);
+  line-height: 1.9;
+}
+.flow-input,
+.hub-practice-controls {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+.flow-input {
+  margin: 22px 0;
+}
+.flow-input label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 13px;
+}
+.flow-input input {
+  padding: 10px 12px;
+  width: 130px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+}
+.flow-input button,
+.flow-controls button,
+.hub-practice-controls button {
+  padding: 11px 16px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  cursor: pointer;
+}
+.flow-input > span {
+  font-size: 12px;
+  color: var(--muted);
+}
+.flow-route {
+  padding: 18px;
+  background: var(--soft);
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  font-size: 13px;
+  margin: 20px 0;
+}
+.flow-layout {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 22px;
+}
+.flow-layout nav {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.flow-layout nav button {
+  padding: 12px;
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.flow-layout nav button small {
+  margin-right: 10px;
+  color: var(--muted);
+}
+.flow-layout nav button[aria-current="step"] {
+  border-color: var(--accent);
+  background: var(--soft);
+}
+.flow-detail {
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  min-width: 0;
+  background: var(--panel);
+}
+.flow-detail h3 {
+  font-size: 21px;
+  margin: 12px 0;
+}
+.flow-detail pre {
+  padding: 18px;
+  background: var(--soft);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  font:
+    12px/1.9 ui-monospace,
+    monospace;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.flow-controls {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 20px;
+}
+.flow-result {
+  font-size: 12px;
+  padding: 17px;
+  border-bottom: 1px solid var(--line);
+  overflow-wrap: anywhere;
+}
+.hub-references {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+  margin-top: 24px;
+}
+.hub-references a {
+  padding: 24px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  text-decoration: none;
+  color: var(--text);
+}
+.hub-references h3 {
+  font-size: 18px;
+  margin: 0 0 12px;
+}
+.hub-references p {
+  font-size: 13px;
+  margin: 0;
+}
+.hub-practice-controls button[aria-pressed="true"] {
+  background: var(--accent);
+  color: var(--bg);
+}
+.hub-practice-controls label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+}
+.hub-practice-controls select {
+  padding: 9px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+}
+.hub-code-lab .arena-orrery > .app > .site-header,
+.hub-code-lab .arena-orrery > .app > .site-footer {
+  display: none;
+}
+.hub-code-lab .arena-orrery > .app > .site-main {
+  padding-top: 20px;
+}
+@media (max-width: 700px) {
+  .hub-heading,
+  .hub-content,
+  .hub-practice-controls {
+    padding: 25px 20px;
+  }
+  .hub-heading nav a {
+    font-size: 11px;
+    padding: 9px 11px;
+  }
+  .flow-layout {
+    grid-template-columns: 1fr;
+  }
+  .flow-layout nav {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .flow-layout nav button {
+    font-size: 11px;
+  }
+  .flow-detail {
+    padding: 18px;
+  }
+  .hub-references {
+    grid-template-columns: 1fr;
+  }
+  .hub-content h2 {
+    font-size: 22px;
+  }
+}

@@ -13,10 +13,7 @@ import HomeHero from "./HomeHero";
 import ResourceArtwork from "./ResourceArtwork";
 import { filterResources, parseState, STORAGE_KEY } from "./state";
 
-const CodeLab = lazy(() =>
-  import("./arena/orrery/App").then((m) => ({ default: m.App })),
-);
-const Learning = lazy(() => import("./Learning"));
+const LearningHub = lazy(() => import("./LearningHub"));
 const Secondary = lazy(() => import("./Secondary"));
 const routes = new Set([
   "/",
@@ -173,26 +170,19 @@ export default function App() {
             </span>
           </a>
           <nav aria-label="メイン">
-            <a aria-current={path === "/" ? "page" : undefined} href="/">
+            <a href="/" aria-current={path === "/" ? "page" : undefined}>
               探索
             </a>
-            <a aria-current={path === "/lab" ? "page" : undefined} href="/lab">
-              実験室
-            </a>
-            <a aria-current={path === "/art" ? "page" : undefined} href="/art">
-              宇宙
-            </a>
             <a
-              aria-current={path === "/learn" ? "page" : undefined}
               href="/learn"
+              aria-current={
+                ["/learn", "/lab", "/code"].includes(path) ? "page" : undefined
+              }
             >
-              学ぶ
+              学習
             </a>
-            <a
-              aria-current={path === "/code" ? "page" : undefined}
-              href="/code"
-            >
-              コード
+            <a href="/art" aria-current={path === "/art" ? "page" : undefined}>
+              宇宙
             </a>
           </nav>
           <div className="header-actions">
@@ -320,27 +310,14 @@ export default function App() {
               </ol>
             </section>
           </main>
-        ) : path === "/lab" ? (
+        ) : ["/learn", "/lab", "/code"].includes(path) ? (
           <Suspense
-            fallback={
-              <main className="page-shell" aria-busy="true">
-                実験室を読み込んでいます…
-              </main>
-            }
+            fallback={<p className="page-shell">教材を読み込んでいます…</p>}
           >
-            <CodeLab />
-          </Suspense>
-        ) : path === "/learn" ? (
-          <Suspense
-            fallback={
-              <main className="page-shell" aria-busy="true">
-                教材を読み込んでいます…
-              </main>
-            }
-          >
-            <Learning
+            <LearningHub
               state={state}
               update={setState}
+              path={path}
               search={url.split("?")[1] || ""}
             />
           </Suspense>

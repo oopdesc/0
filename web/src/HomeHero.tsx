@@ -48,7 +48,7 @@ export default function HomeHero({ paused }: { paused: boolean }) {
           予想と結果を見比べながら、仕組みを理解する。
         </p>
         <div className="home-actions">
-          <a className="home-primary" href="/lab#/lab">
+          <a className="home-primary" href="/learn?section=practice&mode=code">
             Javaを試す <span aria-hidden="true">↗</span>
           </a>
           <a className="home-secondary" href="/art">
@@ -61,7 +61,7 @@ export default function HomeHero({ paused }: { paused: boolean }) {
           <span>TypeScript</span>
           <span>宇宙の模型</span>
         </div>
-        <a className="home-source" href="/code">
+        <a className="home-source" href="/learn?section=source">
           <span aria-hidden="true">&lt;/&gt;</span> このサイトのコードを読む{" "}
           <span aria-hidden="true">→</span>
         </a>
