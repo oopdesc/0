@@ -71,6 +71,8 @@ class AppStore {
   constructor() {
     if (typeof window !== 'undefined') {
       window.addEventListener('hashchange', () => {
+        const raw = window.location.hash.replace(/^#\/?/, '').split('/')[0];
+        if (!(ROUTES as string[]).includes(raw ?? '')) return;
         const route = routeFromHash();
         if (route !== this.state.route) this.set({ route });
       });

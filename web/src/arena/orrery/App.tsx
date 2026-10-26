@@ -72,7 +72,7 @@ export function App() {
           </div>
         </header>
 
-        <main id="lab-main" className="site-main" key={state.route}>{view}</main>
+        <main id="main" className="site-main" key={state.route}>{view}</main>
 
         <footer className="site-footer">
           <div>
