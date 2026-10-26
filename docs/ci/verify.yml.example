@@ -1,0 +1,49 @@
+name: Verify 0
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  verify:
+    if: github.event.repository.private == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      CARGO_BUILD_JOBS: '2'
+      RAYON_NUM_THREADS: '2'
+      UV_THREADPOOL_SIZE: '2'
+      JAVA_TOOL_OPTIONS: '-XX:ActiveProcessorCount=2 -Xmx256m'
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: '24'
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
+        with:
+          distribution: temurin
+          java-version: '21'
+      - run: npm --prefix web ci --ignore-scripts --no-fund --no-audit
+      - name: Java API checks
+        run: |
+          mkdir -p .local/java-bin
+          javac --release 21 -encoding UTF-8 -d .local/java-bin backend/java/src/cosmic/learning/LearningServer.java backend/java/test/cosmic/learning/LearningServerTest.java
+          java -cp .local/java-bin cosmic.learning.LearningServerTest
+      - name: JVM and TeaVM contract
+        run: node tools/test-java-browser.mjs
+      - name: Rust checks
+        run: cargo test -j 2 --manifest-path backend/rust/Cargo.toml -- --test-threads=2
+      - name: Browser state and Wasm checks
+        run: |
+          npm --prefix web test
+          node tools/test-wasm.mjs
+      - name: Public build and privacy budget
+        run: |
+          node tools/check-build-inputs.mjs
+          npm --prefix web run build

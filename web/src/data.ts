@@ -1,0 +1,91 @@
+/** 公開してよい作品・教材だけを列挙。個人文書や共有フォルダのURLは置かない。 */
+export type Category = "作品" | "学習" | "リンク";
+export type Resource = {
+  id: string;
+  title: string;
+  subtitle: string;
+  category: Category;
+  tag: string;
+  href: string;
+  image?: string;
+  accent: string;
+};
+export const resources: Resource[] = [
+  { id: "code-lab", title: "宇宙をつくるコード実験室", subtitle: "Java・Rustの短いコードを編集し、結果と天体の変化を確かめる。", category: "学習", tag: "予測・実行・復習", href: "/lab", accent: "orange" },
+  {
+    id: "art",
+    title: "動かして眺める宇宙",
+    subtitle: "銀河とブラックホールを回転・拡大し、仕組みを読む。",
+    category: "作品",
+    tag: "Java · Rust · 三次元",
+    href: "/art",
+    accent: "violet",
+  },
+  {
+    id: "java",
+    title: "Java / HTTPの入口",
+    subtitle: "入力から応答まで。小さなAPIを読む。",
+    category: "学習",
+    tag: "Java 21",
+    href: "/learn?track=Java",
+    accent: "orange",
+  },
+  {
+    id: "rust",
+    title: "Rust / 境界を越える",
+    subtitle: "所有権、再現性、ブラウザのメモリ。",
+    category: "学習",
+    tag: "Rust",
+    href: "/learn?track=Rust",
+    accent: "mint",
+  },
+  {
+    id: "typescript",
+    title: "TypeScript / 画面をつくる",
+    subtitle: "型と状態を、小さく積み重ねる。",
+    category: "学習",
+    tag: "TypeScript · React",
+    href: "/learn?track=TypeScript",
+    accent: "blue",
+  },
+  {
+    id: "github",
+    title: "コードのすべて",
+    subtitle: "このサイトを、手元のEclipseで再現する。",
+    category: "リンク",
+    tag: "GitHub",
+    href: "https://github.com/oopdesc/0",
+    image: "/images/github-thumbnail.webp",
+    accent: "mint",
+  },
+  {
+    id: "chat",
+    title: "ChatGPTで学ぶ",
+    subtitle: "自分の説明を伝えて、理解を確かめる。",
+    category: "リンク",
+    tag: "チャット",
+    href: "/aichat",
+    image: "/images/chatgpt-thumbnail.webp",
+    accent: "violet",
+  },
+  {
+    id: "youtube",
+    title: "Javaの公式ドキュメント",
+    subtitle: "標準ライブラリの仕様を原文で調べる。",
+    category: "リンク",
+    tag: "Java 21 API",
+    href: "https://docs.oracle.com/en/java/javase/21/docs/api/",
+    image: "/images/youtube-thumbnail0.webp",
+    accent: "orange",
+  },
+  {
+    id: "huggingface",
+    title: "Rustの公式入門書",
+    subtitle: "所有権からテストまで、順を追って読む。",
+    category: "リンク",
+    tag: "Rust公式入門書",
+    href: "https://doc.rust-lang.org/book/",
+    image: "/images/huggingface-thumbnail.webp",
+    accent: "blue",
+  },
+];

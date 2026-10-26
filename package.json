@@ -1,0 +1,13 @@
+{
+  "name": "mk0-cosmic-learning",
+  "version": "2.0.0",
+  "private": true,
+  "engines": { "node": "24.x" },
+  "scripts": {
+    "dev": "npm --prefix web run dev",
+    "build": "npm --prefix web run build",
+    "test": "npm --prefix web test",
+    "wasm": "node tools/build-wasm.mjs",
+    "test:wasm": "node tools/test-wasm.mjs"
+  }
+}

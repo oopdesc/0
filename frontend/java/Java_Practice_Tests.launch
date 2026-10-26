@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="org.eclipse.jdt.launching.localJavaApplication">
+    <stringAttribute key="org.eclipse.jdt.launching.CLASSPATH_PROVIDER" value="org.eclipse.m2e.launchconfig.classpathProvider"/>
+    <stringAttribute key="org.eclipse.jdt.launching.JRE_CONTAINER" value="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-21"/>
+    <stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="cosmic.browser.PracticeEngineTest"/>
+    <stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="Portfolio_Browser_Java"/>
+    <stringAttribute key="org.eclipse.jdt.launching.SOURCE_PATH_PROVIDER" value="org.eclipse.m2e.launchconfig.sourcepathProvider"/>
+    <stringAttribute key="org.eclipse.jdt.launching.VM_ARGUMENTS" value="-XX:ActiveProcessorCount=2 -Xmx128m"/>
+</launchConfiguration>

@@ -1,0 +1,17 @@
+import { spawnSync, execFileSync } from 'node:child_process';
+import { readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { createHash } from 'node:crypto';
+import { fileURLToPath } from 'node:url';
+import path from 'node:path';
+const root = fileURLToPath(new URL('..', import.meta.url));
+const javaHome = process.env.JAVA_HOME || execFileSync('/usr/libexec/java_home', ['-v', '21'], { encoding: 'utf8' }).trim();
+const result = spawnSync('mvn', ['-q', '-T', '2', '-f', 'frontend/java/pom.xml', 'package', '-DskipTests'], { cwd: root, stdio: 'inherit', env: { ...process.env, JAVA_HOME: javaHome, MAVEN_OPTS: '-XX:ActiveProcessorCount=2 -Xmx768m' } });
+if (result.status !== 0) process.exit(result.status || 1);
+const hash = bytes => createHash('sha256').update(bytes).digest('hex');
+const bytes = Buffer.from(readFileSync(path.join(root, 'frontend/java/target/javascript/art-model.js'), 'utf8').replace(/\/\/# sourceMappingURL=.*$/gm, ''));
+const sha256 = hash(bytes), name = `art-model-${sha256.slice(0, 12)}.js`;
+mkdirSync(path.join(root, 'web/src/generated'), { recursive: true });
+writeFileSync(path.join(root, 'web/src/generated/art-model.js'), bytes);
+const sources = ['frontend/java/pom.xml', 'frontend/java/src/main/java/cosmic/browser/GalleryRules.java', 'frontend/java/src/main/java/cosmic/browser/ArtBridge.java', 'frontend/java/src/main/java/cosmic/browser/PracticeEngine.java'];
+writeFileSync(path.join(root, 'web/src/java-manifest.json'), JSON.stringify({ path: 'web/src/generated/art-model.js', sha256, bytes: bytes.length, compiler: 'TeaVM 0.16.0', sourceHashes: Object.fromEntries(sources.map(f => [f, hash(readFileSync(path.join(root, f)))])) }, null, 2) + '\n');
+console.log(`Java browser model ready: ${bytes.length} bytes; ${name}`);

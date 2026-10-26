@@ -1,0 +1,2 @@
+web/src/generated/*.js linguist-generated=true
+web/public/wasm/*.wasm binary linguist-generated=true

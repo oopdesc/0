@@ -1,0 +1,124 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "installCommand": "npm --prefix web ci --ignore-scripts --no-fund --no-audit",
+  "buildCommand": "npm --prefix web run build",
+  "outputDirectory": "web/dist",
+  "rewrites": [
+    {
+      "source": "/art",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/learn",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/code",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/aichat",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/excelvba",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/contact",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/privacy",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/accessibility",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/settings",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/lab",
+      "destination": "/index.html"
+    }
+  ],
+  "redirects": [
+    {
+      "source": "/game",
+      "destination": "/art",
+      "permanent": false
+    },
+    {
+      "source": "/cosmicGameV3",
+      "destination": "/art",
+      "permanent": false
+    },
+    {
+      "source": "/free-book",
+      "destination": "/contact",
+      "permanent": false
+    }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=(), payment=()"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none'"
+        }
+      ]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/wasm/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/docs/:path*",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        },
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, noarchive"
+        }
+      ]
+    }
+  ]
+}

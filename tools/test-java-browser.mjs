@@ -1,0 +1,30 @@
+import {execFileSync} from 'node:child_process';
+import {mkdirSync,readFileSync} from 'node:fs';
+import {fileURLToPath,pathToFileURL} from 'node:url';
+import path from 'node:path';
+import assert from 'node:assert/strict';
+const root=fileURLToPath(new URL('..',import.meta.url));
+const home=process.env.JAVA_HOME || execFileSync('/usr/libexec/java_home',['-v','21'],{encoding:'utf8'}).trim();
+const output=path.join(root,'.local/java-browser-tests');mkdirSync(output,{recursive:true});
+const base='frontend/java/src/';
+const files=['main/java/cosmic/browser/GalleryRules.java','main/java/cosmic/browser/PracticeEngine.java','test/java/cosmic/browser/GalleryRulesTest.java','test/java/cosmic/browser/PracticeEngineTest.java','test/java/cosmic/browser/BrowserContractFixture.java'];
+execFileSync(path.join(home,'bin/javac'),['-J-XX:ActiveProcessorCount=2','-J-Xmx256m','--release','21','-encoding','UTF-8','-d',output,...files.map(f=>base+f)],{cwd:root,stdio:'inherit'});
+const run=(name)=>execFileSync(path.join(home,'bin/java'),['-XX:ActiveProcessorCount=2','-Xmx128m','-cp',output,'cosmic.browser.'+name],{encoding:'utf8'});
+console.log(run('GalleryRulesTest').trim());console.log(run('PracticeEngineTest').trim());
+const expected=run('BrowserContractFixture').trim().split('\n').map(s=>JSON.parse(s));
+const meta=JSON.parse(readFileSync(path.join(root,'web/src/java-manifest.json'),'utf8'));
+const m=await import(pathToFileURL(path.join(root,meta.path)).href);
+const cases=[['clamp','101'],['clamp','-1'],['clamp','1.5'],['clamp','2147483648'],['filter',' JAVA '],['filter',''],['copy','3,1,2'],['copy','1,'],['json','quote"\n\\'],['unknown','']];
+cases.push(['clamp','１２'],['clamp','١٢'],['clamp','\u300012\u3000'],['filter','ＪＡＶＡ'],['filter','İ'],['copy','３,1,-２'],['json','日本語😀\u2028\u2029']);
+cases.push(['clamp','Ⅲ'],['clamp','²'],['clamp','＋１２']);
+const actual=[JSON.parse(m.catalog()),JSON.parse(m.camera(NaN,9,-999,999)),JSON.parse(m.settings(99,-1,NaN,Infinity)),...cases.map(c=>JSON.parse(m.run(...c)))];
+assert.deepEqual(actual,expected.slice(0,actual.length));
+const views=[[-70,35,3.8,1.15],[720,99,-1,99],[-999,-99,999,-1],[NaN,Infinity,NaN,NaN]];
+for(let i=0;i<views.length;i++){
+ const camera=JSON.parse(m.orbit(...views[i])),want=expected[actual.length+i];
+ for(const key of Object.keys(want))assert(Math.abs(camera[key]-want[key])<1e-10,`orbit ${i}: ${key}`);
+ assert(Math.abs(Math.hypot(camera.x,camera.y,camera.z)-camera.distance)<1e-10);
+ assert(camera.distance>=1.6&&camera.distance<=8&&camera.elevation>=-85&&camera.elevation<=85);
+}
+assert.equal(m.reviewDays(999,true),30);assert.equal(m.reviewDays(4,false),1);
+console.log(`JVM / TeaVM contract: ${actual.length} fixtures + ${views.length} orbit fixtures match; review bounds pass.`);

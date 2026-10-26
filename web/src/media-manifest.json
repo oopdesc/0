@@ -1,0 +1,32 @@
+[
+  {
+    "path": "cosmos/black-hole-nasa.jpg",
+    "bytes": 46915,
+    "sha256": "db42548d3b334f3ba310e89a0208dd15d03688da2b8af23bcb802d682d07a40b",
+    "gitBlob": "82aa40f15107f4c5bbc96da29f64a3129334b7c7"
+  },
+  {
+    "path": "cosmos/black-hole-nasa.mp4",
+    "bytes": 12492579,
+    "sha256": "87dcf121886ce7431230d5ac51bf9af382373ada82b154b40fdd50ff15ff735a",
+    "gitBlob": "3d3ea2c0f15c01007be0aeb7354ced185bb9e338"
+  },
+  {
+    "path": "cosmos/black-hole-nasa.webm",
+    "bytes": 701667,
+    "sha256": "bcb5e83e98053d019e8e946a86fff827763cb913eb7174a75fc39b9e9eec8b36",
+    "gitBlob": "405ce20dca80ccf248d8f8e6fb2e5e7ecf1050f1"
+  },
+  {
+    "path": "cosmos/m104-hubble.webp",
+    "bytes": 1706114,
+    "sha256": "96182a5ba5009d911b0d50c46920aa75dd6f8adeda9f87e4de8295b520c33f45",
+    "gitBlob": "2e665f585de1cf7ad63997ed44e54a52ad8c156a"
+  },
+  {
+    "path": "cosmos/m51-hubble.webp",
+    "bytes": 2877866,
+    "sha256": "e4cf160a9d115717fb8c095f037ff73fb421b5675e7374934d992ec32460e95f",
+    "gitBlob": "3ca9e66d52a1b0ec5a060b02ddd32bfe4e8369be"
+  }
+]

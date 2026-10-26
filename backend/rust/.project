@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectDescription><name>Portfolio_Rust</name><comment>Rust core, Wasm and localhost learning API</comment><projects/><buildSpec/><natures/><filteredResources><filter><id>2026102501</id><name/><type>30</type><matcher><id>org.eclipse.core.resources.regexFilterMatcher</id><arguments>target</arguments></matcher></filter></filteredResources></projectDescription>

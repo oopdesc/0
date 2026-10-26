@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectDescription><name>Portfolio_Web</name><comment>TypeScript and React static portfolio</comment><projects/><buildSpec/><natures/><filteredResources><filter><id>2026102502</id><name/><type>30</type><matcher><id>org.eclipse.core.resources.regexFilterMatcher</id><arguments>node_modules|dist|.git</arguments></matcher></filter></filteredResources></projectDescription>

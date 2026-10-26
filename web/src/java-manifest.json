@@ -1,0 +1,12 @@
+{
+  "path": "web/src/generated/art-model.js",
+  "sha256": "81bb1f0fbdc21bdf2af49a80a5df0a0e56fcbcc810669cd075d1e4821d8894a5",
+  "bytes": 163248,
+  "compiler": "TeaVM 0.16.0",
+  "sourceHashes": {
+    "frontend/java/pom.xml": "b222635590eb49ba8bb408cd5adc436382b423309c4493e85b43698a6964a6be",
+    "frontend/java/src/main/java/cosmic/browser/GalleryRules.java": "c23a48db7b390f09e6e7e93286c500c397922572852743515322fc4a4d6f4117",
+    "frontend/java/src/main/java/cosmic/browser/ArtBridge.java": "25c9f8f26fa8abddfc5bc7d5e998248f5c7061c91495af6265567ade7852cc9b",
+    "frontend/java/src/main/java/cosmic/browser/PracticeEngine.java": "e434d9729cf3d06485b3ba11d21b146e02dbb35920ed62edf6ccd53a90ddf240"
+  }
+}

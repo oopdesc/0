@@ -1,0 +1,15 @@
+export const LESSON_IDS = [
+  "java-browser",
+  "java-copy",
+  "java-json",
+  "java-debug",
+  "java-http",
+  "java-record",
+  "java-test",
+  "rust-own",
+  "rust-wasm",
+  "rust-test",
+  "ts-state",
+  "ts-ui",
+  "ts-budget",
+] as const;

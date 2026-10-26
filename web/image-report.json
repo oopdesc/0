@@ -1,0 +1,30 @@
+[
+  {
+    "name": "github-thumbnail",
+    "webpBytes": 46584,
+    "width": 640,
+    "height": 400,
+    "metadataStripped": true
+  },
+  {
+    "name": "chatgpt-thumbnail",
+    "webpBytes": 61948,
+    "width": 640,
+    "height": 400,
+    "metadataStripped": true
+  },
+  {
+    "name": "huggingface-thumbnail",
+    "webpBytes": 52700,
+    "width": 640,
+    "height": 400,
+    "metadataStripped": true
+  },
+  {
+    "name": "youtube-thumbnail0",
+    "webpBytes": 60406,
+    "width": 640,
+    "height": 400,
+    "metadataStripped": true
+  }
+]

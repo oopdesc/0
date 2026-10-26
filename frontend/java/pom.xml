@@ -1,0 +1,9 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion><groupId>cosmic</groupId><artifactId>portfolio-browser</artifactId><version>3.0.0</version>
+  <properties><maven.compiler.release>21</maven.compiler.release><project.build.sourceEncoding>UTF-8</project.build.sourceEncoding><teavm.version>0.16.0</teavm.version></properties>
+  <dependencies><dependency><groupId>org.teavm</groupId><artifactId>teavm-jso</artifactId><version>${teavm.version}</version></dependency><dependency><groupId>org.teavm</groupId><artifactId>teavm-classlib</artifactId><version>${teavm.version}</version></dependency></dependencies>
+  <build><plugins>
+    <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-compiler-plugin</artifactId><version>3.14.1</version></plugin>
+    <plugin><groupId>org.teavm</groupId><artifactId>teavm-maven-plugin</artifactId><version>${teavm.version}</version><executions><execution><?m2e ignore?><goals><goal>compile</goal></goals><phase>process-classes</phase></execution></executions><configuration><mainClass>cosmic.browser.ArtBridge</mainClass><targetType>JAVASCRIPT</targetType><jsModuleType>ES2015</jsModuleType><targetFileName>art-model.js</targetFileName><optimizationLevel>ADVANCED</optimizationLevel><minifying>true</minifying><debugInformationGenerated>true</debugInformationGenerated><sourceMapsGenerated>true</sourceMapsGenerated><sourceFilesCopied>true</sourceFilesCopied></configuration></plugin>
+  </plugins></build>
+</project>

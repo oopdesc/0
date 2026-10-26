@@ -1,0 +1,18 @@
+node_modules/
+web/dist/
+web/tsconfig.tsbuildinfo
+web/release-report.json
+.local/
+backend/rust/target/
+backend/java/bin/
+frontend/java/target/
+frontend/java/bin/
+.env
+.env.*
+.vercel/
+.DS_Store
+Thumbs.db
+.next/
+.venv/
+# This machine's private agent policy stays local.
+/AGENTS.md
