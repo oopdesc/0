@@ -11,13 +11,21 @@ export type Resource = {
   accent: string;
 };
 export const resources: Resource[] = [
-  { id: "code-lab", title: "宇宙をつくるコード実験室", subtitle: "Java・Rustの短いコードを編集し、結果と天体の変化を確かめる。", category: "学習", tag: "予測・実行・復習", href: "/lab", accent: "orange" },
+  {
+    id: "code-lab",
+    title: "宇宙をつくるコード実験室",
+    subtitle: "Java・Rustの短いコードを編集し、結果と天体の変化を確かめる。",
+    category: "学習",
+    tag: "予測・実行・復習",
+    href: "/lab",
+    accent: "orange",
+  },
   {
     id: "art",
-    title: "動かして眺める宇宙",
-    subtitle: "銀河とブラックホールを回転・拡大し、仕組みを読む。",
+    title: "太陽系と宇宙の模型",
+    subtitle: "惑星の姿と公転、銀河やブラックホールを観察する。",
     category: "作品",
-    tag: "Java · Rust · 三次元",
+    tag: "惑星 · 銀河 · 動く模型",
     href: "/art",
     accent: "violet",
   },
@@ -55,7 +63,6 @@ export const resources: Resource[] = [
     category: "リンク",
     tag: "GitHub",
     href: "https://github.com/oopdesc/0",
-    image: "/images/github-thumbnail.webp",
     accent: "mint",
   },
   {
@@ -65,7 +72,6 @@ export const resources: Resource[] = [
     category: "リンク",
     tag: "チャット",
     href: "/aichat",
-    image: "/images/chatgpt-thumbnail.webp",
     accent: "violet",
   },
   {
@@ -75,7 +81,6 @@ export const resources: Resource[] = [
     category: "リンク",
     tag: "Java 21 API",
     href: "https://docs.oracle.com/en/java/javase/21/docs/api/",
-    image: "/images/youtube-thumbnail0.webp",
     accent: "orange",
   },
   {
@@ -85,7 +90,6 @@ export const resources: Resource[] = [
     category: "リンク",
     tag: "Rust公式入門書",
     href: "https://doc.rust-lang.org/book/",
-    image: "/images/huggingface-thumbnail.webp",
     accent: "blue",
   },
 ];

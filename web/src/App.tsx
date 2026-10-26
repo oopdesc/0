@@ -6,12 +6,16 @@ import {
   useState,
   type MouseEvent,
 } from "react";
-import ArtStudio, { HomeUniverse } from "./ArtStudio";
+import ArtStudio from "./ArtStudio";
 import { ThemeButton } from "./DisplayPreferences";
-import { type Resource } from "./data";
+import { resources, type Resource } from "./data";
+import HomeHero from "./HomeHero";
+import ResourceArtwork from "./ResourceArtwork";
 import { filterResources, parseState, STORAGE_KEY } from "./state";
 
-const CodeLab = lazy(() => import("./arena/orrery/App").then(m => ({default: m.App})));
+const CodeLab = lazy(() =>
+  import("./arena/orrery/App").then((m) => ({ default: m.App })),
+);
 const Learning = lazy(() => import("./Learning"));
 const Secondary = lazy(() => import("./Secondary"));
 const routes = new Set([
@@ -134,30 +138,7 @@ export default function App() {
         rel={item.href.startsWith("https://") ? "noreferrer" : undefined}
       >
         <div className="card-art">
-          {item.image ? (
-            <img
-              src={item.image}
-              width="640"
-              height="360"
-              loading="lazy"
-              decoding="async"
-              alt=""
-            />
-          ) : (
-            <div className={`code-art art-${item.id}`}>
-              <span>
-                {item.id === "art"
-                  ? "◌"
-                  : item.id === "java"
-                    ? "J"
-                    : item.id === "rust"
-                      ? "R"
-                      : "TS"}
-              </span>
-              <div className="art-line" />
-              <div className="art-line" />
-            </div>
-          )}
+          <ResourceArtwork id={item.id} />
           <span className="card-kind">{item.category}</span>
           <span className="card-arrow">↗</span>
         </div>
@@ -179,7 +160,7 @@ export default function App() {
   );
   const known = routes.has(path);
   return (
-    <div onClick={links}>
+    <div onClick={links} className={path === "/" ? "home-route" : undefined}>
       <a className="skip-link" href="#main">
         本文へ
       </a>
@@ -195,7 +176,9 @@ export default function App() {
             <a aria-current={path === "/" ? "page" : undefined} href="/">
               探索
             </a>
-            <a aria-current={path === "/lab" ? "page" : undefined} href="/lab">実験室</a>
+            <a aria-current={path === "/lab" ? "page" : undefined} href="/lab">
+              実験室
+            </a>
             <a aria-current={path === "/art" ? "page" : undefined} href="/art">
               宇宙
             </a>
@@ -241,51 +224,8 @@ export default function App() {
       )}
       <div id="main" tabIndex={-1}>
         {path === "/" ? (
-          <main>
-            <section className="hero">
-              <div className="hero-copy">
-                <span className="eyebrow">
-                  <span className="signal" /> JavaとRustを学ぶ
-                </span>
-                <h1>
-                  Javaを動かして、
-                  <br />
-                  <em>自分で確かめる。</em>
-                </h1>
-                <p>
-                  まず結果を予想し、小さく動かす。
-                  <br className="desktop-break" />
-                  時間を空けて、もう一度思い出す。
-                </p>
-                <div className="hero-actions">
-                  <a className="primary" href="/lab">
-                    コードを動かす <span>↗</span>
-                  </a>
-                  <a className="hero-link" href="/art">
-                    宇宙をひらく <span>→</span>
-                  </a>
-                </div>
-                <div className="hero-languages">
-                  <span>Java</span>
-                  <i>/</i>
-                  <span>Rust</span>
-                  <i>/</i>
-                  <span>GLSL</span>
-                </div>
-              </div>
-              <div className="hero-universe">
-                <HomeUniverse paused={state.motion === "paused"} />
-                <a
-                  className="hero-image-credit"
-                  href="/art"
-                  target="_blank"
-                  rel="noreferrer"
-                >
-                  JavaとRustで動く銀河 · 操作する ↗
-                </a>
-              </div>
-              <span className="hero-bottom">予想 / 実行 / 説明 / 復習</span>
-            </section>
+          <main className="home-page">
+            <HomeHero paused={state.motion === "paused"} />
             <section
               className="explore-section"
               aria-labelledby="explore-title"
@@ -294,10 +234,12 @@ export default function App() {
                 <div>
                   <span className="eyebrow">教材と資料</span>
                   <h2 id="explore-title">
-                    <span>学習と作品</span>
+                    <span>学習の入口</span>
                   </h2>
                 </div>
-                <span className="section-number">01 — 08</span>
+                <span className="section-number">
+                  {String(resources.length).padStart(2, "0")} 項目
+                </span>
               </div>
               <div className="filter-bar">
                 <div className="filter-tabs" aria-label="コンテンツの種類">
@@ -356,20 +298,38 @@ export default function App() {
                 </div>
               )}
             </section>
-            <section className="learning-banner">
-              <div className="banner-mark">&lt;/&gt;</div>
-              <div>
-                <span className="eyebrow">学習の進め方</span>
-                <h2>気になったところから、コードへ。</h2>
-                <p>Javaの入力判定から、Rustの座標生成、画面に届く光まで。</p>
+            <section className="home-method" aria-labelledby="method-title">
+              <div className="home-method-head">
+                <span className="eyebrow">学び方</span>
+                <h2 id="method-title">小さく動かして、理解を残す。</h2>
+                <a href="/learn">学習の進め方を見る →</a>
               </div>
-              <a className="secondary" href="/learn">
-                理解するための入口 →
-              </a>
+              <ol>
+                {[
+                  ["予測する", "出力を見る前に、どうなるか考える。"],
+                  ["動かす", "コードを変えて、結果を比べる。"],
+                  ["説明する", "理由を自分の言葉にしてみる。"],
+                  ["思い出す", "時間を空けて、もう一度つくる。"],
+                ].map(([title, description], i) => (
+                  <li key={title}>
+                    <span>0{i + 1}</span>
+                    <h3>{title}</h3>
+                    <p>{description}</p>
+                  </li>
+                ))}
+              </ol>
             </section>
           </main>
         ) : path === "/lab" ? (
-          <Suspense fallback={<main className="page-shell" aria-busy="true">実験室を読み込んでいます…</main>}><CodeLab /></Suspense>
+          <Suspense
+            fallback={
+              <main className="page-shell" aria-busy="true">
+                実験室を読み込んでいます…
+              </main>
+            }
+          >
+            <CodeLab />
+          </Suspense>
         ) : path === "/learn" ? (
           <Suspense
             fallback={

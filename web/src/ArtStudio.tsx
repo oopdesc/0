@@ -72,7 +72,10 @@ export default function ArtStudio({
   search: string;
 }) {
   const [astra, setAstra] = useState(
-    () => new URLSearchParams(search).get("model") === "solar",
+    () =>
+      !new URLSearchParams(search).has("scene") &&
+      !new URLSearchParams(search).has("view") &&
+      new URLSearchParams(search).get("model") !== "galaxy",
   );
   const [java, setJava] = useState<JavaArt | null>(null),
     [mode, setMode] = useState(0),
@@ -264,6 +267,9 @@ export default function ArtStudio({
         </p>
       </div>
       <div className="media-mode-tabs">
+        <button aria-pressed={astra} onClick={() => setAstra(true)}>
+          太陽系と惑星
+        </button>
         <button
           aria-pressed={!observation && !astra}
           onClick={() => {
@@ -284,9 +290,6 @@ export default function ArtStudio({
           }}
         >
           比較する観測資料
-        </button>
-        <button aria-pressed={astra} onClick={() => setAstra(true)}>
-          太陽系と惑星
         </button>
       </div>
       {astra ? (
