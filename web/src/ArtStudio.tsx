@@ -1,7 +1,8 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { loadJavaArt, type JavaArt } from "./java-model";
 import UniverseCanvas, { type CameraPosition } from "./UniverseCanvas";
 import type { UniverseHandle, UniverseOptions } from "./art/universe3d";
+const ParallaxArt = lazy(() => import("./arena/parallax/Art"));
 const scenes = [
   {
     id: "m51",
@@ -70,6 +71,7 @@ export default function ArtStudio({
   onPause: () => void;
   search: string;
 }) {
+  const [arenaArt, setArenaArt] = useState(() => new URLSearchParams(search).get("studio") === "orbit");
   const [java, setJava] = useState<JavaArt | null>(null),
     [mode, setMode] = useState(0),
     [seed, setSeed] = useState(42),
@@ -255,8 +257,9 @@ export default function ArtStudio({
       </div>
       <div className="media-mode-tabs">
         <button
-          aria-pressed={!observation}
+          aria-pressed={!observation && !arenaArt}
           onClick={() => {
+            setArenaArt(false);
             if (observation) {
               setObservation(false);
               setReady(false);
@@ -265,10 +268,12 @@ export default function ArtStudio({
         >
           操作できる三次元モデル
         </button>
-        <button aria-pressed={observation} onClick={() => setObservation(true)}>
+        <button aria-pressed={observation && !arenaArt} onClick={() => {setArenaArt(false);setObservation(true);}}>
           比較する観測資料
         </button>
+        <button aria-pressed={arenaArt} onClick={() => setArenaArt(true)}>星と軌道のスタジオ</button>
       </div>
+      {arenaArt ? <Suspense fallback={<p>3Dスタジオを読み込んでいます…</p>}><ParallaxArt paused={paused}/></Suspense> : <>
       <div
         className={`observatory-frame universe-stage ${observation ? "observation-frame" : ""}`}
         ref={stage}
@@ -582,6 +587,7 @@ export default function ArtStudio({
       <p className="caption">
         三次元モデルとNASA等の提供資料は区別して掲載しています。このサイトはNASAの公式サイトではありません。
       </p>
+      </>}
     </main>
   );
 }
