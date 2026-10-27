@@ -11,7 +11,7 @@ export function ProblemPage({ id }: { id: string }) {
   const problem = getProblem(id);
 
   const role = useMemo<LoopResult extends never ? never : 'predict' | 'retry' | 'review'>(() => {
-    const q = new URLSearchParams(window.location.search).get('r');
+    const q = new URLSearchParams(window.location.hash.split('?')[1] || '').get('r');
     return q === 'retry' || q === 'review' ? q : 'predict';
   }, [path]);
 

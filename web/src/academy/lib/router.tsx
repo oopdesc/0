@@ -13,7 +13,7 @@ export interface RouterState {
 const Ctx = createContext<RouterState>({ path: '/', navigate: () => {} });
 
 function currentPath(): string {
-  const p = decodeURIComponent(window.location.hash.slice(1) || '/').replace(/\/+$/, '');
+  const p = decodeURIComponent((window.location.hash.slice(1) || '/').split('?')[0]).replace(/\/+$/, '');
   return p === '' ? '/' : p;
 }
 
