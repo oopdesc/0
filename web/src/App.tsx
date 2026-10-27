@@ -376,6 +376,13 @@ export default function App() {
             >
               GitHub ↗
             </a>
+            <a
+              href="https://github.com/oopdesc/all-beings-flourishing"
+              target="_blank"
+              rel="noreferrer"
+            >
+              作成者の著作 ↗
+            </a>
             <a href="/contact">このサイトについて</a>
             <a href="/privacy">プライバシー</a>
             <a href="/accessibility">アクセシビリティ</a>
@@ -384,10 +391,16 @@ export default function App() {
         <div className="footer-bottom">
           <span>© {new Date().getFullYear()} 0 制作者</span>
           <span>宇宙 / Java / Rust</span>
-          <span className="footer-status">
-            <span className="signal" />
-            オープンソースの学習サイト
-          </span>
+          <a
+            className="footer-status license-badge"
+            href="https://github.com/oopdesc/0/blob/main/LICENSE"
+            target="_blank"
+            rel="noreferrer"
+            aria-label="ソースコードのMITライセンスを読む"
+          >
+            <span className="license-mark" aria-hidden="true">&lt;/&gt;</span>
+            ソースコード：MIT License ↗
+          </a>
         </div>
       </footer>
       <dialog

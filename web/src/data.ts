@@ -40,6 +40,15 @@ export const resources: Resource[] = [
     accent: "violet",
   },
   {
+    id: "authors-books",
+    title: "作成者の著作",
+    subtitle: "科学・数学・哲学の本を、更新を重ねながらGitHubで無料公開しています。",
+    category: "リンク",
+    tag: "無料で読む",
+    href: "https://github.com/oopdesc/all-beings-flourishing",
+    accent: "mint",
+  },
+  {
     id: "java",
     title: "Java / HTTPの入口",
     subtitle: "入力から応答まで。小さなAPIを読む。",
