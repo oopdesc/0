@@ -3,12 +3,18 @@ import type { SavedState } from "./state";
 import { requestTrace } from "./request-flow";
 import { store, type Route } from "./arena/orrery/core/appStore";
 import "./learning-hub.css";
+const Curated = lazy(() => import("./CuratedProblems"));
+const OrbitLab = lazy(() => import("./OrbitLab"));
+const Academy = lazy(() => import("./Academy"));
 const Basics = lazy(() => import("./Learning"));
 const Lab = lazy(() =>
   import("./arena/orrery/App").then((m) => ({ default: m.App })),
 );
 const Source = lazy(() => import("./Secondary"));
 const sections = [
+  ["orbit", "宇宙とコード・6つの実験"],
+  ["drill", "問題集・復習"],
+  ["verified", "Java・Rustの実行演習"],
   ["flow", "処理の全体像"],
   ["practice", "Java・Rustの演習"],
   ["source", "Eclipseとソース"],
@@ -170,7 +176,7 @@ export default function LearningHub({
           ))}
         </nav>
       </section>
-      {section === "flow" ? (
+      {section === "orbit" ? (<Suspense fallback={<p>宇宙の実験を読み込んでいます…</p>}><OrbitLab /></Suspense>) : section === "verified" ? (<Suspense fallback={<p>演習を読み込んでいます…</p>}><Curated /></Suspense>) : section === "drill" ? (<Suspense fallback={<p className="hub-content">問題を読み込んでいます…</p>}><Academy /></Suspense>) : section === "flow" ? (
         <RequestFlow />
       ) : section === "references" ? (
         <main className="hub-content">

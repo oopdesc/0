@@ -1,0 +1,75 @@
+import type { TopicMeta } from './schema';
+
+/** Topic catalogue. Order is the recommended learning order. */
+export const TOPICS: TopicMeta[] = [
+  { id: 'java-vars', language: 'java', order: 1, kicker: '01 / 変数', name: '変数と基本型',
+    summary: '代入先の型は演算を変えない。値型と参照型の最初の違い。' },
+  { id: 'java-ops', language: 'java', order: 2, kicker: '02 / 演算子', name: '演算子と評価',
+    summary: '優先順位、左結合、% の符号、境界でのオーバーフロー。' },
+  { id: 'java-if', language: 'java', order: 3, kicker: '03 / 条件', name: 'if と switch',
+    summary: 'else のつながり、fall-through、論理演算子。' },
+  { id: 'java-loop', language: 'java', order: 4, kicker: '04 / ループ', name: 'for と while',
+    summary: '何回回るか、< と <=、自動ではない進行。' },
+  { id: 'java-array', language: 'java', order: 5, kicker: '05 / 配列', name: '配列と境界',
+    summary: 'length は要素数。範囲外アクセスは実行時例外。' },
+  { id: 'java-string', language: 'java', order: 6, kicker: '06 / 文字列', name: '文字列',
+    summary: '不変、== と equals、+ の結合順。' },
+  { id: 'java-method', language: 'java', order: 7, kicker: '07 / メソッド', name: 'メソッド',
+    summary: '引数の評価、overload、値渡しと参照渡し。' },
+  { id: 'java-class', language: 'java', order: 8, kicker: '08 / クラス', name: 'クラスとオブジェクト',
+    summary: 'インスタンス変数とクラス変数、コンストラクタ。' },
+  { id: 'java-inherit', language: 'java', order: 9, kicker: '09 / 継承', name: '継承と多態',
+    summary: 'override されるものとされないもの。' },
+  { id: 'java-collections', language: 'java', order: 10, kicker: '10 / コレクション', name: 'コレクションと泛型',
+    summary: 'List / Set / Map の違い、泛型の不変性。' },
+  { id: 'java-functional', language: 'java', order: 11, kicker: '11 / 関数型', name: 'ラムダと Stream',
+    summary: 'ラムダは値。Stream は宣言的なパイプライン。' },
+  { id: 'java-errors', language: 'java', order: 12, kicker: '12 / 例外', name: '例外',
+    summary: 'try/catch/finally の順序、checked exception。' },
+  { id: 'java-practical', language: 'java', order: 13, kicker: '13 / 実践', name: '境界・JSON・フロー',
+    summary: '入力範囲、エスケープ、リクエストの層の順。' },
+
+  { id: 'rust-let', language: 'rust', order: 1, kicker: '01 / let', name: 'let と mut',
+    summary: 'Rust の let は不変。変更には let mut。' },
+  { id: 'rust-expr', language: 'rust', order: 2, kicker: '02 / 式', name: '式と関数',
+    summary: '優先順位、型の明示、関数の定義。' },
+  { id: 'rust-control', language: 'rust', order: 3, kicker: '03 / 制御', name: '制御構造',
+    summary: 'if は式。for の Range の終端の扱い。' },
+  { id: 'rust-ownership', language: 'rust', order: 4, kicker: '04 / 所有権', name: '所有権と move',
+    summary: 'move は元を無効にする。Copy 型は例外。' },
+  { id: 'rust-borrow', language: 'rust', order: 5, kicker: '05 / 借用', name: '参照と借用',
+    summary: '& は複数可、&mut は 1 つ。使用壽命。' },
+  { id: 'rust-string', language: 'rust', order: 6, kicker: '06 / 文字列', name: '文字列',
+    summary: 'String と &str の違い、不変性。' },
+  { id: 'rust-struct', language: 'rust', order: 7, kicker: '07 / 構造体', name: 'struct / enum / match',
+    summary: 'フィールドの初期化、match の網羅性。' },
+  { id: 'rust-option', language: 'rust', order: 8, kicker: '08 /  Option', name: 'Option と Result',
+    summary: '無さを型に乗せる。unwrap の危険。' },
+  { id: 'rust-collections', language: 'rust', order: 9, kicker: '09 / コレクション', name: 'Vec と HashMap',
+    summary: 'len の意味、iter と into_iter、collect。' },
+  { id: 'rust-trait', language: 'rust', order: 10, kicker: '10 / 抽象', name: 'trait とジェネリクス',
+    summary: '型に能力を追加する。クロージャの捕获。' },
+  { id: 'rust-lifetime', language: 'rust', order: 11, kicker: '11 / 寿命', name: 'ライフタイムと伝搬',
+    summary: '参照の有効期間、? によるエラー伝搬。' },
+  { id: 'rust-practical', language: 'rust', order: 12, kicker: '12 / 実践', name: 'WASM・メモリ・決定性',
+    summary: 'f32 の精度、オーバーフロー、linear memory。' },
+
+  { id: 'bridge-memory', language: 'bridge', order: 1, kicker: '01 / メモリ', name: 'GC と所有権',
+    summary: '解放のタイミングと責任の置きどころが違う。' },
+  { id: 'bridge-null', language: 'bridge', order: 2, kicker: '02 / 無さ', name: 'null と Option',
+    summary: '「無い」を許す言語と型で強制する言語。' },
+  { id: 'bridge-interface', language: 'bridge', order: 3, kicker: '03 / 契約', name: 'interface と trait',
+    summary: '継承の数と実装の場所が違う。' },
+  { id: 'bridge-exception', language: 'bridge', order: 4, kicker: '04 / 失敗', name: '例外と Result',
+    summary: '隠れた分岐と、型の一部としての失敗。' },
+  { id: 'bridge-iteration', language: 'bridge', order: 5, kicker: '05 / 列', name: 'Stream と iterator',
+    summary: '宣言的なパイプラインと消費型の列。' },
+];
+
+export const TOPIC_MAP: Record<string, TopicMeta> = Object.fromEntries(
+  TOPICS.map((t) => [t.id, t]),
+);
+
+export function topicsFor(language: 'java' | 'rust' | 'bridge'): TopicMeta[] {
+  return TOPICS.filter((t) => t.language === language).sort((a, b) => a.order - b.order);
+}

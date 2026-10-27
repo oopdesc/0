@@ -1,0 +1,95 @@
+/* ─────────────────────────────────────────────────────────────
+   0 — design tokens
+   現在サイトの identity（明るい紙面 / 深い夜空、抑制された藍と青緑）を
+   そのまま土台にし、学習 UI に必要な階調だけを増やしている。
+   ───────────────────────────────────────────────────────────── */
+:root {
+  color-scheme: light;
+  --bg: #f5f7fb;
+  --bg-deep: #e9eef6;
+  --panel: #ffffff;
+  --panel-2: #fbfcfe;
+  --soft: #eaf0f7;
+  --soft-2: #dfe7f1;
+  --text: #182a3d;
+  --text-strong: #0f1d2c;
+  --muted: #526275;
+  --muted-2: #6d7d90;
+  --line: #ccd5df;
+  --line-strong: #a9b8c9;
+  --accent: #245787;
+  --accent-soft: #dce9f7;
+  --mint: #187663;
+  --mint-soft: #d9efe9;
+  --amber: #8a5a10;
+  --amber-soft: #f6e9d2;
+  --rose: #9c2b3e;
+  --rose-soft: #f7dfe3;
+  --violet: #5a4b8a;
+  --violet-soft: #e8e3f4;
+  --code-bg: #f2f5fa;
+  --code-text: #1c2b3d;
+  --code-line: #dbe3ee;
+  --ok: #187663;
+  --bad: #9c2b3e;
+  --warn: #8a5a10;
+  --shadow-1: 0 1px 2px rgba(16, 32, 51, 0.05), 0 4px 14px rgba(16, 32, 51, 0.05);
+  --shadow-2: 0 2px 6px rgba(16, 32, 51, 0.07), 0 18px 50px rgba(16, 32, 51, 0.1);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --radius-lg: 20px;
+  --maxw: 1120px;
+  --readw: 720px;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Hiragino Kaku Gothic ProN', 'Hiragino Sans',
+    'Noto Sans JP', 'Yu Gothic', Meiryo, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', SFMono-Regular, 'JetBrains Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --bg: #080d16;
+  --bg-deep: #050911;
+  --panel: #101b2a;
+  --panel-2: #14202f;
+  --soft: #19283b;
+  --soft-2: #21324a;
+  --text: #e8eef6;
+  --text-strong: #f6f9fc;
+  --muted: #afbed0;
+  --muted-2: #94a5ba;
+  --line: #2c3e55;
+  --line-strong: #3f5673;
+  --accent: #a8d2f8;
+  --accent-soft: #16283d;
+  --mint: #a4e7da;
+  --mint-soft: #102e2a;
+  --amber: #f0c98a;
+  --amber-soft: #2c2214;
+  --rose: #f4a8b6;
+  --rose-soft: #2e1620;
+  --violet: #c9bcf0;
+  --violet-soft: #221e35;
+  --code-bg: #0b1420;
+  --code-text: #dce7f4;
+  --code-line: #1d2b3c;
+  --ok: #7fdcbf;
+  --bad: #f4a8b6;
+  --warn: #f0c98a;
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3), 0 4px 16px rgba(0, 0, 0, 0.25);
+  --shadow-2: 0 2px 8px rgba(0, 0, 0, 0.4), 0 20px 60px rgba(0, 0, 0, 0.45);
+}
+
+/* Java / Rust の識別色。ブランドカラーではなく、教材の文脈色として使う。 */
+:root {
+  --java: #b0651c;
+  --java-soft: #f6e8d8;
+  --rust: #8a4a2a;
+  --rust-soft: #f4e3da;
+}
+:root[data-theme='dark'] {
+  --java: #e6a866;
+  --java-soft: #2a1d10;
+  --rust: #e5a184;
+  --rust-soft: #2b1712;
+}

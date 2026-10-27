@@ -1,0 +1,12 @@
+[package]
+name = "cosmic-problems"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "cosmic_problems"
+crate-type = ["cdylib", "rlib"]
+
+[[bin]]
+name = "problems-verify"
+path = "src/main.rs"

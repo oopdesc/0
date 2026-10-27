@@ -65,6 +65,7 @@ export default function App() {
   }, [state]);
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
+      if ((e.composedPath()[0] as HTMLElement | undefined)?.getRootNode() instanceof ShadowRoot) return;
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setSearchOpen(true);
