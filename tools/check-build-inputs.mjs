@@ -7,6 +7,7 @@ import assert from 'node:assert/strict';
 const root = fileURLToPath(new URL('..', import.meta.url));
 const read = file => JSON.parse(readFileSync(path.join(root, file), 'utf8'));
 const java = read('web/src/java-manifest.json');
+const problemJava = read('web/src/problems/java-manifest.json');
 const wasm = read('web/src/wasm-manifest.json');
 const media = read('web/src/media-manifest.json');
 const required = [...new Set([
@@ -14,6 +15,7 @@ const required = [...new Set([
   'web/package.json', 'web/package-lock.json', 'web/index.html', 'web/vite.config.ts',
   'web/src/java-manifest.json', 'web/src/wasm-manifest.json', 'web/src/media-manifest.json',
   java.path, ...Object.keys(java.sourceHashes), ...Object.keys(wasm.sourceHashes),
+  'web/src/problems/java-manifest.json', problemJava.path, ...Object.keys(problemJava.sourceHashes),
   'web/public/' + wasm.url.replace(/^\//, ''),
   ...media.map(file => 'web/public/' + file.path),
 ])];

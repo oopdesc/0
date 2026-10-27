@@ -75,6 +75,9 @@ for (const [file, sha] of Object.entries(meta.sourceHashes)) {
 const javaMeta = JSON.parse(readFileSync(path.join(root, 'web/src/java-manifest.json'), 'utf8'));
 assert.equal(hash(readFileSync(path.join(root, javaMeta.path))), javaMeta.sha256, 'Java browser module digest mismatch');
 for (const [file, sha] of Object.entries(javaMeta.sourceHashes)) assert.equal(hash(readFileSync(path.join(root, file))), sha, 'Java source changed: rebuild the browser module');
+const problemJava = JSON.parse(readFileSync(path.join(root, 'web/src/problems/java-manifest.json'), 'utf8'));
+assert.equal(hash(readFileSync(path.join(root, problemJava.path))), problemJava.sha256, 'Fixed Java problem module digest mismatch');
+for (const [file, sha] of Object.entries(problemJava.sourceHashes)) assert.equal(hash(readFileSync(path.join(root, file))), sha, 'Fixed Java problem source changed: rebuild the browser module');
 const mediaMeta = JSON.parse(readFileSync(path.join(root, 'web/src/media-manifest.json'), 'utf8'));
 for (const file of mediaMeta) assert.equal(hash(readFileSync(path.join(dist, file.path))), file.sha256, 'Observation media digest mismatch');
 const report = { files, totalBytes: total, javaScriptGzipBytes: jsGzip, initialJavaScriptGzipBytes: initialGzip, pagePayloads, payloadMethod: 'static import closure plus selected lazy route; gzip estimate, cold browser; excludes headers and interaction-selected media', wasmBytes: meta.bytes, javaBrowserBytes: javaMeta.bytes, limits: { staticBytes: 30 * 1024 * 1024, javaScriptGzipBytes: 1024 * 1024, initialJavaScriptGzipBytes: 128 * 1024 }, privateDocumentsIncluded: false, functions: 0, monthlyTransferGuaranteed: false };

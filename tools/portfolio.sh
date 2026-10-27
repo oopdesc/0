@@ -23,6 +23,7 @@ case "${1:-help}" in
     fi ;;
   test-java-browser) exec node tools/test-java-browser.mjs ;;
   java-browser) exec node tools/build-java-browser.mjs ;;
+  problem-java-browser) exec node tools/build-problem-java.mjs ;;
   test-web) exec npm --prefix web test ;;
   build) exec npm --prefix web run build ;;
   wasm) exec node tools/build-wasm.mjs ;;
@@ -34,5 +35,5 @@ case "${1:-help}" in
     node tools/test-wasm.mjs
     node tools/check-build-inputs.mjs
     npm --prefix web run build ;;
-  *) print 'Usage: ./tools/portfolio.sh web | java | rust | java-browser | test-java-browser | test-java | test-rust | test-web | wasm | build | verify' ;;
+  *) print 'Usage: ./tools/portfolio.sh web | java | rust | java-browser | problem-java-browser | test-java-browser | test-java | test-rust | test-web | wasm | build | verify' ;;
 esac

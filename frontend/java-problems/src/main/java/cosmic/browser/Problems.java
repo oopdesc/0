@@ -16,6 +16,14 @@ public final class Problems {
 
   private Problems() {}
 
+  // TeaVM may strip reflective class names. Identify this taught exception by type,
+  // rather than filling in the problem's expected answer at display time.
+  private static String exceptionName(Throwable error) {
+    if (error instanceof NullPointerException) return "java.lang.NullPointerException";
+    String name = error.getClass().getName();
+    return name == null ? "種類を取得できない例外" : name;
+  }
+
   public static void main(String[] args) {}
 
   @JSExport
@@ -57,7 +65,7 @@ public final class Problems {
         }
         System.out.println(new H().add(new H().add(1, 2), 3));
     } catch (Throwable t) {
-      return "PANIC:" + t.getClass().getName();
+      return "PANIC:" + exceptionName(t);
     } finally {
       System.setOut(old);
     }
@@ -76,7 +84,7 @@ public final class Problems {
         new H().show(5);
         new H().show("5");
     } catch (Throwable t) {
-      return "PANIC:" + t.getClass().getName();
+      return "PANIC:" + exceptionName(t);
     } finally {
       System.setOut(old);
     }
@@ -95,7 +103,7 @@ public final class Problems {
         new H().change(arr);
         System.out.println(arr[0]);
     } catch (Throwable t) {
-      return "PANIC:" + t.getClass().getName();
+      return "PANIC:" + exceptionName(t);
     } finally {
       System.setOut(old);
     }
@@ -114,7 +122,7 @@ public final class Problems {
         new H().triple(v);
         System.out.println(v[0]);
     } catch (Throwable t) {
-      return "PANIC:" + t.getClass().getName();
+      return "PANIC:" + exceptionName(t);
     } finally {
       System.setOut(old);
     }
@@ -134,7 +142,7 @@ public final class Problems {
         q.v = 9;
         System.out.println(p.v);
     } catch (Throwable t) {
-      return "PANIC:" + t.getClass().getName();
+      return "PANIC:" + exceptionName(t);
     } finally {
       System.setOut(old);
     }
@@ -153,7 +161,7 @@ public final class Problems {
         }
         System.out.println(new C().n + "," + new C(3).n);
     } catch (Throwable t) {
-      return "PANIC:" + t.getClass().getName();
+      return "PANIC:" + exceptionName(t);
     } finally {
       System.setOut(old);
     }
@@ -174,7 +182,7 @@ public final class Problems {
         Counter b = new Counter();
         System.out.println(total[0] + "," + a.mine + "," + b.mine);
     } catch (Throwable t) {
-      return "PANIC:" + t.getClass().getName();
+      return "PANIC:" + exceptionName(t);
     } finally {
       System.setOut(old);
     }
@@ -194,7 +202,7 @@ public final class Problems {
         }
         System.out.println(new Star().kind());
     } catch (Throwable t) {
-      return "PANIC:" + t.getClass().getName();
+      return "PANIC:" + exceptionName(t);
     } finally {
       System.setOut(old);
     }
@@ -215,7 +223,7 @@ public final class Problems {
         A a = new B();
         System.out.println(a.kind());
     } catch (Throwable t) {
-      return "PANIC:" + t.getClass().getName();
+      return "PANIC:" + exceptionName(t);
     } finally {
       System.setOut(old);
     }
@@ -236,7 +244,7 @@ public final class Problems {
         A a = new B();
         System.out.println(a.kind());
     } catch (Throwable t) {
-      return "PANIC:" + t.getClass().getName();
+      return "PANIC:" + exceptionName(t);
     } finally {
       System.setOut(old);
     }
@@ -257,7 +265,7 @@ public final class Problems {
         A a = new B();
         System.out.println(a.v);
     } catch (Throwable t) {
-      return "PANIC:" + t.getClass().getName();
+      return "PANIC:" + exceptionName(t);
     } finally {
       System.setOut(old);
     }
@@ -278,7 +286,7 @@ public final class Problems {
         }
         new B().m();
     } catch (Throwable t) {
-      return "PANIC:" + t.getClass().getName();
+      return "PANIC:" + exceptionName(t);
     } finally {
       System.setOut(old);
     }
@@ -298,7 +306,7 @@ public final class Problems {
           System.out.println("finally");
         }
     } catch (Throwable t) {
-      return "PANIC:" + t.getClass().getName();
+      return "PANIC:" + exceptionName(t);
     } finally {
       System.setOut(old);
     }
@@ -318,7 +326,7 @@ public final class Problems {
         }
         System.out.println(new H().f());
     } catch (Throwable t) {
-      return "PANIC:" + t.getClass().getName();
+      return "PANIC:" + exceptionName(t);
     } finally {
       System.setOut(old);
     }
@@ -333,7 +341,7 @@ public final class Problems {
         String s = null;
         System.out.println(s.length());
     } catch (Throwable t) {
-      return "PANIC:" + t.getClass().getName();
+      return "PANIC:" + exceptionName(t);
     } finally {
       System.setOut(old);
     }
@@ -350,7 +358,7 @@ public final class Problems {
         }
         System.out.println(new H().clamp(-5) + "," + new H().clamp(50) + "," + new H().clamp(100));
     } catch (Throwable t) {
-      return "PANIC:" + t.getClass().getName();
+      return "PANIC:" + exceptionName(t);
     } finally {
       System.setOut(old);
     }
@@ -369,7 +377,7 @@ public final class Problems {
         }
         System.out.println(new H().point(1, 2));
     } catch (Throwable t) {
-      return "PANIC:" + t.getClass().getName();
+      return "PANIC:" + exceptionName(t);
     } finally {
       System.setOut(old);
     }

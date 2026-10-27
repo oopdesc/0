@@ -1,0 +1,11 @@
+{
+  "path": "web/src/generated/problems-model.js",
+  "compiler": "TeaVM 0.16.0",
+  "sha256": "06ccd6f7cfd53633bfeb6b42b87e0c41feb1db3e830dc155d8c4189eadbf5cb0",
+  "bytes": 47115,
+  "sourceHashes": {
+    "frontend/java-problems/pom.xml": "1cf1f81860cfc3c984a23f2e706fccc8e93335404900267c466b7e34c806fbec",
+    "frontend/java-problems/src/main/java/cosmic/browser/Problems.java": "7c9f4066aa2d9b47cb49e1e2c83b4610192c3f7aa11a6216aafba592785e1d6e",
+    "tools/build-problem-java.mjs": "fa50759e3bae26339e8f8c70b99d9681caddcb892a6b13ba1077c9a3d2384c48"
+  }
+}

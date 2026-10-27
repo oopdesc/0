@@ -63,6 +63,8 @@ Javaのコードを変更したら、次を実行してページを再読み込�
 ./tools/portfolio.sh java-browser
 ```
 
+109問の実行演習にある固定Javaコードを変更した場合は、`./tools/portfolio.sh problem-java-browser` で別のTeaVMモジュールを再生成します。このコマンドは既存のMavenキャッシュを使います。初回は `frontend/java-problems/pom.xml` の依存をMavenで取得してから実行してください。例外の学習に使うため、TeaVMの `strict` を有効にしています。任意の入力コードをコンパイルする機能ではありません。`verify` では、固定Java17件・Rust32件の出力や例外を実際のブラウザ用モジュールと照合します。
+
 ブラウザで動くTeaVMコードと、JVMで動くJavaのデバッグは別の実行環境です。同じ純粋なJava処理を両方で使い、同一入力の結果をテストで照合します。JVMのデバッグでは分岐と変数を、ブラウザの開発者ツールでは描画と通信を確認できます。ブラウザ向けのソースマップはMavenのtarget/javascriptに生成します。
 
 Rustの座標生成を変更したら、`rustup target add wasm32-unknown-unknown` を一度実行した後、`./tools/portfolio.sh wasm` で再生成します。

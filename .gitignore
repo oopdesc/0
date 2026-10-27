@@ -6,6 +6,7 @@ web/release-report.json
 backend/rust/target/
 backend/java/bin/
 frontend/java/target/
+frontend/java-problems/target/
 frontend/java/bin/
 .env
 .env.*

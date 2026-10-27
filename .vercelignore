@@ -11,6 +11,7 @@ web/.env*
 web/tsconfig.tsbuildinfo
 !tools/
 !tools/check-release.mjs
+!tools/build-problem-java.mjs
 !backend/
 !backend/rust/
 !backend/rust/Cargo.toml
@@ -27,3 +28,11 @@ web/tsconfig.tsbuildinfo
 !frontend/java/src/main/java/cosmic/
 !frontend/java/src/main/java/cosmic/browser/
 !frontend/java/src/main/java/cosmic/browser/*.java
+!frontend/java-problems/
+!frontend/java-problems/pom.xml
+!frontend/java-problems/src/
+!frontend/java-problems/src/main/
+!frontend/java-problems/src/main/java/
+!frontend/java-problems/src/main/java/cosmic/
+!frontend/java-problems/src/main/java/cosmic/browser/
+!frontend/java-problems/src/main/java/cosmic/browser/Problems.java
