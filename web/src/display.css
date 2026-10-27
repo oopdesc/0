@@ -11,6 +11,16 @@
   --soft: #eaf0f7;
   --accent: #245787;
 }
+.footer-main > div {
+  color: var(--muted);
+  font-size: 12px;
+}
+.footer-bottom {
+  font-size: 10px;
+}
+.footer-status.license-badge {
+  font-size: 11px;
+}
 :root[data-theme="dark"] {
   color-scheme: dark;
   --bg: #080d16;

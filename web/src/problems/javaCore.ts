@@ -466,7 +466,7 @@ System.out.println(a);`,
   }),
   j({
     id: 'js2', topic: 'java-string', level: 2, questionType: 'predict-output',
-    prompt: '== と equals の違いを而出力で確かめる。',
+    prompt: '== と equals の違いを出力で確かめる。',
     code: `String a = new String("Java");
 String b = new String("Java");
 System.out.println(a == b);
@@ -484,7 +484,7 @@ System.out.println(a.equals(b));`,
   }),
   j({
     id: 'js3', topic: 'java-string', level: 2, questionType: 'predict-output',
-    prompt: '+ が文字列と数値のどちらに見える时机かで結果が変わる。',
+    prompt: '+ の左右の型と評価順によって、文字列連結か数値の加算かが決まる。',
     code: `System.out.println("a" + 1 + 2);
 System.out.println(1 + 2 + "a");`,
     prediction: { text: '2 行の出力を予想してください。', options: ['a3 と 3a', 'a12 と 3a', 'a12 と 12a', 'a3 と 12a'] },
