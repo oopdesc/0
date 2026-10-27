@@ -147,7 +147,7 @@ function Header() {
             type="button"
             className="iconbtn"
             onClick={() => {
-              window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true }));
+              window.dispatchEvent(new CustomEvent('0:academy-search'));
             }}
             aria-label="検索（⌘K）"
             title="検索 ⌘K"

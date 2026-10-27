@@ -68,7 +68,7 @@ export class FrameMeter {
   get slow(): boolean {
     const s = this.samples.slice(-45);
     if (s.length < 45) return false;
-    return s.reduce((a, b) => a + b, 0) / s.length > 26; // 約 38fps 未満
+    return s.reduce((a, b) => a + b, 0) / s.length > 50; // 30fps上限で、約20fpsを下回ったときだけ下げる
   }
   reset(): void {
     this.samples = [];

@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { SolarDiagram } from "./arena/astra/SolarDiagram";
 import bodies from "./arena/astra/bodies.json";
 import "./home.css";
+import stats from "./generated/learning-stats.json";
 export default function HomeHero({ paused }: { paused: boolean }) {
   const [selected, setSelected] = useState("earth"),
     [language, setLanguage] = useState<"java" | "rust">("java"),
@@ -48,11 +49,26 @@ export default function HomeHero({ paused }: { paused: boolean }) {
           予想と結果を見比べながら、仕組みを理解する。
         </p>
         <div className="home-actions">
-          <a className="home-primary" href="/learn?section=practice&mode=code">
-            Javaを試す <span aria-hidden="true">↗</span>
+          <a className="home-primary" href="/learn">
+            {stats.total.toLocaleString()}問から学ぶ{" "}
+            <span aria-hidden="true">↗</span>
           </a>
           <a className="home-secondary" href="/art">
             太陽系を動かす <span aria-hidden="true">→</span>
+          </a>
+        </div>
+        <div className="home-learning-numbers" aria-label="収録している教材">
+          <a href="/learn?section=drill">
+            <strong>{stats.questionBank.toLocaleString()}</strong>
+            <span>問の問題集</span>
+          </a>
+          <a href="/learn?section=verified">
+            <strong>{stats.executionPractice}</strong>
+            <span>問の実行演習</span>
+          </a>
+          <a href="/learn?section=orbit">
+            <strong>{stats.experiments}</strong>
+            <span>つの宇宙実験</span>
           </a>
         </div>
         <div className="home-topics">

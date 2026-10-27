@@ -13,14 +13,20 @@
  *
  * 学習ページからは動的 import されるだけで、初期バンドルには入らない。
  */
-import { createWebGL2 } from './webgl2';
-import { createWebGPU, type CursorState, type SpaceRenderer } from './webgpu';
-import { createStatic } from './staticScene';
-import { FrameMeter, degrade, preset, type Quality, type Tier } from './quality';
-import { loadSpaceCore, type SpaceCore } from '../engine/rust/spaceCore';
+import { createWebGL2 } from "./webgl2";
+import { createWebGPU, type CursorState, type SpaceRenderer } from "./webgpu";
+import { createStatic } from "./staticScene";
+import {
+  FrameMeter,
+  degrade,
+  preset,
+  type Quality,
+  type Tier,
+} from "./quality";
+import { loadSpaceCore, type SpaceCore } from "../engine/rust/spaceCore";
 
 export interface EngineStats {
-  backend: 'webgpu' | 'webgl2' | 'static';
+  backend: "webgpu" | "webgl2" | "static";
   tier: Tier;
   particles: number;
   links: number;
@@ -92,35 +98,67 @@ export async function createEngine(
     const rect = canvas.getBoundingClientRect();
     const dpr = Math.min(window.devicePixelRatio || 1, q.dprCap);
     renderer!.resize(Math.max(1, rect.width), Math.max(1, rect.height), dpr);
-    canvas.style.width = '100%';
-    canvas.style.height = '100%';
+    canvas.style.width = "100%";
+    canvas.style.height = "100%";
   }
 
   function loop(now: number) {
     if (!running || disposed) return;
     // 動きを減らす設定では 1 枚だけ描いて止める（rAF を予約しない）
     if (opts.reducedMotion) {
-      renderer!.frame(0, 0, cursor, new Float32Array(0), 0, new Float32Array(0), 0);
+      renderer!.frame(
+        0,
+        0,
+        cursor,
+        new Float32Array(0),
+        0,
+        new Float32Array(0),
+        0,
+      );
       running = false;
       return;
     }
     raf = requestAnimationFrame(loop);
-    if (!last) last = now;
+    if (!last) last = now - 34;
+    if (now - last < 1000 / 30) return;
     const dtMs = Math.min(64, now - last);
     last = now;
     meter.push(now);
     t += dtMs / 1000;
 
     if (core) {
-      core.step(dtMs / 1000, cursor.x, 1 - cursor.y, 0.7 + cursor.down * 1.5, 1, 1);
+      core.step(
+        dtMs / 1000,
+        cursor.x,
+        1 - cursor.y,
+        0.7 + cursor.down * 1.5,
+        1,
+        1,
+      );
       const anchors = core.particles();
       const links = core.links();
       const nLinks = core.linkCount();
       stats.particles = core.count();
       stats.links = nLinks;
-      renderer!.frame(t, dtMs / 1000, cursor, links, nLinks, anchors, core.count());
+      renderer!.frame(
+        t,
+        dtMs / 1000,
+        cursor,
+        links,
+        nLinks,
+        anchors,
+        core.count(),
+      );
     } else {
-      renderer!.frame(t, dtMs / 1000, cursor, new Float32Array(0), 0, new Float32Array(0), 0);
+      renderer!.frame(
+        t,
+        dtMs / 1000,
+        cursor,
+        new Float32Array(0),
+        0,
+        new Float32Array(0),
+        0,
+      );
     }
 
     // カーソル速度は減衰させる
@@ -135,7 +173,7 @@ export async function createEngine(
       if (slowFrames > 12) {
         downgraded = true;
         const next = degrade(q);
-        if (next && q.tier !== 'battery') opts.onDowngrade?.(next);
+        if (next && q.tier !== "battery") opts.onDowngrade?.(next);
       }
     } else {
       slowFrames = 0;
@@ -147,7 +185,7 @@ export async function createEngine(
   }
 
   function play() {
-    if (opts.reducedMotion) return; // 1 枚描いて止まる。rAF は使わない
+    if (opts.reducedMotion || staticOnly) return; // 静止画にrAFは使わない
     if (!shouldRun() || raf) return;
     last = 0;
     raf = requestAnimationFrame(loop);
@@ -183,7 +221,10 @@ export async function createEngine(
   };
 
   const onResize = () => size();
-  const dprQuery = typeof window.matchMedia === 'function' ? window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`) : null;
+  const dprQuery =
+    typeof window.matchMedia === "function"
+      ? window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`)
+      : null;
   const onDpr = () => size();
   const onContextLost = (e: Event) => {
     e.preventDefault();
@@ -195,24 +236,26 @@ export async function createEngine(
   };
 
   size();
+  const resizeObserver = new ResizeObserver(size);
+  resizeObserver.observe(canvas);
 
-  canvas.addEventListener('pointermove', onPointer, { passive: true });
-  canvas.addEventListener('pointerdown', onDown, { passive: true });
-  window.addEventListener('pointerup', onUp, { passive: true });
-  window.addEventListener('resize', onResize);
+  canvas.addEventListener("pointermove", onPointer, { passive: true });
+  canvas.addEventListener("pointerdown", onDown, { passive: true });
+  window.addEventListener("pointerup", onUp, { passive: true });
+  window.addEventListener("resize", onResize);
   // 画面間の移動やブラウザ zoom で DPR が変わったときも作り直す
   try {
-    dprQuery?.addEventListener('change', onDpr);
+    dprQuery?.addEventListener("change", onDpr);
   } catch {
     /* 古い Safari */
   }
-  window.addEventListener('visibilitychange', onVisibility);
-  canvas.addEventListener('webglcontextlost', onContextLost as EventListener);
-  canvas.addEventListener('webglcontextrestored', onContextRestored);
+  document.addEventListener("visibilitychange", onVisibility);
+  canvas.addEventListener("webglcontextlost", onContextLost as EventListener);
+  canvas.addEventListener("webglcontextrestored", onContextRestored);
 
   // IntersectionObserver が無い環境（テスト・古いブラウザ）では常に可視として扱う
   const io =
-    typeof IntersectionObserver === 'function'
+    typeof IntersectionObserver === "function"
       ? new IntersectionObserver(
           (entries) => {
             onScreen = entries.some((en) => en.isIntersecting);
@@ -225,9 +268,15 @@ export async function createEngine(
   io?.observe(canvas);
 
   // 開いた直後は必ず 1 枚描く（真っ黒を避ける）
-  if (opts.reducedMotion || staticOnly) {
-    renderer.frame(0, 0, cursor, new Float32Array(0), 0, new Float32Array(0), 0);
-  }
+  renderer.frame(
+    0,
+    0,
+    cursor,
+    core?.links() ?? new Float32Array(0),
+    core?.linkCount() ?? 0,
+    core?.particles() ?? new Float32Array(0),
+    core?.count() ?? 0,
+  );
 
   return {
     resize: size,
@@ -241,20 +290,24 @@ export async function createEngine(
     },
     dispose() {
       disposed = true;
+      resizeObserver.disconnect();
       pause();
       io?.disconnect();
-      canvas.removeEventListener('pointermove', onPointer);
-      canvas.removeEventListener('pointerdown', onDown);
-      window.removeEventListener('pointerup', onUp);
-      window.removeEventListener('resize', onResize);
+      canvas.removeEventListener("pointermove", onPointer);
+      canvas.removeEventListener("pointerdown", onDown);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("resize", onResize);
       try {
-        dprQuery?.removeEventListener('change', onDpr);
+        dprQuery?.removeEventListener("change", onDpr);
       } catch {
         /* noop */
       }
-      window.removeEventListener('visibilitychange', onVisibility);
-      canvas.removeEventListener('webglcontextlost', onContextLost as EventListener);
-      canvas.removeEventListener('webglcontextrestored', onContextRestored);
+      document.removeEventListener("visibilitychange", onVisibility);
+      canvas.removeEventListener(
+        "webglcontextlost",
+        onContextLost as EventListener,
+      );
+      canvas.removeEventListener("webglcontextrestored", onContextRestored);
       renderer?.dispose();
       renderer = null;
     },

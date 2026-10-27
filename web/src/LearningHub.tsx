@@ -3,6 +3,8 @@ import type { SavedState } from "./state";
 import { requestTrace } from "./request-flow";
 import { store, type Route } from "./arena/orrery/core/appStore";
 import "./learning-hub.css";
+import LearningOverview from "./LearningOverview";
+import stats from "./generated/learning-stats.json";
 const Curated = lazy(() => import("./CuratedProblems"));
 const OrbitLab = lazy(() => import("./OrbitLab"));
 const Academy = lazy(() => import("./Academy"));
@@ -12,12 +14,11 @@ const Lab = lazy(() =>
 );
 const Source = lazy(() => import("./Secondary"));
 const sections = [
-  ["orbit", "宇宙とコード・6つの実験"],
-  ["drill", "問題集・復習"],
-  ["verified", "Java・Rustの実行演習"],
+  ["overview", "学習の入口"],
+  ["drill", `問題集 ${stats.questionBank.toLocaleString()}問`],
+  ["verified", `実行演習 ${stats.executionPractice}問`],
   ["flow", "処理の全体像"],
   ["practice", "Java・Rustの演習"],
-  ["source", "Eclipseとソース"],
   ["references", "日本語の資料"],
 ] as const;
 function RequestFlow() {
@@ -140,10 +141,13 @@ export default function LearningHub({
       ? "practice"
       : path === "/code"
         ? "source"
-        : params.get("section") || (params.has("track") ? "practice" : "flow");
-  const section = sections.some(([id]) => id === requested)
-    ? requested
-    : "flow";
+        : params.get("section") ||
+          (params.has("track") ? "practice" : "overview");
+  const section =
+    ["orbit", "source"].includes(requested) ||
+    sections.some(([id]) => id === requested)
+      ? requested
+      : "overview";
   const [mode, setMode] = useState(
     params.get("mode") === "code" || path === "/lab" ? "code" : "basics",
   );
@@ -176,7 +180,23 @@ export default function LearningHub({
           ))}
         </nav>
       </section>
-      {section === "orbit" ? (<Suspense fallback={<p>宇宙の実験を読み込んでいます…</p>}><OrbitLab /></Suspense>) : section === "verified" ? (<Suspense fallback={<p>演習を読み込んでいます…</p>}><Curated /></Suspense>) : section === "drill" ? (<Suspense fallback={<p className="hub-content">問題を読み込んでいます…</p>}><Academy /></Suspense>) : section === "flow" ? (
+      {section === "overview" ? (
+        <LearningOverview />
+      ) : section === "orbit" ? (
+        <Suspense fallback={<p>宇宙の実験を読み込んでいます…</p>}>
+          <OrbitLab />
+        </Suspense>
+      ) : section === "verified" ? (
+        <Suspense fallback={<p>演習を読み込んでいます…</p>}>
+          <Curated />
+        </Suspense>
+      ) : section === "drill" ? (
+        <Suspense
+          fallback={<p className="hub-content">問題を読み込んでいます…</p>}
+        >
+          <Academy />
+        </Suspense>
+      ) : section === "flow" ? (
         <RequestFlow />
       ) : section === "references" ? (
         <main className="hub-content">

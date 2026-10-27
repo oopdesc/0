@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import type { Language, Problem } from "./schema";
 import { BRIDGE_PROBLEMS, JAVA_PROBLEMS, RUST_PROBLEMS, QUESTION_LABEL } from "./index";
-import { topicsFor } from "./topics";
+import { topicsFor, TOPIC_MAP } from "./topics";
 import { BUCKET_LABEL, BUCKET_ORDER, bucketCounts, bucketFor, loadProgress, saveProgress, type ProgressBucket, type ProgressState } from "./store";
 import Player from "./Player";
 import "./player.css";
@@ -134,7 +134,7 @@ export default function TrackPage({ language, onNavigate }: TrackPageProps) {
           >
             {topics.map((t) => (
               <option key={t} value={t}>
-                {t}
+                {TOPIC_MAP[t]?.name ?? t}
               </option>
             ))}
           </select>
@@ -159,7 +159,7 @@ export default function TrackPage({ language, onNavigate }: TrackPageProps) {
                       <span className="lp-chip" style={{ marginRight: 8 }}>
                         {QUESTION_LABEL[problem.questionType]}
                       </span>
-                      <strong>{problem.topic}</strong>
+                      <strong>{TOPIC_MAP[problem.topic]?.name ?? problem.topic}</strong>
                       <span className="lp-rule" style={{ marginLeft: 8 }}>
                         L{problem.level}
                       </span>

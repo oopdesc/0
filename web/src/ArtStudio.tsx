@@ -1,7 +1,12 @@
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { loadJavaArt, type JavaArt } from "./java-model";
+import "./art-gallery.css";
+import { ART_EXHIBITS, readExhibit, type ExhibitId } from "./art/exhibits";
 import UniverseCanvas, { type CameraPosition } from "./UniverseCanvas";
 import type { UniverseHandle, UniverseOptions } from "./art/universe3d";
+const OrbitShowcase = lazy(() => import("./art/OrbitShowcase"));
+const NebulaExperience = lazy(() => import("./art/NebulaExperience"));
+const ParticleExperience = lazy(() => import("./art/ParticleExperience"));
 const AstraModels = lazy(() => import("./arena/astra/Models"));
 const scenes = [
   {
@@ -71,12 +76,26 @@ export default function ArtStudio({
   onPause: () => void;
   search: string;
 }) {
-  const [astra, setAstra] = useState(
-    () =>
-      !new URLSearchParams(search).has("scene") &&
-      !new URLSearchParams(search).has("view") &&
-      new URLSearchParams(search).get("model") !== "galaxy",
+  const [currentExhibit, setExhibit] = useState<ExhibitId>(() =>
+    readExhibit(search),
   );
+  const astra = currentExhibit === "solar";
+  const observation = currentExhibit === "observation";
+  const guest =
+    currentExhibit === "orbit" ||
+    currentExhibit === "nebula" ||
+    currentExhibit === "particles"
+      ? currentExhibit
+      : null;
+  useEffect(() => setExhibit(readExhibit(search)), [search]);
+  function selectExhibit(id: ExhibitId) {
+    setExhibit(id);
+    const query = new URLSearchParams({ exhibit: id });
+    if (id === "observation" || id === "galaxy")
+      query.set("scene", scenes[mode].id);
+    history.replaceState(null, "", "/art?" + query);
+    dispatchEvent(new PopStateEvent("popstate"));
+  }
   const [java, setJava] = useState<JavaArt | null>(null),
     [mode, setMode] = useState(0),
     [seed, setSeed] = useState(42),
@@ -85,7 +104,6 @@ export default function ArtStudio({
     [speed, setSpeed] = useState(1),
     [autoCamera, setAutoCamera] = useState(false),
     [quality, setQuality] = useState<"standard" | "high">("standard"),
-    [observation, setObservation] = useState(false),
     [focus, setFocus] = useState(false),
     [notice, setNotice] = useState(""),
     [sharedURL, setSharedURL] = useState(""),
@@ -96,6 +114,7 @@ export default function ArtStudio({
     stage = useRef<HTMLDivElement>(null),
     video = useRef<HTMLVideoElement>(null);
   useEffect(() => {
+    if (guest || astra) return;
     let live = true;
     loadJavaArt()
       .then((m) => {
@@ -109,7 +128,7 @@ export default function ArtStudio({
     return () => {
       live = false;
     };
-  }, []);
+  }, [guest, astra]);
   useEffect(() => {
     if (!java) return;
     const q = new URLSearchParams(search),
@@ -132,9 +151,6 @@ export default function ArtStudio({
     setBrightness(camera.brightness);
     setDistance(camera.distance);
     setView(camera);
-    setObservation(
-      q.get("view") === "observation" || q.get("view") === "photo",
-    );
     setNotice("");
   }, [java, search]);
   const options = useMemo<UniverseOptions>(
@@ -142,6 +158,7 @@ export default function ArtStudio({
     [mode, seed, brightness, paused, autoCamera, quality, speed],
   );
   const scene = scenes[mode];
+  const gallery = ART_EXHIBITS;
   function camera(az: number, el: number, d = distance) {
     if (!java) return;
     const v = JSON.parse(java.orbit(az, el, d, brightness));
@@ -231,10 +248,8 @@ export default function ArtStudio({
     const sync = () => {
       if (paused || document.hidden || !visible || reduced.matches)
         node.pause();
-      else
-        void node
-          .play()
-          .catch(() => setNotice("動画の再生ボタンを押してください。"));
+      // Media starts only from the video's own play control; opening this
+      // reference page must not automatically transfer the whole video.
     };
     const observer = new IntersectionObserver((e) => {
       visible = e[0].isIntersecting;
@@ -257,42 +272,64 @@ export default function ArtStudio({
         <div>
           <span className="eyebrow">0 / 宇宙を観察する</span>
           <h1>
-            {astra ? "動かして眺める、太陽系。" : "動かして眺める、銀河。"}
+            {guest
+              ? gallery.find((x) => x[0] === guest)![1]
+              : astra
+                ? "動かして眺める、太陽系。"
+                : "動かして眺める、銀河。"}
           </h1>
         </div>
         <p>
-          {astra
-            ? "太陽と惑星の動きや、それぞれの姿を観察する。"
-            : "星の円盤を回し、視点を変え、仕組みを読む。"}
+          {guest
+            ? "視点を変え、手を動かして、光と奥行きを楽しむ。"
+            : astra
+              ? "太陽と惑星の動きや、それぞれの姿を観察する。"
+              : "星の円盤を回し、視点を変え、仕組みを読む。"}
         </p>
       </div>
-      <div className="media-mode-tabs">
-        <button aria-pressed={astra} onClick={() => setAstra(true)}>
-          太陽系と惑星
-        </button>
+      <div className="art-collection" aria-label="宇宙の作品を選ぶ">
+        {gallery.map(([id, title, description, n]) => (
+          <button
+            key={id}
+            className={"art-choice art-choice-" + id}
+            aria-pressed={currentExhibit === id}
+            onClick={() => selectExhibit(id)}
+          >
+            <span className="art-choice-preview" aria-hidden="true">
+              <i />
+              <i />
+              <b />
+            </span>
+            <span className="art-choice-number">{n}</span>
+            <strong>{title}</strong>
+            <span>{description}</span>
+          </button>
+        ))}
+      </div>
+      <div className="art-collection-note">
+        <span>眺めたい宇宙を選び、視点を変えてみてください。</span>
         <button
-          aria-pressed={!observation && !astra}
-          onClick={() => {
-            setAstra(false);
-            if (observation) {
-              setObservation(false);
-              setReady(false);
-            }
-          }}
+          aria-pressed={currentExhibit === "observation"}
+          onClick={() => selectExhibit("observation")}
         >
-          操作できる三次元モデル
-        </button>
-        <button
-          aria-pressed={observation && !astra}
-          onClick={() => {
-            setAstra(false);
-            setObservation(true);
-          }}
-        >
-          比較する観測資料
+          観測資料と比べる ↗
         </button>
       </div>
-      {astra ? (
+      {guest ? (
+        <Suspense
+          fallback={
+            <p className="guest-loading">宇宙を描く準備をしています…</p>
+          }
+        >
+          {guest === "orbit" ? (
+            <OrbitShowcase paused={paused} />
+          ) : guest === "nebula" ? (
+            <NebulaExperience paused={paused} />
+          ) : (
+            <ParticleExperience paused={paused} />
+          )}
+        </Suspense>
+      ) : astra ? (
         <Suspense fallback={<p>太陽系の模型を読み込んでいます…</p>}>
           <AstraModels paused={paused} />
         </Suspense>
@@ -358,7 +395,7 @@ export default function ArtStudio({
                   ? "提供資料とモデルは別のものです"
                   : "ドラッグで回転 · スクロール／ピンチで拡大"}
               </span>
-              {(!observation || mode === 1) && (
+              {!observation && (
                 <button onClick={onPause}>
                   {paused ? "▷ 動きを再開" : "Ⅱ 動きを止める"}
                 </button>

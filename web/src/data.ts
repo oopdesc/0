@@ -1,4 +1,5 @@
 /** 公開してよい作品・教材だけを列挙。個人文書や共有フォルダのURLは置かない。 */
+import stats from "./generated/learning-stats.json";
 export type Category = "作品" | "学習" | "リンク";
 export type Resource = {
   id: string;
@@ -11,6 +12,15 @@ export type Resource = {
   accent: string;
 };
 export const resources: Resource[] = [
+  {
+    id: "question-bank",
+    title: "Java・Rustの問題集と実行演習",
+    subtitle: `${stats.questionBank.toLocaleString()}問の問題集と${stats.executionPractice}問の実行演習。予測・理由・復習で理解を確かめる。`,
+    category: "学習",
+    tag: `${stats.total.toLocaleString()}問収録`,
+    href: "/learn",
+    accent: "blue",
+  },
   {
     id: "code-lab",
     title: "宇宙をつくるコード実験室",

@@ -127,8 +127,10 @@ export function CommandPalette() {
         setOpen(false);
       }
     }
+    const onOpen = () => setOpen(true);
+    window.addEventListener('0:academy-search', onOpen);
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    return () => { window.removeEventListener('keydown', onKey); window.removeEventListener('0:academy-search', onOpen); };
   }, [open]);
 
   useEffect(() => {

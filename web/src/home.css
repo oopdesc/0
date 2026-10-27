@@ -792,3 +792,30 @@
   min-height: 30px;
   max-width: 110px;
 }
+.home-learning-numbers {
+  display: flex;
+  gap: 26px;
+  margin: 24px 0 18px;
+  border-top: 1px solid var(--home-border);
+  padding-top: 22px;
+}
+.home-learning-numbers a {
+  display: grid;
+  gap: 5px;
+  text-decoration: none;
+  color: var(--home-ink);
+}
+.home-learning-numbers strong {
+  font-size: clamp(26px, 3vw, 38px);
+  font-weight: 650;
+  line-height: 1.15;
+  letter-spacing: -0.04em;
+  font-variant-numeric: tabular-nums;
+}
+.home-learning-numbers span {
+  font-size: 11px;
+  color: var(--home-muted);
+}
+.home-learning-numbers a:hover strong {
+  color: var(--home-blue);
+}

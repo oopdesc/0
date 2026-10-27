@@ -1,3 +1,4 @@
+import { TOPIC_MAP } from "./topics";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Problem } from "./schema";
 import {
@@ -263,7 +264,7 @@ export default function Player({ problem, record, state, onChange, onExit }: Pla
             <strong>{problem.language === "java" ? "Java" : "Rust"}</strong>
           </span>
           <span className="lp-chip">
-            トピック <strong>{problem.topic}</strong>
+            トピック <strong>{TOPIC_MAP[problem.topic]?.name ?? problem.topic}</strong>
           </span>
           <span className="lp-chip">
             レベル <strong>{problem.level}</strong>
@@ -470,7 +471,7 @@ export default function Player({ problem, record, state, onChange, onExit }: Pla
                 <strong>{transferProblem.language === "java" ? "Java" : "Rust"}</strong>
               </span>
               <span className="lp-chip">
-                トピック <strong>{transferProblem.topic}</strong>
+                トピック <strong>{TOPIC_MAP[transferProblem.topic]?.name ?? transferProblem.topic}</strong>
               </span>
             </div>
             {transferProblem.code && (

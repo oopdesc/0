@@ -1,0 +1,238 @@
+:host {
+  display: block;
+  color: var(--ink);
+  background: var(--bg);
+}
+.course-intro {
+  padding-block: 24px 4px;
+}
+.course-intro h2 {
+  font-size: clamp(24px, 3vw, 36px);
+  font-weight: 650;
+  line-height: 1.4;
+  margin: 14px 0;
+}
+.course-intro p {
+  max-width: 740px;
+  line-height: 1.9;
+  color: var(--muted);
+}
+.course-progress {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 18px;
+}
+.section-head {
+  margin-bottom: 24px;
+}
+:host([data-theme="light"]) {
+  color-scheme: light;
+  --bg: #fff;
+  --panel: #fff;
+  --panel2: #f5f7fb;
+  --line: #d4dce5;
+  --muted: #526275;
+  --subtle: #627286;
+  --ink: #17283a;
+  --accent: #7b572e;
+  background: #fff;
+  color: #17283a;
+}
+:host([data-theme="light"]) :where(h1, h2, h3, h4, strong, b) {
+  color: #17283a;
+}
+:host([data-theme="light"])
+  :where(
+    p,
+    .eyebrow,
+    .section-description,
+    .mission-number,
+    .mission-main small,
+    .column-title,
+    .stage-description p,
+    .lab-id,
+    .lab-tag,
+    .edit-guide,
+    .concept-details dd,
+    .concept-details dt,
+    .truth-note p,
+    .atlas-detail p,
+    .review-help,
+    .review-local,
+    .course-progress
+  ) {
+  color: #526275;
+}
+:host([data-theme="light"])
+  :where(
+    .mission-item,
+    .lab-panel,
+    .atlas-layout,
+    .atlas-node,
+    .review-layout,
+    .scaffold-exercise,
+    .reorder-exercise li
+  ) {
+  background: #fff;
+  border-color: #d4dce5;
+  color: #17283a;
+}
+:host([data-theme="light"])
+  :where(.mission-item.is-selected, .atlas-node.active) {
+  background: #f0f5fc;
+  border-color: #7793b4;
+}
+:host([data-theme="light"])
+  :where(
+    .lab-titlebar,
+    .editor-bar,
+    .editor-foot,
+    .review-aside,
+    .atlas-map-top,
+    .review-patch,
+    .trace-state,
+    .concept-details
+  ) {
+  background: #f5f7fb;
+  border-color: #d4dce5;
+  color: #293e55;
+}
+:host([data-theme="light"])
+  :where(
+    .editor,
+    .line-numbers,
+    .code-highlight,
+    .review-code,
+    .compare-row > div,
+    .run-feedback,
+    .rebuild-result,
+    .error-insight
+  ) {
+  background: #f7f9fc;
+  border-color: #d4dce5;
+  color: #17283a;
+}
+:host([data-theme="light"]) .code-highlight {
+  color: #17283a;
+}
+:host([data-theme="light"]) .code-layers textarea {
+  color: transparent;
+  caret-color: #17283a;
+  background: transparent;
+}
+:host([data-theme="light"]) .syntax-keyword {
+  color: #245da9;
+}
+:host([data-theme="light"]) .syntax-string {
+  color: #14735c;
+}
+:host([data-theme="light"]) .syntax-number {
+  color: #875321;
+}
+:host([data-theme="light"]) .syntax-comment {
+  color: #607184;
+}
+:host([data-theme="light"])
+  :where(input, select, textarea:not(.code-layers textarea)) {
+  background: #fff;
+  color: #17283a;
+  border-color: #aebdce;
+}
+:host([data-theme="light"])
+  :where(
+    .stage-tabs button,
+    .trace-controls button,
+    .reorder-exercise li button,
+    .editor-bar button,
+    .one-line-patch button,
+    .atlas-detail button,
+    .review-open-lab,
+    .scheduled button
+  ) {
+  background: #fff;
+  color: #294460;
+  border-color: #bdcbd9;
+}
+:host([data-theme="light"]) .stage-tabs button.active {
+  background: #edf3fb;
+  color: #1f4f7f;
+}
+:host([data-theme="light"]) .button {
+  color: #294460;
+  border-color: #aebdce;
+}
+:host([data-theme="light"]) .button-primary {
+  background: #244f7a;
+  color: #fff;
+  border-color: #244f7a;
+}
+:host([data-theme="light"])
+  :where(.feedback-badge.success, .recall-status, .scheduled strong) {
+  color: #14674f;
+}
+:host([data-theme="light"]) .line-numbers {
+  color: #66768a;
+}
+:host([data-theme="light"]) .orbit-scene {
+  color: #eeeae0;
+  --muted: #c4ccce;
+  --ink: #eeeae0;
+  --accent: #d7ad82;
+}
+:host([data-theme="light"]) .orbit-scene :where(strong, b, .eyebrow) {
+  color: #eeeae0;
+}
+:host([data-theme="light"]) .orbit-scene .scene-controls button {
+  background: #102021b3;
+  color: #fff;
+  border-color: #73827b;
+}
+.section-space {
+  padding-top: 44px;
+}
+.review-section {
+  padding-bottom: 44px;
+}
+#orbit-course h2 {
+  font-family: inherit;
+  letter-spacing: -0.02em;
+  font-weight: 650;
+}
+.shell {
+  padding-inline: clamp(18px, 4vw, 42px);
+}
+:host([data-theme="light"])
+  :where(
+    .concept-details summary,
+    .concept-details summary span,
+    .concept-flow small,
+    .simulation-settings label,
+    .simulation-settings,
+    .mission-end,
+    .stage-description .text-link,
+    .model-note,
+    .stage-tabs button span,
+    .stage-indicator,
+    .column-title > span:last-child,
+    .compare-row small,
+    .error-insight small,
+    .error-insight p,
+    .feedback-unsupported p,
+    .trace-controls,
+    .trace-state code,
+    .trace-state > span,
+    .truth-note span,
+    .atlas-node small,
+    .atlas-detail div small,
+    .review-top label,
+    .review-due,
+    .review-result > p,
+    .review-question,
+    .review-patch small,
+    .scaffold-actions label,
+    .reorder-exercise li code,
+    .reorder-exercise .scaffold-actions > span
+  ) {
+  color: #42576d;
+}

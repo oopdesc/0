@@ -24,6 +24,6 @@ export function CodeEditor({ language, value, onChange, onReset, id = 'code-edit
       <div className="line-numbers" aria-hidden="true" ref={linesRef}>{Array.from({ length: lines }, (_, i) => <span key={i}>{String(i + 1).padStart(2, '0')}</span>)}</div>
       <div className="code-layers"><pre aria-hidden="true" className="code-highlight" ref={highlightRef}><code>{highlight(value)}{'\n'}</code></pre><textarea id={id} aria-label={`${language}のコード`} spellCheck={false} autoCapitalize="off" autoCorrect="off" value={value} maxLength={3000} onChange={(e) => onChange(e.target.value)} onScroll={sync} placeholder="ここにコードを入力" /></div>
     </div>
-    <div className="editor-foot"><span>UTF-8 <b>·</b> {language.toUpperCase()} SUBSET</span><span aria-live="polite">{copyState === 'done' ? 'コピーしました' : copyState === 'error' ? 'コピー不可。テキストを選択してください' : `${value.length} / 3000`}</span></div>
+    <div className="editor-foot"><span>UTF-8 <b>·</b> {language.toUpperCase()} 教材用の構文</span><span aria-live="polite">{copyState === 'done' ? 'コピーしました' : copyState === 'error' ? 'コピー不可。テキストを選択してください' : `${value.length} / 3000`}</span></div>
   </div>;
 }
