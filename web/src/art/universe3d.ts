@@ -155,6 +155,9 @@ export function createUniverse(
     generation = 0,
     pixelRatio = 1;
   let field: THREE.Points | undefined;
+  // 低GPU向けの適応劣化: 描画間隔が遅い状態が続いたら粒子数を一度だけ落とす。
+  let degraded = false,
+    slowFrames = 0;
   const animatedMaterials: THREE.ShaderMaterial[] = [];
   const glow = new THREE.Mesh(
     new THREE.PlaneGeometry(1.5, 1.5),
@@ -218,11 +221,18 @@ export function createUniverse(
     try {
       const wasm = await core();
       if (disposed || token !== generation) return;
+      const baseCount = !interactive
+        ? 12000
+        : options.quality === "high"
+          ? 32000
+          : 22000;
       wasm.cosmic_generate(
         options.mode,
-        !interactive ? 12000 : options.quality === "high" ? 32000 : 22000,
+        degraded ? Math.round(baseCount * 0.45) : baseCount,
         options.seed,
       );
+      if (degraded) canvas.dataset.degraded = "true";
+      else delete canvas.dataset.degraded;
       const data = new Float32Array(
         wasm.memory.buffer,
         wasm.galaxy_ptr(),
@@ -310,10 +320,20 @@ export function createUniverse(
     raf = 0;
     if (disposed || contextLost || !visible || document.hidden) return;
     if (now - last >= 1000 / 24) {
-      if (moving()) time += Math.min((now - last) / 1000, 0.1) * options.speed;
+      const dt = now - last;
+      if (moving()) time += Math.min(dt / 1000, 0.1) * options.speed;
       last = now;
       dirty = false;
       draw();
+      // 実フレーム間隔が約58ms超で続く環境では、星の数を落として滑らかさを守る。
+      if (interactive && moving()) {
+        slowFrames = dt > 58 ? slowFrames + 1 : Math.max(0, slowFrames - 2);
+        if (!degraded && slowFrames >= 100) {
+          degraded = true;
+          slowFrames = 0;
+          void rebuild();
+        }
+      }
     }
     if ((moving() || dirty) && !raf) raf = requestAnimationFrame(tick);
   }
@@ -392,6 +412,11 @@ export function createUniverse(
         next.seed !== options.seed ||
         next.quality !== options.quality;
       const sizeChanged = next.quality !== options.quality;
+      if (sizeChanged) {
+        // 画質設定が変わったら適応劣化を解除して再評価する。
+        degraded = false;
+        slowFrames = 0;
+      }
       options = { ...next };
       if (changed) void rebuild();
       if (sizeChanged) resize();

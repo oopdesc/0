@@ -15,7 +15,7 @@ export const resources: Resource[] = [
   {
     id: "question-bank",
     title: "Java・Rustの問題集と実行演習",
-    subtitle: `${stats.questionBank.toLocaleString()}問の問題集と${stats.executionPractice}問の実行演習。予測・理由・復習で理解を確かめる。`,
+    subtitle: `${stats.questionBank.toLocaleString()}問の読み取り問題と${stats.executionPractice}問のコード記述。予測・理由・復習で理解を確かめる。`,
     category: "学習",
     tag: `${stats.total.toLocaleString()}問収録`,
     href: "/learn",
@@ -27,7 +27,7 @@ export const resources: Resource[] = [
     subtitle: "Java・Rustの短いコードを編集し、結果と天体の変化を確かめる。",
     category: "学習",
     tag: "予測・実行・復習",
-    href: "/learn?section=practice&mode=code",
+    href: "/learn?section=orbit",
     accent: "orange",
   },
   {
@@ -72,7 +72,7 @@ export const resources: Resource[] = [
     subtitle: "型と状態を、小さく積み重ねる。",
     category: "学習",
     tag: "TypeScript · React",
-    href: "/learn?track=TypeScript",
+    href: "/learn?section=source",
     accent: "blue",
   },
   {

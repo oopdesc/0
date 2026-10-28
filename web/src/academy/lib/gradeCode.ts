@@ -50,13 +50,16 @@ export function gradeCodeAnswer(p: Problem, userCode: string): CodeGrade {
   const a = p.answer;
   if (a.mode !== 'code') return { ran: false, ok: false, tests: [], notes: ['コード問題ではありません'] };
 
+  if (userCode.length > 65_536) {
+    return { ran: false, ok: false, tests: [], notes: ['コードが長すぎるため学習用エンジンでは実行しません'], error: 'source-limit' };
+  }
   const lintNotes = lintCheck(p, userCode);
 
-  // 実行して採点できるのは、Java で tests があるときだけ
+  // lint は補助情報であり、実行していないコードを合格にしない。
   if (p.lang !== 'java' || !a.tests?.length) {
     return {
       ran: false,
-      ok: lintNotes.length === 0 && userCode.trim().length > 0,
+      ok: false,
       tests: [],
       notes: lintNotes.length ? lintNotes : ['実行はしていない簡易チェックです（構文の存在と行数のみ）'],
     };
@@ -71,13 +74,17 @@ export function gradeCodeAnswer(p: Problem, userCode: string): CodeGrade {
   for (const t of a.tests) {
     const call = t.input ? `${name}(${t.input})` : `${name}()`;
     const source = `class Main {\n${userCode}\n  public static void main(String[] args) {\n    System.out.println(${call});\n  }\n}`;
-    const res = runJava(source, { mode: 'unit' });
+    const res = runJava(source, { mode: 'unit', maxSteps: 4000, maxOutput: 500 });
+    // パーサーはJavaのサブセット。拒否はjavacの診断ではない。
+    if (res.compileError || res.error?.type === 'InternalError' || res.truncated) {
+      const detail = res.compileError?.message ?? res.error?.message ?? '出力または実行上限';
+      return {
+        ran: false, ok: false, tests: [], error: 'teaching-engine-unsupported',
+        notes: [`学習用エンジンでは判定できません: ${detail}。実際のコンパイラのエラーとは限りません。`, ...lintNotes],
+      };
+    }
     const got = res.output;
-    const error = res.compileError
-      ? `コンパイルエラー: ${res.compileError.message}`
-      : res.error
-        ? `${res.error.type}: ${res.error.message}`
-        : undefined;
+    const error = res.error ? `学習用エンジンで ${res.error.type}: ${res.error.message}` : undefined;
     tests.push({
       input: t.input ?? '',
       expected: t.expectOutput,
@@ -87,7 +94,8 @@ export function gradeCodeAnswer(p: Problem, userCode: string): CodeGrade {
     });
   }
 
-  const ok = tests.every((t) => t.ok) && lintNotes.length === 0;
+  // 実行された固定テストを満たす別解は、文字列lintの違いで落とさない。
+  const ok = tests.length > 0 && tests.every((t) => t.ok);
   return {
     ran: true,
     ok,

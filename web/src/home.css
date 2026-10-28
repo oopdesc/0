@@ -819,3 +819,6 @@
 .home-learning-numbers a:hover strong {
   color: var(--home-blue);
 }
+.home-quick-links { display:flex; flex-wrap:wrap; gap:20px; margin-top:17px; color:var(--home-muted); font-size:12px; font-weight:600; }
+.home-quick-links a { color:inherit; text-decoration:none; }
+.home-quick-links a:hover { color:var(--home-blue); }

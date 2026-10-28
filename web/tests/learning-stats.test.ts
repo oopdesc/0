@@ -1,15 +1,17 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import stats from "../src/generated/learning-stats.json";
-import { PROBLEMS } from "../src/academy/content";
-import { ALL_PROBLEMS } from "../src/problems";
+import { readFileSync } from "node:fs";
 import { LESSONS } from "../src/orbit/domain/lessons";
 import { ART_EXHIBITS, readExhibit } from "../src/art/exhibits";
 
 test("public counts match the published problems, without counting experiments as questions", () => {
-  assert.equal(stats.questionBank, PROBLEMS.length);
-  assert.equal(stats.executionPractice, ALL_PROBLEMS.length);
-  assert.equal(stats.total, PROBLEMS.length + ALL_PROBLEMS.length);
+  const packs=['java','rust'].map(language=>JSON.parse(readFileSync(new URL(`../public/learning-v2/${language}/manifest.json`,import.meta.url),'utf8')));
+  const all=packs.flatMap((m,i)=>m.chunks.flatMap((c:{path:string})=>JSON.parse(readFileSync(new URL(`../public/learning-v2/${i===0?'java':'rust'}/${c.path}`,import.meta.url),'utf8'))));
+  assert.equal(new Set(all.map(q=>q.id)).size,all.length);
+  assert.equal(stats.questionBank, all.filter(q=>!q.writingRequired).length);
+  assert.equal(stats.executionPractice, all.filter(q=>q.writingRequired).length);
+  assert.equal(stats.total, all.length);
   assert.equal(stats.java + stats.rust, stats.total);
   assert.equal(stats.experiments, LESSONS.length);
 });

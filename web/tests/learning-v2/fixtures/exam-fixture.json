@@ -1,0 +1,17 @@
+[
+  {
+    "id": "java:fixture-exam-a",
+    "language": "java",
+    "level": "beginner",
+    "form": "A",
+    "durationMinutes": 65,
+    "passingPercent": 60,
+    "choiceQuestionIds": [
+      "java:fixture-choice-01"
+    ],
+    "codeQuestionIds": [
+      "java:fixture-code-01"
+    ],
+    "questionsPath": "exams/fixture-a.json"
+  }
+]

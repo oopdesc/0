@@ -5,6 +5,9 @@ import tokens from "./academy/styles/tokens.css?inline";
 import base from "./academy/styles/base.css?inline";
 import app from "./academy/styles/app.css?inline";
 import { setTheme } from "./academy/state/useStore";
+import { applyLegacyJavaConceptCorrections } from "./learning-v2/legacyConceptCorrections";
+// Correct only known Java concepts in the archived display; mixed source stays untouched.
+applyLegacyJavaConceptCorrections();
 const css = [tokens, base, app].join("\n").replaceAll(":root", ":host").replace(/\bhtml\s*\{/g, ":host {").replace(/\bbody\s*\{/g, ":host {");
 export default function Academy() {
  const ref = useRef<HTMLDivElement>(null);

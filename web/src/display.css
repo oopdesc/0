@@ -684,3 +684,21 @@ kbd {
   color: var(--muted);
   margin: 8px 0;
 }
+
+/* 共通学習画面と将来のpackが共有する表示契約。data-themeと同じ意味。 */
+:root {
+  --zero-bg: #f5f7fb;
+  --zero-fg: #17283d;
+  --zero-muted: #53677c;
+  --zero-line: #d8e1ea;
+  --zero-accent: #245fbd;
+  --zero-code-bg: #15253a;
+}
+:root[data-theme="dark"] {
+  --zero-bg: #080d16;
+  --zero-fg: #e8eef6;
+  --zero-muted: #adbed0;
+  --zero-line: #33445b;
+  --zero-accent: #9ec9ff;
+  --zero-code-bg: #080f1c;
+}

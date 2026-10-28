@@ -6,6 +6,7 @@ import type { Problem } from '../content/types';
 import type { AnswerValue } from './AnswerInput';
 import { diffLines } from '../lib/diff';
 import { gradeCodeAnswer } from '../lib/gradeCode';
+import { compareOutput } from '../../learning-v2/comparison';
 import { CodeBlock } from './CodeBlock';
 
 export function predictionText(p: Problem, v: AnswerValue | null): string[] {
@@ -39,15 +40,17 @@ export function isCorrect(p: Problem, v: AnswerValue | null): boolean {
   if (!v) return false;
   if (a.mode === 'choice' && v.kind === 'choice') return v.index === a.correct;
   if (a.mode === 'text' && v.kind === 'text' && p.expect?.kind === 'output') {
-    const norm = (s: string) => s.replace(/\s+/g, ' ').trim();
-    return norm(v.text) === norm(p.expect.output.join(' '));
+    return compareOutput(v.text, p.expect.output, 'exact-lines');
   }
   if (a.mode === 'blanks' && v.kind === 'blanks') {
     return a.blanks.every((b, i) => b.accept.some((acc) => acc.trim() === (v.values[i] ?? '').trim()));
   }
   if (a.mode === 'order' && v.kind === 'order') return v.order.every((x, i) => x === i);
   // コード問題は、書いたコードを実際に走らせて採点する（Rust / tests なしは簡易チェックのみ）
-  if (a.mode === 'code' && v.kind === 'code') return gradeCodeAnswer(p, v.text).ok;
+  if (a.mode === 'code' && v.kind === 'code') {
+    const grade = gradeCodeAnswer(p, v.text);
+    return grade.ran && grade.ok;
+  }
   return false;
 }
 
@@ -57,15 +60,16 @@ export function DiffView({ p, value, correct }: { p: Problem; value: AnswerValue
   const actual = actualText(p);
   const rows = diffLines(mine, actual);
   const src = actualSource(p);
+  const ungraded = p.answer.mode === 'code' && v?.kind === 'code' && !gradeCodeAnswer(p, v.text).ran;
 
   return (
     <div className="diff">
       <div className="diff__head">
-        <span className={`diff__verdict ${correct ? 'is-ok' : 'is-bad'}`}>
-          {correct ? '一致' : 'ずれ'}
+        <span className={`diff__verdict ${ungraded ? '' : correct ? 'is-ok' : 'is-bad'}`}>
+          {ungraded ? '未判定' : correct ? '一致' : 'ずれ'}
         </span>
         <span className="diff__caption">
-          {correct ? '予測と実際が一致しました。次は同じ核心を別の形で。' : 'どこでずれたかを確認する。'}
+          {ungraded ? '実行できていないため、正誤を確定しません。' : correct ? '予測と実際が一致しました。次は同じ核心を別の形で。' : 'どこでずれたかを確認する。'}
         </span>
       </div>
       <div className="diff__cols">

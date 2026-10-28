@@ -75,7 +75,7 @@ export const CONCEPTS: Concept[] = [
     misconception: '変数の型 Side のメソッドが呼ばれると思う', x: 0.70, y: 0.11,
   },
   {
-    id: 'java-collections', label: 'List / Map / 泛型', language: 'java', group: 'Java 実務',
+    id: 'java-collections', label: 'List / Map / ジェネリクス', language: 'java', group: 'Java 実務',
     summary: '可変長のコレクションと型パラメータ。Stream は「パイプライン」であって「ループの糖衣」ではない。',
     input: 'List<Planet>', decision: '要素の型と順序の有無', process: '追加・検索・変換を宣言的に合成', result: 'コレクションまたは集約値',
     role: 'データのまとまりを型安全に扱う', invariant: 'generics はコンパイル時の型制約（型消去）', boundary: 'この教材ランタイムは Stream/lambda を実行しない。等価な for で構造を追う',
@@ -97,9 +97,9 @@ export const CONCEPTS: Concept[] = [
   },
   {
     id: 'rust-borrow', label: '借用 / &mut', language: 'rust', group: 'Rust 所有権',
-    summary: '参照は所有権を移さずに値を読む／書く。可変参照は同時に一つだけ。',
+    summary: '参照は所有権を移さずに値を読む／書く。同じ領域に対して有効な可変借用がある間は、競合する参照を同時に使えません。',
     input: '&x / &mut x', decision: '読み取りか書き換えか', process: '借用チェッカーが生存区間を検査', result: 'コンパイル可能 or E0499/E0502',
-    role: '所有権を動かさずにアクセスを共有する', invariant: '可変借用中は元の値に直接アクセスできない', boundary: 'この教材の借用チェックは教育用サブセット（rustc の完全版ではない）',
+    role: '所有権を動かさずにアクセスを共有する', invariant: '有効な可変借用と、同じ領域への競合アクセスは併用できない', boundary: 'この教材の借用チェックは教育用サブセット（rustc の完全版ではない）',
     x: 0.27, y: 0.62,
   },
   {

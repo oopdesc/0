@@ -1,0 +1,2 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<projectDescription><name>Arena0_book-api-http</name><comment>Arena 0 Java learning project: real local HTTP to JDBC/SQLite</comment><projects/><buildSpec><buildCommand><name>org.eclipse.jdt.core.javabuilder</name><arguments/></buildCommand></buildSpec><natures><nature>org.eclipse.jdt.core.javanature</nature></natures></projectDescription>

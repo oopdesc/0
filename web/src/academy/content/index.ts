@@ -1,9 +1,11 @@
 import type { Problem, Family, Curriculum } from './types';
 import questions from './published.json';
+import quarantined from './quarantined-ids.json';
 import families from './families.json';
 import { CONCEPTS } from './concepts';
 export const FAMILIES = families as Family[];
-export const PROBLEMS = questions as unknown as Problem[];
+const excluded = new Set(quarantined);
+export const PROBLEMS: Problem[] = (questions as unknown as Problem[]).filter(p=>!excluded.has(p.id)).map(p=>({...p,transfer:p.transfer&&!excluded.has(p.transfer)?p.transfer:undefined,reviewVariants:p.reviewVariants?.filter(id=>!excluded.has(id))}));
 export const PROBLEM_BY_ID = new Map(PROBLEMS.map(p => [p.id,p]));
 export const CURRICULUM: Curriculum = { families:FAMILIES, concepts:CONCEPTS, problems:PROBLEMS };
 export const VERIFIED_VERSIONS = { java:'javac (archive fixture)', rust:'rustc (archive fixture)', javaGeneratedAt:'2026-10-27', rustGeneratedAt:'2026-10-27' };

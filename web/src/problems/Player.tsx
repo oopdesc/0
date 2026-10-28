@@ -4,7 +4,7 @@ import type { Problem } from "./schema";
 import {
   MISCONCEPTION_LABEL,
   QUESTION_LABEL,
-  isCorrectAnswer,
+  judgeLegacyAnswer,
 } from "./schema";
 import {
   applyAttempt,
@@ -138,6 +138,20 @@ export default function Player({ problem, record, state, onChange, onExit }: Pla
   const [transferAnswer, setTransferAnswer] = useState("");
   const [verdict, setVerdict] = useState<{ text: string; kind: "ok" | "bad" | "info" } | null>(null);
   const commitRef = useRef<HTMLButtonElement>(null);
+  const runToken = useRef(0);
+  const inFlight = useRef(false);
+  const currentProblemId = useRef(problem.id);
+  if (currentProblemId.current !== problem.id) {
+    currentProblemId.current = problem.id;
+    runToken.current += 1;
+    inFlight.current = false;
+  }
+  useEffect(() => () => { runToken.current += 1; }, []);
+  const leave = () => {
+    runToken.current += 1;
+    inFlight.current = false;
+    onExit();
+  };
   // Every panel that appears after a commit is focusable, so keyboard and screen
   // reader users land on the new content instead of the button that just vanished.
   const panels = useRef<Partial<Record<Phase, HTMLElement | null>>>({});
@@ -159,11 +173,15 @@ export default function Player({ problem, record, state, onChange, onExit }: Pla
 
   const commit = async () => {
     const value = freeText ?? "";
-    if (!value.trim() || running) return;
+    if (!value.trim() || inFlight.current) return;
+    inFlight.current = true;
+    const token = ++runToken.current;
+    const submittedProblem = problem.id;
     setRunning(true);
     setRunError("");
     let lines = fallback?.lines ?? [];
-    let source = `検証済み（${problem.expected?.verifiedBy ?? "toolchain"}）`;
+    let source = fallback ? `過去の検証記録（${problem.expected?.verifiedBy ?? "詳細不明"}）` : '未実行';
+    let failure = '';
     try {
       const raw = await runProblem(problem.id, problem.language);
       if (raw !== null) {
@@ -175,22 +193,29 @@ export default function Player({ problem, record, state, onChange, onExit }: Pla
         );
       }
     } catch (error) {
-      setRunError(describeFailure(error));
-    } finally {
-      setRunning(false);
+      failure = describeFailure(error);
     }
+    // 問題切替・画面離脱後の遅い結果は、表示・記録どちらにも反映しない。
+    if (runToken.current !== token || currentProblemId.current !== submittedProblem) return;
+    inFlight.current = false;
+    setRunning(false);
+    if (failure) setRunError(failure);
     setActual({ lines, label: fallback?.label ?? "実行結果" });
     setActualSource(source);
-    const ok = judge(problem, value);
-    const next = applyAttempt(state, problem, {
-      prediction: value,
-      actual: lines.join("\n"),
-      ok,
-      blind: true,
-    });
-    onChange(next.state);
+    const ok = judgeLegacyAnswer(problem, value, picked !== null);
+    if (problem.answerKind !== 'code') {
+      const next = applyAttempt(state, problem, {
+        prediction: value,
+        actual: lines.join("\n"),
+        ok,
+        blind: hintStep === 0,
+      });
+      onChange(next.state);
+    }
     setPhase("committed");
-    setVerdict({ text: ok ? "あなたの推測が実行結果・検証記録と一致しました。" : "実際の結果とは違いました。どこが違うかを見てみましょう。", kind: ok ? "ok" : "bad" });
+    setVerdict(problem.answerKind === 'code'
+      ? { text: '編集したコードは実行・採点していません。固定教材の実行結果と区別してください。', kind: 'info' }
+      : { text: ok ? "あなたの推測が期待値と一致しました。" : "期待値とは違いました。どこが違うかを見てみましょう。", kind: ok ? "ok" : "bad" });
     setTimeout(() => commitRef.current?.focus(), 30);
   };
 
@@ -202,16 +227,20 @@ export default function Player({ problem, record, state, onChange, onExit }: Pla
   };
 
   const submitRetry = () => {
-    const ok = judge(problem, retryAnswer);
+    if (problem.answerKind === 'code') {
+      setVerdict({ text: '編集コードは未実行・未判定です。', kind: 'info' });
+      return;
+    }
+    const ok = judgeLegacyAnswer(problem, retryAnswer);
     const next = applyAttempt(state, problem, {
       prediction: retryAnswer,
       actual: fallback?.lines.join("\n") ?? "",
       ok,
-      blind: true,
+      blind: hintStep === 0,
     });
     onChange(next.state);
     if (ok) {
-      setVerdict({ text: "答えを隠したまま書けました。これは「学習した」として記録します。", kind: "ok" });
+      setVerdict({ text: hintStep === 0 ? "答えを隠したまま書けました。" : "ヒントを使って答えました。次は時間を空けて自力でも試しましょう。", kind: "ok" });
       if (problem.transfer) setPhase("transfer");
       else setPhase("done");
     } else {
@@ -238,7 +267,11 @@ export default function Player({ problem, record, state, onChange, onExit }: Pla
 
   const submitTransfer = () => {
     if (!transferProblem) return;
-    const ok = judge(transferProblem, transferAnswer);
+    if (transferProblem.answerKind === 'code') {
+      setVerdict({ text: '編集コードは未実行・未判定です。', kind: 'info' });
+      return;
+    }
+    const ok = judgeLegacyAnswer(transferProblem, transferAnswer);
     const next = applyTransfer(state, transferProblem, ok, true);
     onChange(next.state);
     setVerdict({
@@ -254,7 +287,7 @@ export default function Player({ problem, record, state, onChange, onExit }: Pla
     <div className="lp-">
       <main className="lp-main">
         <p className="lp-sub">
-          <button type="button" onClick={onExit}>
+          <button type="button" onClick={leave}>
             ← 一覧へ戻る
           </button>
         </p>
@@ -295,6 +328,7 @@ export default function Player({ problem, record, state, onChange, onExit }: Pla
                     type="button"
                     className="lp-choice"
                     aria-pressed={picked === option}
+                    disabled={running}
                     onClick={() => setPicked((p) => (p === option ? null : option))}
                   >
                     {option}
@@ -311,8 +345,9 @@ export default function Player({ problem, record, state, onChange, onExit }: Pla
               id="lp-free"
               className="lp-editor"
               value={prediction}
-              placeholder={problem.answerKind === "code" ? "コードを書きます" : "your prediction"}
-              onChange={(e) => setPrediction(e.target.value)}
+              disabled={running}
+              placeholder={problem.answerKind === "code" ? "コードを書きます" : "出力は1行ずつ入力"}
+              onChange={(e) => { setPicked(null); setPrediction(e.target.value); }}
             />
             <div className="lp-actions">
               <button ref={commitRef} className="primary" disabled={!canCommit} onClick={() => void commit()}>
@@ -320,7 +355,7 @@ export default function Player({ problem, record, state, onChange, onExit }: Pla
               </button>
               {hintStep > 0 && <span className="lp-hint">ヒント：{hint}</span>}
               {hintStep < problem.hints.length && (
-                <button type="button" onClick={() => setHintStep((n) => n + 1)}>
+                <button type="button" disabled={running} onClick={() => setHintStep((n) => n + 1)}>
                   ヒントをみる
                 </button>
               )}
@@ -407,7 +442,7 @@ export default function Player({ problem, record, state, onChange, onExit }: Pla
                     隠して再現する
                   </button>
                   {hintStep < problem.hints.length && (
-                    <button type="button" onClick={() => setHintStep((n) => n + 1)}>
+                    <button type="button" disabled={running} onClick={() => setHintStep((n) => n + 1)}>
                       ヒントをみる
                     </button>
                   )}
@@ -453,7 +488,7 @@ export default function Player({ problem, record, state, onChange, onExit }: Pla
                   この問題は「学習済み」として扱います。復習は {problem.reviewInterval} 日後に予約されました。
                 </p>
                 <div className="lp-actions">
-                  <button className="primary" onClick={onExit}>
+                  <button className="primary" onClick={leave}>
                     一覧へ戻る
                   </button>
                 </div>
@@ -490,7 +525,7 @@ export default function Player({ problem, record, state, onChange, onExit }: Pla
               <button className="primary" disabled={!transferAnswer.trim()} onClick={submitTransfer}>
                 転移を提出
               </button>
-              <button type="button" onClick={onExit}>
+              <button type="button" onClick={leave}>
                 スキップ
               </button>
             </div>
@@ -499,19 +534,6 @@ export default function Player({ problem, record, state, onChange, onExit }: Pla
       </main>
     </div>
   );
-}
-
-function judge(problem: Problem, given: string): boolean {
-  if (!given.trim()) return false;
-  if (problem.answerKind === "order") {
-    const lines = given.split("\n");
-    if (!problem.orderAnswer) return false;
-    return (
-      lines.length === problem.orderAnswer.length &&
-      problem.orderAnswer.every((line, i) => isCorrectAnswer(lines[i] ?? "", line))
-    );
-  }
-  return isCorrectAnswer(given, problem.answer);
 }
 
 function executionLabel(execution: Problem["execution"]): string {

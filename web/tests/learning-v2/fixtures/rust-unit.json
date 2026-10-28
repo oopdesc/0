@@ -1,0 +1,10 @@
+[
+  {
+    "id":"rust:q0001","language":"rust","contentVersion":"fixture-1","unitId":"rust:u01","order":1,"level":"beginner","kind":"choice","title":"fixture の一行","prompt":"検査用の例。表示は？",
+    "conceptIds":["rust:c-print"],"prerequisiteConceptIds":[],"introducesConceptIds":["rust:c-print"],
+    "setup":{"files":[{"path":"main.rs","content":"fn main() { println!(\"hi\"); }\n","editable":false}],"entryPoint":"main","languageVersion":"Rust 1.88","edition":"2021","dependencies":[],"note":"互換性のfixtureで、本教材ではない。"},
+    "answer":{"mode":"choice","options":[{"id":"a","text":"hi"},{"id":"b","text":"bye"}],"correctOptionIds":["a"],"expectedOutput":[],"comparison":"exact-lines","orderItems":[],"correctOrderIds":[]},
+    "solution":{"files":[{"path":"main.rs","content":"fn main() { println!(\"hi\"); }\n","editable":false}],"explanation":"hi を表示する。","reasoningSteps":["println! は文字列を表示する。"],"wrongReasons":[{"optionId":"b","reason":"文字列が違う。"}],"boundaries":["大小文字を区別する。"],"alternativeCriteria":["同じ文字列の表示。"],"references":[]},
+    "hints":[{"id":"h1","text":"文字列を見る。","revealsAnswer":false}],"writingRequired":false,"tests":[],"runnerProfile":null,"relatedIds":[],"transferIds":[],"evidence":{"specReviewed":false,"compilerRun":null,"browserRun":null},"legacyRefs":[]
+  }
+]

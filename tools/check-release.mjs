@@ -53,7 +53,7 @@ function payload(keys) {
 const pagePayloads = {
   home: payload([entryKey]),
   learning: payload([entryKey, 'src/LearningHub.tsx']),
-  questions: payload([entryKey, 'src/LearningHub.tsx', 'src/Academy.tsx']),
+  questions: payload([entryKey, 'src/LearningHub.tsx', 'src/learning-v2/PackLearning.tsx']),
   orbit: payload([entryKey, 'src/art/OrbitShowcase.tsx']),
   nebula: payload([entryKey, 'src/art/NebulaExperience.tsx']),
   particles: payload([entryKey, 'src/art/ParticleExperience.tsx']),

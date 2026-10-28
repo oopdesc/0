@@ -1,0 +1,9 @@
+[package]
+name = "book-api-http"
+version = "0.1.0"
+edition = "2021"
+
+# rusqlite の bundled 機能で SQLite 本体も一緒にビルドする（Cコンパイラが必要）。
+# 初回ビルド時に crates.io から取得する。通常の cargo プロジェクトと同じ扱い。
+[dependencies]
+rusqlite = { version = "0.32", features = ["bundled"] }

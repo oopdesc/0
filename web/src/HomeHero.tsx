@@ -2,7 +2,8 @@ import { useEffect, useRef, useState } from "react";
 import { SolarDiagram } from "./arena/astra/SolarDiagram";
 import bodies from "./arena/astra/bodies.json";
 import "./home.css";
-import stats from "./generated/learning-stats.json";
+import { loadManifest } from "./learning-v2/loader";
+import { loadLast } from "./learning-v2/progress";
 export default function HomeHero({ paused }: { paused: boolean }) {
   const [selected, setSelected] = useState("earth"),
     [language, setLanguage] = useState<"java" | "rust">("java"),
@@ -10,6 +11,14 @@ export default function HomeHero({ paused }: { paused: boolean }) {
     [active, setActive] = useState(true),
     [copied, setCopied] = useState(false);
   const area = useRef<HTMLElement>(null);
+  const [counts, setCounts] = useState<{ java: number | null; rust: number | null; exams: number | null }>({ java: null, rust: null, exams: null });
+  const [last] = useState(() => { try { return loadLast(localStorage); } catch { return null; } });
+  useEffect(() => {
+    const controller = new AbortController();
+    Promise.all([loadManifest("java", controller.signal), loadManifest("rust", controller.signal)]).then(([j,r]) => setCounts({java:j.counts.normal,rust:r.counts.normal,exams:j.counts.exams+r.counts.exams})).catch(() => {});
+    return () => controller.abort();
+  }, []);
+  const resume = last ? `/learn?section=drill&lang=${last.language}&q=${encodeURIComponent(last.id)}` : "/learn?section=drill&lang=java&q=java%3Aq0001";
   const body = bodies.find((b) => b.slug === selected)!;
   const code =
     language === "java"
@@ -49,26 +58,23 @@ export default function HomeHero({ paused }: { paused: boolean }) {
           予想と結果を見比べながら、仕組みを理解する。
         </p>
         <div className="home-actions">
-          <a className="home-primary" href="/learn">
-            {stats.total.toLocaleString()}問から学ぶ{" "}
-            <span aria-hidden="true">↗</span>
+          <a className="home-primary" href="/learn?section=drill&lang=java&q=java%3Aq0001">
+            はじめての一問 <span aria-hidden="true">↗</span>
           </a>
-          <a className="home-secondary" href="/art">
-            太陽系を動かす <span aria-hidden="true">→</span>
+          <a className="home-secondary" href="/learn?section=drill">
+            問題を選ぶ <span aria-hidden="true">→</span>
           </a>
         </div>
-        <div className="home-learning-numbers" aria-label="収録している教材">
-          <a href="/learn?section=drill">
-            <strong>{stats.questionBank.toLocaleString()}</strong>
-            <span>問の問題集</span>
+        <div className="home-quick-links"><a href={resume}>続きから →</a><a href="/learn?section=concepts">概念図 →</a><a href="/learn?section=exams">試験 →</a><a href="/art">太陽系の模型 →</a><a href="https://github.com/oopdesc/all-beings-flourishing" target="_blank" rel="noreferrer">著作を読む ↗</a></div>
+        <div className="home-learning-numbers" aria-label="新しい教材の実際の件数">
+          <a href="/learn?section=drill&lang=java">
+            <strong>{counts.java ?? "—"}</strong><span>Javaの問題（コード記述を含む）</span>
           </a>
-          <a href="/learn?section=verified">
-            <strong>{stats.executionPractice}</strong>
-            <span>問の実行演習</span>
+          <a href="/learn?section=drill&lang=rust">
+            <strong>{counts.rust ?? "—"}</strong><span>Rustの問題（コード記述を含む）</span>
           </a>
-          <a href="/learn?section=orbit">
-            <strong>{stats.experiments}</strong>
-            <span>つの宇宙実験</span>
+          <a href="/learn?section=exams">
+            <strong>{counts.exams ?? "—"}</strong><span>Java・Rustの試験・別集計</span>
           </a>
         </div>
         <div className="home-topics">

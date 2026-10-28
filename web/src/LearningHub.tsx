@@ -4,21 +4,27 @@ import { requestTrace } from "./request-flow";
 import { store, type Route } from "./arena/orrery/core/appStore";
 import "./learning-hub.css";
 import LearningOverview from "./LearningOverview";
-import stats from "./generated/learning-stats.json";
+const PackLearning = lazy(() => import("./learning-v2/PackLearning"));
+const FlowView = lazy(() => import("./learning-v2/FlowView"));
+const ProjectView = lazy(() => import("./learning-v2/ProjectView"));
 const Curated = lazy(() => import("./CuratedProblems"));
+const Supplemental = lazy(() => import("./Academy"));
 const OrbitLab = lazy(() => import("./OrbitLab"));
-const Academy = lazy(() => import("./Academy"));
 const Basics = lazy(() => import("./Learning"));
 const Lab = lazy(() =>
   import("./arena/orrery/App").then((m) => ({ default: m.App })),
 );
 const Source = lazy(() => import("./Secondary"));
+const ConceptOverview = lazy(() => import("./ConceptOverview"));
 const sections = [
   ["overview", "学習の入口"],
-  ["drill", `問題集 ${stats.questionBank.toLocaleString()}問`],
-  ["verified", `実行演習 ${stats.executionPractice}問`],
+  ["concepts", "概念図"],
+  ["drill", "問題を選ぶ"],
+  ["writing", "コードを書く"],
+  ["diagnostics", "途中確認"],
+  ["exams", "試験"],
   ["flow", "処理の全体像"],
-  ["practice", "Java・Rustの演習"],
+  ["projects", "小プロジェクト"],
   ["references", "日本語の資料"],
 ] as const;
 function RequestFlow() {
@@ -136,18 +142,20 @@ export default function LearningHub({
   path: string;
 }) {
   const params = new URLSearchParams(search);
-  const requested =
-    path === "/lab"
-      ? "practice"
-      : path === "/code"
-        ? "source"
-        : params.get("section") ||
-          (params.has("track") ? "practice" : "overview");
-  const section =
-    ["orbit", "source"].includes(requested) ||
-    sections.some(([id]) => id === requested)
-      ? requested
-      : "overview";
+  const [legacyHash, setLegacyHash] = useState(() => window.location.hash);
+  useEffect(() => {
+    const sync = () => setLegacyHash(window.location.hash);
+    sync(); addEventListener("hashchange", sync); addEventListener("popstate", sync);
+    return () => { removeEventListener("hashchange", sync); removeEventListener("popstate", sync); };
+  }, [search, path]);
+  const rawRequested = path === "/lab" ? "writing" : path === "/code" ? "source" :
+    params.get("section") || (params.has("track") ? "drill" : "overview");
+  // Old entrances converge on the new ledger; original materials remain accessible below.
+  const requested = rawRequested === "verified" || rawRequested === "practice" ? "writing" : rawRequested;
+  const section = requested === "drill" && legacyHash.startsWith("#/") && !legacyHash.startsWith("#/p/")
+    ? "archive"
+    : ["orbit", "source", "archive", "supplemental", "legacy-verified", "legacy-practice", "legacy-flow"].includes(requested) ||
+      sections.some(([id]) => id === requested) ? requested : "overview";
   const [mode, setMode] = useState(
     params.get("mode") === "code" || path === "/lab" ? "code" : "basics",
   );
@@ -160,7 +168,7 @@ export default function LearningHub({
     );
   }, [search, path]);
   useEffect(() => {
-    if (section === "practice" && mode === "code") store.navigate(exercise);
+    if (section === "legacy-practice" && mode === "code") store.navigate(exercise);
   }, [section, mode, exercise]);
   return (
     <div className="learning-hub">
@@ -182,21 +190,31 @@ export default function LearningHub({
       </section>
       {section === "overview" ? (
         <LearningOverview />
+      ) : section === "concepts" ? (
+        <Suspense fallback={<p className="hub-content">概念図を読み込んでいます…</p>}><ConceptOverview/></Suspense>
+      ) : section === "supplemental" ? (
+        <Suspense fallback={<p className="hub-content">補充問題集を読み込んでいます…</p>}><p className="hub-content">以前の教材を追加の練習に使えます。新教材と一部重複し、全問の再検証は終えていません。確認された誤りは除外し、修正版を新教材に収録しています。 <a href="/learn?section=drill">新しい問題集へ →</a></p><Supplemental/></Suspense>
       ) : section === "orbit" ? (
         <Suspense fallback={<p>宇宙の実験を読み込んでいます…</p>}>
           <OrbitLab />
         </Suspense>
-      ) : section === "verified" ? (
-        <Suspense fallback={<p>演習を読み込んでいます…</p>}>
-          <Curated />
+      ) : section === "legacy-verified" ? (
+        <Suspense fallback={<p>従来の演習を読み込んでいます…</p>}>
+          <p className="hub-content">従来の実行演習です。新packとは別に保管しています。</p><Curated />
         </Suspense>
-      ) : section === "drill" ? (
-        <Suspense
-          fallback={<p className="hub-content">問題を読み込んでいます…</p>}
-        >
-          <Academy />
+      ) : section === "archive" ? (
+        <Suspense fallback={<p>従来の問題集を読み込んでいます…</p>}>
+          <p className="hub-content">問題集を更新しました。以前の学習記録を残し、新しい問題は別のIDで記録します。</p><PackLearning search={search} view="all" />
+        </Suspense>
+      ) : section === "drill" || section === "writing" || section === "exams" || section === "diagnostics" ? (
+        <Suspense fallback={<p className="hub-content">教材を読み込んでいます…</p>}>
+          <PackLearning search={search} view={section === "writing" ? "writing" : section === "exams" ? "exams" : section === "diagnostics" ? "diagnostics" : "all"} />
         </Suspense>
       ) : section === "flow" ? (
+          <Suspense fallback={<p className="hub-content">処理の流れを読み込んでいます…</p>}><FlowView search={search} /></Suspense>
+      ) : section === "projects" ? (
+        <Suspense fallback={<p className="hub-content">小プロジェクトを読み込んでいます…</p>}><ProjectView /></Suspense>
+      ) : section === "legacy-flow" ? (
         <RequestFlow />
       ) : section === "references" ? (
         <main className="hub-content">

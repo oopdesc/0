@@ -10,6 +10,10 @@ cd "$ROOT"
 JAVA_HOME="$(/usr/libexec/java_home -v 21)"
 case "${1:-help}" in
   web) exec npm --prefix web run dev ;;
+  local-learning)
+    export JAVA_HOME
+    npm --prefix web run build
+    exec node contributions/java/local-server.mjs ;;
   rust) exec cargo run --offline -j 2 --manifest-path backend/rust/Cargo.toml -p cosmic-api ;;
   test-rust) exec cargo test --offline -j 2 --manifest-path backend/rust/Cargo.toml -- --test-threads=2 ;;
   java|test-java)
@@ -35,5 +39,5 @@ case "${1:-help}" in
     node tools/test-wasm.mjs
     node tools/check-build-inputs.mjs
     npm --prefix web run build ;;
-  *) print 'Usage: ./tools/portfolio.sh web | java | rust | java-browser | problem-java-browser | test-java-browser | test-java | test-rust | test-web | wasm | build | verify' ;;
+  *) print 'Usage: ./tools/portfolio.sh web | local-learning | java | rust | java-browser | problem-java-browser | test-java-browser | test-java | test-rust | test-web | wasm | build | verify' ;;
 esac

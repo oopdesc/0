@@ -1,9 +1,9 @@
 {
   "schema": 1,
-  "total": 1256,
-  "questionBank": 1147,
-  "executionPractice": 109,
+  "total": 1181,
+  "questionBank": 922,
+  "executionPractice": 259,
   "experiments": 6,
-  "java": 688,
-  "rust": 568
+  "java": 838,
+  "rust": 343
 }

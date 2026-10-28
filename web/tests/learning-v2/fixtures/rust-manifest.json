@@ -1,0 +1,14 @@
+{
+  "schema": "zero-learning-pack/1",
+  "language": "rust",
+  "baseCommit": "c1fb8d2e91d1b8ebeac478db2098f28437ddb961",
+  "contentVersion": "fixture-1",
+  "counts": {"normal": 1, "writing": 0, "exams": 0, "projects": 0},
+  "chunks": [{"path": "units/sample.v1.json", "ids": ["rust:q0001"]}],
+  "conceptsPath": "concepts.json",
+  "examsPath": "exams.json",
+  "flowsPath": "flows.json",
+  "projectsPath": "projects.json",
+  "aliasesPath": "aliases.json",
+  "extensions": {"units": [{"id":"rust:u01", "title":"Rust fixture", "summary":"互換性検査用。実教材ではない。", "path":"units/sample.v1.json"}]}
+}

@@ -1,0 +1,357 @@
+[
+  {
+    "id": "java:fixture-code-01",
+    "language": "java",
+    "contentVersion": "fixture-1",
+    "unitId": "java:fixture-exam",
+    "order": 27,
+    "level": "beginner",
+    "kind": "code",
+    "title": "両端を含む範囲を判定する",
+    "prompt": "static boolean inRange(int value) を完成させてください。0以上100以下なら true、それ以外は false。入力は int の全範囲で、0と100も含みます。",
+    "conceptIds": [
+      "java:c-and",
+      "java:c-comparison",
+      "java:c-method"
+    ],
+    "prerequisiteConceptIds": [
+      "java:c-and",
+      "java:c-comparison",
+      "java:c-method"
+    ],
+    "introducesConceptIds": [],
+    "setup": {
+      "files": [
+        {
+          "path": "Main.java",
+          "content": "public class Main {\n    static boolean inRange(int value) {\n        // ここを実装する\n        return false;\n    }\n    public static void main(String[] args) {\n        System.out.println(inRange(50));\n    }\n}\n",
+          "editable": true
+        }
+      ],
+      "entryPoint": "Main.main",
+      "languageVersion": "Java 17",
+      "edition": null,
+      "dependencies": [],
+      "note": "Main.java の main が開始位置。class・public・static・String[] args は今は実行用の枠として扱い、main の中を読みます。Java 17以降、追加依存なし。 Harness は有効な int を一つ読み、inRange の戻り値を一行に表示します。"
+    },
+    "starter": "public class Main {\n    static boolean inRange(int value) {\n        // ここを実装する\n        return false;\n    }\n    public static void main(String[] args) {\n        System.out.println(inRange(50));\n    }\n}\n",
+    "answer": {
+      "mode": "code",
+      "options": [],
+      "correctOptionIds": [],
+      "expectedOutput": [],
+      "comparison": "exact-lines",
+      "orderItems": [],
+      "correctOrderIds": []
+    },
+    "solution": {
+      "files": [
+        {
+          "path": "Main.java",
+          "content": "public class Main {\n    static boolean inRange(int value) {\n        return 0 <= value && value <= 100;\n    }\n    public static void main(String[] args) {\n        System.out.println(inRange(50));\n    }\n}\n",
+          "editable": false
+        }
+      ],
+      "explanation": "下限と上限の両方を満たす必要があるので &&。<= は0と100も含む。",
+      "reasoningSteps": [
+        "0 <= value で下限を確認。",
+        "value <= 100 で上限を確認。",
+        "二つを && で結び、結果を返す。"
+      ],
+      "wrongReasons": [],
+      "boundaries": [
+        "-1と101は false、0と100は true。int の両端も false。"
+      ],
+      "alternativeCriteria": [
+        "範囲外を先に false とする if を使う別解も、同じ仕様なら成立する。"
+      ],
+      "references": [
+        {
+          "title": "Java Language Specification, Java SE 17",
+          "url": "https://docs.oracle.com/javase/specs/jls/se17/html/jls-15.html"
+        }
+      ]
+    },
+    "hints": [
+      {
+        "id": "h1",
+        "text": "下限と上限は両方必要。",
+        "revealsAnswer": false
+      },
+      {
+        "id": "h2",
+        "text": "等号を含むか仕様を読み直す。",
+        "revealsAnswer": false
+      }
+    ],
+    "writingRequired": true,
+    "tests": [
+      {
+        "id": "default",
+        "mode": "harness",
+        "testFiles": [
+          {
+            "path": "Harness.java",
+            "content": "import java.util.Scanner;\npublic class Harness {\n    public static void main(String[] args) {\n        Scanner in = new Scanner(System.in);\n        int v = in.nextInt();\n        System.out.println(Main.inRange(v));\n    }\n}\n",
+            "editable": false
+          }
+        ],
+        "cases": [
+          {
+            "id": "case-1",
+            "stdin": "-1\n",
+            "expectedStdout": [
+              "false"
+            ],
+            "expectedExit": 0,
+            "expectedCompile": "pass",
+            "errorContains": []
+          },
+          {
+            "id": "case-2",
+            "stdin": "0\n",
+            "expectedStdout": [
+              "true"
+            ],
+            "expectedExit": 0,
+            "expectedCompile": "pass",
+            "errorContains": []
+          },
+          {
+            "id": "case-3",
+            "stdin": "1\n",
+            "expectedStdout": [
+              "true"
+            ],
+            "expectedExit": 0,
+            "expectedCompile": "pass",
+            "errorContains": []
+          },
+          {
+            "id": "case-4",
+            "stdin": "50\n",
+            "expectedStdout": [
+              "true"
+            ],
+            "expectedExit": 0,
+            "expectedCompile": "pass",
+            "errorContains": []
+          },
+          {
+            "id": "case-5",
+            "stdin": "99\n",
+            "expectedStdout": [
+              "true"
+            ],
+            "expectedExit": 0,
+            "expectedCompile": "pass",
+            "errorContains": []
+          },
+          {
+            "id": "case-6",
+            "stdin": "100\n",
+            "expectedStdout": [
+              "true"
+            ],
+            "expectedExit": 0,
+            "expectedCompile": "pass",
+            "errorContains": []
+          },
+          {
+            "id": "case-7",
+            "stdin": "101\n",
+            "expectedStdout": [
+              "false"
+            ],
+            "expectedExit": 0,
+            "expectedCompile": "pass",
+            "errorContains": []
+          },
+          {
+            "id": "case-8",
+            "stdin": "-2147483648\n",
+            "expectedStdout": [
+              "false"
+            ],
+            "expectedExit": 0,
+            "expectedCompile": "pass",
+            "errorContains": []
+          },
+          {
+            "id": "case-9",
+            "stdin": "2147483647\n",
+            "expectedStdout": [
+              "false"
+            ],
+            "expectedExit": 0,
+            "expectedCompile": "pass",
+            "errorContains": []
+          }
+        ]
+      }
+    ],
+    "runnerProfile": "java17-harness-v1",
+    "relatedIds": [],
+    "transferIds": [],
+    "evidence": {
+      "specReviewed": false,
+      "compilerRun": null,
+      "browserRun": null
+    },
+    "legacyRefs": [],
+    "extensions": {
+      "expectedObservation": null,
+      "expectedCompile": "pass",
+      "audit": "教材としての人手監査は継続中。"
+    }
+  },
+  {
+    "id": "java:fixture-choice-01",
+    "language": "java",
+    "contentVersion": "fixture-1",
+    "unitId": "java:fixture-exam",
+    "order": 1,
+    "level": "beginner",
+    "kind": "choice",
+    "title": "最初の一行を表示する",
+    "prompt": "Main.java は実行可能な最小プログラムです。main の中が開始位置です。引用符の内側は文字列、println は値を表示して改行します。このプログラムの出力は？",
+    "conceptIds": [
+      "java:c-program",
+      "java:c-println"
+    ],
+    "prerequisiteConceptIds": [],
+    "introducesConceptIds": [
+      "java:c-program",
+      "java:c-println"
+    ],
+    "setup": {
+      "files": [
+        {
+          "path": "Main.java",
+          "content": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"Hello\");\n    }\n}\n",
+          "editable": false
+        }
+      ],
+      "entryPoint": "Main.main",
+      "languageVersion": "Java 17",
+      "edition": null,
+      "dependencies": [],
+      "note": "Main.java の main が開始位置。class・public・static・String[] args は今は実行用の枠として扱い、main の中を読みます。Java 17以降、追加依存なし。"
+    },
+    "answer": {
+      "mode": "choice",
+      "options": [
+        {
+          "id": "b",
+          "text": "\"Hello\""
+        },
+        {
+          "id": "c",
+          "text": "hello"
+        },
+        {
+          "id": "d",
+          "text": "コンパイルエラー"
+        },
+        {
+          "id": "a",
+          "text": "Hello"
+        }
+      ],
+      "correctOptionIds": [
+        "a"
+      ],
+      "expectedOutput": [],
+      "comparison": "exact-lines",
+      "orderItems": [],
+      "correctOrderIds": []
+    },
+    "solution": {
+      "files": [
+        {
+          "path": "Main.java",
+          "content": "public class Main {\n    public static void main(String[] args) {\n        System.out.println(\"Hello\");\n    }\n}\n",
+          "editable": false
+        }
+      ],
+      "explanation": "Hello と一行表示する。引用符は文字列リテラルの境界で、内容の Hello が println に渡される。",
+      "reasoningSteps": [
+        "main の文を上から読む。",
+        "文字列 Hello を println に渡す。",
+        "Hello を表示して改行する。"
+      ],
+      "wrongReasons": [
+        {
+          "optionId": "b",
+          "reason": "引用符は文字列を囲む記号で、表示される文字には含まれません。"
+        },
+        {
+          "optionId": "c",
+          "reason": "大文字 H と小文字 h は違う文字です。"
+        },
+        {
+          "optionId": "d",
+          "reason": "この println と文字列リテラルの組合せは有効です。"
+        }
+      ],
+      "boundaries": [
+        "大文字小文字も出力の一部。println は最後に改行する。"
+      ],
+      "alternativeCriteria": [
+        "同じ文字列を println に渡せば、表示は同じ。"
+      ],
+      "references": [
+        {
+          "title": "Java Language Specification, Java SE 17",
+          "url": "https://docs.oracle.com/javase/specs/jls/se17/html/jls-3.html#jls-3.10.5"
+        }
+      ]
+    },
+    "hints": [
+      {
+        "id": "h1",
+        "text": "式を左から確認し、該当する規則を思い出す。",
+        "revealsAnswer": false
+      }
+    ],
+    "writingRequired": false,
+    "tests": [],
+    "runnerProfile": null,
+    "relatedIds": [],
+    "transferIds": [],
+    "evidence": {
+      "specReviewed": false,
+      "compilerRun": null,
+      "browserRun": null
+    },
+    "legacyRefs": [],
+    "extensions": {
+      "expectedObservation": [
+        "Hello"
+      ],
+      "expectedCompile": "pass",
+      "audit": "教材としての人手監査は継続中。"
+    },
+    "prediction": {
+      "prompt": "解答を見る前に一つ選んでください。",
+      "options": [
+        {
+          "id": "b",
+          "text": "\"Hello\""
+        },
+        {
+          "id": "c",
+          "text": "hello"
+        },
+        {
+          "id": "d",
+          "text": "コンパイルエラー"
+        },
+        {
+          "id": "a",
+          "text": "Hello"
+        }
+      ]
+    }
+  }
+]

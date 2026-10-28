@@ -1,0 +1,1 @@
+[{"id":"rust:c-print","language":"rust","name":"fixture の表示","summary":"表示の検査用。","minimalExample":"println!(\"hi\");","hardPrerequisiteIds":[],"relatedIds":[],"introducedBy":["rust:q0001"],"problemIds":["rust:q0001"]}]

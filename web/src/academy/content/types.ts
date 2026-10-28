@@ -232,9 +232,9 @@ export function normalise(s: string): string {
     .toLowerCase();
 }
 
-/** 出力行の比較。末尾の空白と全角半角の揺れだけを吸収する。 */
+/** 出力は行・大小文字・Unicode・空白を保つ。一般的な文章の正規化とは分ける。 */
 export function normaliseOutput(lines: string[]): string {
-  return normalise(lines.map((l) => l.trimEnd()).join('\n'));
+  return lines.join('\n');
 }
 
 export function checkText(given: string, accept: string[]): boolean {

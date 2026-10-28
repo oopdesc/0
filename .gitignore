@@ -8,6 +8,13 @@ backend/java/bin/
 frontend/java/target/
 frontend/java-problems/target/
 frontend/java/bin/
+backend/java-learning-v2/target/
+projects/java/book-api-http/bin/
+projects/java/book-api-http/target/
+projects/java/book-api-http/lib/
+projects/java/book-api-http/*.db*
+projects/rust/book-api-http/target/
+projects/rust/book-api-http/*.db*
 .env
 .env.*
 .vercel/

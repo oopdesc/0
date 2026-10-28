@@ -14,6 +14,8 @@
  *     `execution`. Nothing pretends to run code it does not run.
  */
 
+import { compareOutput } from '../learning-v2/comparison';
+
 export type Language = 'java' | 'rust';
 
 /** Requirement 10: mistake taxonomy. Drives error-lab grouping and retries. */
@@ -205,6 +207,20 @@ export function isCorrectAnswer(given: string, expected: string): boolean {
   return normaliseAnswer(given) === normaliseAnswer(expected);
 }
 
+/** 旧教材の回答。出力予測は文章検索用の正規化を使わず、行単位で照合する。 */
+export function judgeLegacyAnswer(problem: Problem, given: string, selectedOption = false): boolean {
+  if (!given.trim() || problem.answerKind === 'code') return false;
+  if (selectedOption) return (problem.prediction.options ?? []).includes(given) && given === problem.answer;
+  if (problem.answerKind === 'order') {
+    return Boolean(problem.orderAnswer) && compareOutput(given, problem.orderAnswer ?? []);
+  }
+  if (problem.questionType === 'predict-output' && problem.expected?.output) {
+    return compareOutput(given, problem.expected.output);
+  }
+  // 出力以外の旧自由記述は、元の解答文字列をそのまま比較する。
+  return given === problem.answer;
+}
+
 /** Order answers compare as sequences of normalised lines. */
 export function isCorrectOrder(given: string[], expected: string[]): boolean {
   if (given.length !== expected.length) return false;
@@ -237,20 +253,25 @@ export function shuffleLines(lines: string[], salt: string): string[] {
 export function makeVariants(problem: Problem, salt: string): Problem[] {
   const out: Problem[] = [];
   for (const v of problem.variants ?? []) {
-    const code = v.replace
-      ? Object.entries(v.replace).reduce(
-          (acc, [from, to]) => acc.split(from).join(to),
-          problem.code ?? '',
-        )
-      : problem.code;
+    // 数字の一括置換だけでは、答え・選択肢・理由まで一貫させられない。
+    // 個別に照合できた変形のみ提供し、その他の原本は残したまま保留する。
+    if (problem.language !== 'java' || problem.id !== 'jv1' || v.id !== '7->11') continue;
+    const code = 'int a = 11 / 4;\nSystem.out.println(a);';
     out.push({
       ...problem,
       id: `${problem.id}:${v.id}`,
-      prompt: `${problem.prompt}\n\n変形 ${v.label}。同じ規則が适用できるか。`,
+      prompt: '11 と 4 を int 同士で割る。表示される値はどれですか。',
       code,
-      solution: problem.solution,
-      expected: v.expected,
-      oneLinePatch: v.rule ?? problem.oneLinePatch,
+      starter: undefined,
+      solution: undefined,
+      prediction: { text: '整数の商を予測してください。', options: ['2', '2.75', '3', 'コンパイルエラー'] },
+      answer: '2',
+      answerKind: 'text',
+      expected: { output: ['2'], verifiedBy: 'JDK 21: 別途検査記録を参照' },
+      explanation: '11 と 4 はどちらも int なので整数除算を行う。商 2.75 は 0 に近い方向へ小数部を捨てた 2 になり、println が 2 を表示する。',
+      misconception: '数学の割り算と同じく、小数をそのまま表示すると考える。',
+      oneLinePatch: 'int 同士の除算は、商の小数部を 0 に近い方向へ捨てる。',
+      hints: ['割られる数と割る数の型を確認する。', 'int 同士の除算の結果も int。'],
       variants: undefined,
     });
   }

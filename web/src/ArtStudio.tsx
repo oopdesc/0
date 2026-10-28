@@ -7,6 +7,7 @@ import type { UniverseHandle, UniverseOptions } from "./art/universe3d";
 const OrbitShowcase = lazy(() => import("./art/OrbitShowcase"));
 const NebulaExperience = lazy(() => import("./art/NebulaExperience"));
 const ParticleExperience = lazy(() => import("./art/ParticleExperience"));
+const CelestialGallery = lazy(() => import("./art/CelestialGallery"));
 const AstraModels = lazy(() => import("./arena/astra/Models"));
 const scenes = [
   {
@@ -82,7 +83,7 @@ export default function ArtStudio({
   const astra = currentExhibit === "solar";
   const observation = currentExhibit === "observation";
   const guest =
-    currentExhibit === "orbit" ||
+    currentExhibit === "celestial" || currentExhibit === "orbit" ||
     currentExhibit === "nebula" ||
     currentExhibit === "particles"
       ? currentExhibit
@@ -321,7 +322,9 @@ export default function ArtStudio({
             <p className="guest-loading">宇宙を描く準備をしています…</p>
           }
         >
-          {guest === "orbit" ? (
+          {guest === "celestial" ? (
+            <CelestialGallery paused={paused} />
+          ) : guest === "orbit" ? (
             <OrbitShowcase paused={paused} />
           ) : guest === "nebula" ? (
             <NebulaExperience paused={paused} />

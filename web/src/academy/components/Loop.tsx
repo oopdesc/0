@@ -126,7 +126,9 @@ export function Loop({
     const ms = Date.now() - started.current;
     if (!finished.current) {
       finished.current = true;
-      onFinish({ ok: isCorrect(problem, value) && !solutionSeen, ms, usedSolution: solutionSeen, cause: primaryCause(problem, value) });
+      const ungraded = problem.answer.mode === 'code' && value?.kind === 'code' && !gradeCodeAnswer(problem, value.text).ran;
+      // 実行不能は不正解でも合格でもない。既存の学習記録に判定を保存しない。
+      if (!ungraded) onFinish({ ok: isCorrect(problem, value) && !solutionSeen, ms, usedSolution: solutionSeen, cause: primaryCause(problem, value) });
     }
     requestAnimationFrame(() => resultRef.current?.scrollIntoView({ block: 'start', behavior: 'smooth' }));
   }
@@ -517,7 +519,7 @@ function CodeVerdict({ problem, code }: { problem: Problem; code: string }) {
         </>
       ) : (
         <p className="note">
-          この問題は実行して採点していません（{problem.lang === 'rust' ? 'ブラウザでは Rust をコンパイルしないため' : 'テストが無いため'}）。
+          この問題は実行して採点できませんでした。学習用エンジンの制限と実際のコンパイラの診断は別です。
           {grade.notes.map((n) => (
             <span key={n}> {n}</span>
           ))}
