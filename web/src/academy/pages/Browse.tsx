@@ -40,7 +40,7 @@ export function BrowsePage() {
     <div className="page">
       <h1>問題一覧</h1>
       <p className="lead">
-        {PROBLEMS.length} 問。すべて実際のツールで検証済み（Java は OpenJDK 21、Rust は rustc 1.99）。
+        {PROBLEMS.length} 問。以前の教材から追加の練習を選べます。今回の全問再検証は未完了です。
       </p>
 
       <div className="filters">

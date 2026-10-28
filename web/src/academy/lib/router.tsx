@@ -32,8 +32,8 @@ export function RouterProvider({ children }: { children: ReactNode }) {
       path,
       navigate(to, opts) {
         if (to === currentPath()) return;
-        if (opts?.replace) window.history.replaceState(null, '', '/learn?section=drill#' + to);
-        else window.history.pushState(null, '', '/learn?section=drill#' + to);
+        if (opts?.replace) window.history.replaceState(null, '', '/learn?section=supplemental#' + to);
+        else window.history.pushState(null, '', '/learn?section=supplemental#' + to);
         setPath(to);
         window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
       },
@@ -61,7 +61,7 @@ export function Link({
   const { navigate } = useRouter();
   return (
     <a
-      href={'/learn?section=drill#' + to}
+      href={'/learn?section=supplemental#' + to}
       className={className}
       onClick={(e: MouseEvent<HTMLAnchorElement>) => {
         if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey || e.button !== 0) return;
