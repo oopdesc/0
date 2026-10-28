@@ -73,13 +73,13 @@ function MissionPanel({ project, mission, version }: { project: Project; mission
   return <article className="zlv-card zlv-project-card">
     <div className="zlv-card-top"><span>制作 / {project.title}</span><span className="zlv-tag">実装課題</span></div>
     <h3>{mission.title}</h3><p>{mission.instructions}</p><p className="zlv-build-note">{project.extensions?.note || 'このプロジェクトの完成状況を確認してください。'}</p>
-    <section className="zlv-project-requirements"><h4>できたか確かめる条件</h4><ul>{mission.acceptance.map((a,i) => <li key={i}>{a}</li>)}</ul><p>前提: {mission.prerequisiteConceptIds.map(id => id.replace(/^(java:c-|rust:)/,'')).join(' / ') || 'なし'}</p></section>
+    <section className="zlv-project-requirements"><h4>できたか確かめる条件</h4><ul>{mission.acceptance.map((a,i) => <li key={i}>{a}</li>)}</ul><p>前提: {mission.prerequisiteConceptIds.map(id => id.replace(/^(java:c-|rust:)/,'')).join(' / ') || (project.language==='rust'?'Rustの基本文法・Cargo。開始ZIPの手順も確認してください。':'開始ZIPの手順を確認してください。')}</p></section>
     <p><button type="button" disabled={archiveBusy} onClick={() => void downloadStarter()}>{archiveBusy ? 'ZIPを準備中…' : 'この課題の開始状態・テストをZIPで取得 ↓'}</button></p><p>課題ごとに新しいZIPから始め、次の編集ファイルを同じ相対パスに保存してください。各ZIPの共通部には、ほかの課題の完成例も含まれます。ZIPはクリック時にブラウザで作ります。</p>
     {mission.files.map((f,i) => <section key={f.path}><div className="zlv-code-head"><span>{f.path}</span><span>{f.editable ? '編集できます' : '参照用'}</span></div><label className="zlv-sr" htmlFor={`zlv-project-file-${i}`}>編集ファイル {f.path}</label><textarea id={`zlv-project-file-${i}`} className="zlv-editor zlv-project-editor" spellCheck={false} readOnly={!f.editable} value={files[i]} onChange={e => updateFile(i,e.target.value)} /><div className="zlv-code-actions"><button type="button" onClick={() => saveFile(f.path,files[i])}>編集ファイルを保存 ↓</button><span>このブラウザに下書き</span></div></section>)}
     {notice && <p className="zlv-notice" role="status">{notice}</p>}
     <div className="zlv-write-note"><strong>未実行・未判定</strong><p>{project.language==='rust'?'Rust stable・CargoとCコンパイラを用意し、ZIPの展開先で次を実行します。':'JDK 17以上とMavenを用意し、ZIPの展開先で次を実行します。'}表示だけでは実行しません。</p><pre><code>{mission.testCommand.join(' ')}</code></pre><p>実測はその環境でのテスト結果を確認してください。</p></div>
     <details className="zlv-disclosure"><summary>ヒント</summary><ol>{mission.hints.map((h,i) => <li key={i}>{h}</li>)}</ol></details>
     <details className="zlv-disclosure"><summary>模範差分と理由を見る</summary><p>{mission.explanation}</p><pre><code>{mission.solutionDiff}</code></pre></details>
-    <p className="zlv-archive"><a href={project.language==='rust'?'https://github.com/oopdesc/0/tree/main/projects/rust/book-api-http':'/learning-v2/java/examples/flow/README.md'} target="_blank" rel="noreferrer">ローカル実行について ↗</a>　<a href="/learn?section=drill">問題集に戻る →</a></p>
+    <p className="zlv-archive"><a href={project.language==='rust'?'https://github.com/oopdesc/0/tree/main/projects/rust/book-api-http':'/learning-v2/java/examples/flow/README.md'} target="_blank" rel="noreferrer">ローカル実行について ↗</a>　<a href={`/learn?section=drill&lang=${project.language}`}>問題集に戻る →</a></p>
   </article>;
 }
