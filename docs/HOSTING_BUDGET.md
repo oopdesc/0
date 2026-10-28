@@ -1,6 +1,6 @@
 # 無料枠での配信と容量の確認
 
-2026年10月28日確認。既存の `0-3gaz` だけへ、静的ファイルを配信します。新しいVercelプロジェクト、常駐API、有料DB、AI APIは追加しません。
+2026年10月29日確認。既存の `0-3gaz` だけへ、静的ファイルを配信します。新しいVercelプロジェクト、常駐API、有料DB、AI APIは追加しません。
 
 ## 月間転送量と、ファイルの容量は別です
 
@@ -12,17 +12,21 @@ CDNから閲覧者へ送るデータも転送量に含まれます。CDNのキ�
 
 ## 今回の静的成果物
 
-- 全静的ファイル：約22.4MB。リポジトリ内の検査上限は30MiBです。
-- 初回JavaScript：約84.5KB gzip。静的なimport先まで含めて測ります。
-- トップのHTML/CSS/JavaScript：約102KB gzip推計。
-- 問題集を開くまでのHTML/CSS/JavaScript：約613KB gzip推計。
-- 星雲の描画コードまで：約248KB gzip推計。
+- 全静的ファイル：約30.60MB。リポジトリ内の検査上限は30MiBです。
+- 初回JavaScript：約90.7KB gzip。静的なimport先まで含めて測ります。
+- トップのHTML/CSS/JavaScript：約108KB gzip推計。
+- 問題集を開くまでのHTML/CSS/JavaScript：約170KB gzip推計。問題本文のJSONは選んだ単元に応じて追加で取得します。
+- 星雲の描画コードまで：約254KB gzip推計。
 - 作品は選んだものだけ起動し、離れると描画資源を解放します。
 - 観測資料の動画は自動再生せず、再生を押した場合だけ読み込みます。
 
 上の推計はビルドの依存関係から算出したもので、実通信量の測定ではありません。HTTPヘッダー、後から選ぶ資料・画像・動画、画面操作に伴う追加読込は含みません。正確な値はVercel Usageで確認します。最新の機械判定結果はビルド後の `web/release-report.json` に出力します。
 
 Hobbyの静的アップロード上限は100MBです。配信するものはビルド済みファイルだけで、原本ZIP、node_modules、比較用候補、バックアップは含めません。[Vercel公式：Limits](https://vercel.com/docs/limits)
+
+## 今回確認したアカウント使用量
+
+HobbyのUsage表示で、Fast Data Transfer 319.24MB / 100GB、Fast Origin Transfer 16.02kB / 10GB、CDN Requests 5,807 / 100万回、Deployment Storage 598.29MBを確認しました。表示対象期間は9月28日16:00〜10月28日16:00でした。このスナップショットは将来の残量を保証しません。アカウント全体の利用量で、今回のサイトの静的ビルドはFunctions 0です。既存のHobbyプランを維持します。
 
 ## アクセスが増えたときの目安
 

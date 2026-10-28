@@ -1,0 +1,28 @@
+{
+  "checkedAt": "2026-10-29",
+  "scope": "表示コードまたは穴埋めの完成形を実コンパイラと照合。設問文・全選択肢の人手校閲を意味しません。",
+  "total": 1130,
+  "matched": 1126,
+  "notRun": [
+    {
+      "id": "r-e-111",
+      "reason": "concept or diagnostic, not executable"
+    },
+    {
+      "id": "r-w-114",
+      "reason": "concept or diagnostic, not executable"
+    },
+    {
+      "id": "r-w-118",
+      "reason": "concept or diagnostic, not executable"
+    },
+    {
+      "id": "r-w-101",
+      "reason": "runtime capability excluded"
+    }
+  ],
+  "versions": {
+    "java": "javac 21.0.13",
+    "rust": "rustc 1.99.1 (58cf8f9c3 2026-10-13)"
+  }
+}

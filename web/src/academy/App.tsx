@@ -197,11 +197,11 @@ export function App() {
   const isSpace = path === '/space';
   return (
     <div className={`app ${isSpace ? 'app--space' : ''}`}>
-      <a className="skip" href="#main">
+      <a className="skip" href="#main" onClick={e=>{e.preventDefault();const root=e.currentTarget.getRootNode() as Document|ShadowRoot;const main=root.querySelector<HTMLElement>("#main");main?.focus();main?.scrollIntoView();}}>
         本文へ
       </a>
       <Header />
-      <main id="main" className={isSpace ? 'main main--space' : 'main'}>
+      <main id="main" tabIndex={-1} className={isSpace ? 'main main--space' : 'main'}>
         <Routes />
       </main>
       {!isSpace && <Footer />}

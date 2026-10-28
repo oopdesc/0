@@ -145,3 +145,5 @@
 .zlv-units { max-height:360px; overflow:auto; overscroll-behavior:contain; scrollbar-gutter:stable; }
 .zlv-problem-list { max-height:430px; overflow:auto; scrollbar-gutter:stable; }
 @media(max-width:640px){.zlv-units{max-height:175px}.zlv-problem-list{max-height:165px;grid-template-columns:1fr}.zlv-layout{gap:14px}.zlv-header{padding:22px 0}.zlv-card{scroll-margin-top:90px}}
+
+.zlv-supplemental{display:flex;align-items:center;justify-content:space-between;gap:1.5rem;padding:clamp(18px,3vw,30px);border:1px solid var(--line,#d5dbdf);border-radius:18px;margin:1.5rem 0;background:var(--panel,#fff)}.zlv-supplemental h3{font-size:clamp(22px,3vw,30px);margin:.5rem 0}.zlv-supplemental h3 strong{font-size:.8em}.zlv-supplemental p{max-width:65ch;line-height:1.8}.zlv-supplemental>a{flex-shrink:0;padding:12px 18px;border-radius:12px;border:1px solid currentColor;font-weight:700}[data-theme=dark] .zlv-supplemental{background:#141c24;color:#e5ecf2;border-color:#34414c}@media(max-width:700px){.zlv-supplemental{display:block}.zlv-supplemental>a{display:inline-block}}

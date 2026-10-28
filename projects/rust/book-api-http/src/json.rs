@@ -1,23 +1,30 @@
-//! 教材用の最小 JSON 生成。外部ライブラリは使わない。
-
+//! 教材用の最小JSON生成。制御文字を含め、文字列の規則を明示する。
 use crate::model::Book;
 
 pub fn book(b: &Book) -> String {
     format!("{{\"id\":{},\"title\":\"{}\",\"version\":{}}}", b.id, escape(&b.title), b.version)
 }
-
 pub fn error(message: &str) -> String {
     format!("{{\"error\":\"{}\"}}", escape(message))
 }
-
-/// エラー応答には requestId を含め、利用者がサーバ側ログと照合できるようにする（内部詳細は含めない）。
 pub fn error_with_id(message: &str, request_id: u64) -> String {
     format!("{{\"error\":\"{}\",\"requestId\":{}}}", escape(message), request_id)
 }
-
 pub fn escape(s: &str) -> String {
-    s.replace('\\', "\\\\")
-        .replace('"', "\\\"")
-        .replace('\n', "\\n")
-        .replace('\r', "\\r")
+    use std::fmt::Write as _;
+    let mut out = String::new();
+    for ch in s.chars() {
+        match ch {
+            '"' => out.push_str("\\\""),
+            '\\' => out.push_str("\\\\"),
+            '\n' => out.push_str("\\n"),
+            '\r' => out.push_str("\\r"),
+            '\t' => out.push_str("\\t"),
+            '\u{08}' => out.push_str("\\b"),
+            '\u{0c}' => out.push_str("\\f"),
+            '\u{00}'..='\u{1f}' => write!(out,"\\u{:04x}",ch as u32).unwrap(),
+            _ => out.push(ch),
+        }
+    }
+    out
 }

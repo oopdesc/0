@@ -17,8 +17,8 @@
 
 ```sh
 cd projects/rust/book-api-http
-cargo run --release -- --memory 18082        # インメモリ
-cargo run --release -- --sqlite books.db 18082  # SQLite ファイルへ保存
+cargo run --locked -j 2 --release -- --memory 18082        # インメモリ
+cargo run --locked -j 2 --release -- --sqlite books.db 18082  # SQLite ファイルへ保存
 
 # 別ターミナルで:
 curl -i http://127.0.0.1:18082/api/books/1
@@ -36,7 +36,7 @@ curl -i -X PUT -d "title=改訂タイトル&version=1" http://127.0.0.1:18082/ap
 ## テスト
 
 ```sh
-cargo test
+cargo test --locked -j 2 -- --test-threads=2
 ```
 
 インメモリ実装と SQLite（:memory:）実装の両方で、取得・未存在・楽観ロック（古い version の拒否）を検証します。
@@ -53,6 +53,8 @@ Rust では JDBC という言葉は使いません。
 | repository | `repository.rs` の `BookRepository` トレイト |
 | SQLite / DB | `SqliteBookRepository` / 比較用 `InMemoryBookRepository` |
 
-Eclipse 系のエディタではなく、通常は rust-analyzer 対応エディタ（VS Code 等）で開きます。
+Rust対応の既存Eclipseでは、プロジェクトのフォルダを開き、Cargo.tomlを入口にして編集します。別のEclipseを追加する必要はありません。rust-analyzer対応のVS Code等でも開けます。
+サイト内の「小プロジェクト → Rust」では、対象の不具合を1件含む開始ZIPと固定テストを8課題分用意しています。ZIPは課題ごとに新しいフォルダへ展開してください。
+今回、Cargoでの実テストは確認しています。Eclipse画面でのブレークポイント停止は未確認です。
 デバッグでは handler、service の分岐、repository の `params!` に breakpoint を置き、
 `id` と `version` がどう変わるかを追ってください。

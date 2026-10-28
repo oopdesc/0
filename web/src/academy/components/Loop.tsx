@@ -191,8 +191,8 @@ export function Loop({
       {problem.code && (
         <CodeBlock
           code={problem.code}
-          lang={problem.lang}
-          label={problem.harness === 'unit' ? 'コード（そのまま）' : 'コード（class と main の中身として実行）'}
+          lang={problem.displayLanguage ?? problem.lang}
+          label={problem.runnable===false ? (problem.displayLanguage==='javascript'?'JavaScript側の例':'診断メッセージの例') : problem.harness === 'unit' ? 'コード（そのまま）' : problem.lang==='rust'?'コード（fn main の中に配置）':'コード（class と main の中に配置）'}
         />
       )}
       {problem.codeNote && <p className="note">{problem.codeNote}</p>}
@@ -291,7 +291,7 @@ export function Loop({
           {/* STEP 4 */}
           <section className="step" aria-labelledby="s4">
             <h3 className="step__title" id="s4">
-              <span className="step__n">4</span> 実行して確かめる
+              <span className="step__n">4</span> {problem.runnable===false?'解説で確かめる':'実行して確かめる'}
             </h3>
             {problem.lang === 'java' && canRunLive ? (
               <>
@@ -325,19 +325,17 @@ export function Loop({
             ) : (
               <div className="measured">
                 <p className="measured__lead">
-                  {problem.lang === 'rust'
-                    ? 'Rust はブラウザでコンパイルできないため、この問題のコードは実際の rustc検証記録した結果を表示します。'
-                    : 'この問題は実行を伴わないため、検証済みの結果を表示します。'}
+                  {problem.runnable===false ? 'これは概念の確認です。コードの実行結果ではなく、下の解説と選択肢を比べます。' : 'ここでは保存した実コンパイラの検証記録を表示します。いまブラウザでコンパイルした結果ではありません。'}
                 </p>
                 {problem.verified && (
                   <dl className="measured__facts">
                     <div>
                       <dt>ツール</dt>
-                      <dd>{problem.verified.version}</dd>
+                      <dd>{problem.verified.version}{problem.verified.checkedAt ? ` / ${problem.verified.checkedAt}照合` : ' / 保存済み記録'}</dd>
                     </div>
                     <div>
                       <dt>判定</dt>
-                      <dd>{verdictLabel(problem.verified.verdict)}</dd>
+                      <dd>{problem.verified.scope==='compile-only'?'コンパイル成功（実行対象外）':verdictLabel(problem.verified.verdict)}</dd>
                     </div>
                     {problem.verified.errorCode && (
                       <div>

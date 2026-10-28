@@ -22,6 +22,15 @@ export const resources: Resource[] = [
     accent: "blue",
   },
   {
+    id: "supplemental-bank",
+    title: "補充問題集",
+    subtitle: "以前の教材もここから。Java・Rustを分野別に選んで、繰り返し練習する。新しい問題集と重複する設問を含みます。",
+    category: "学習",
+    tag: `${stats.supplemental.toLocaleString()}問・別の問題集`,
+    href: "/learn?section=supplemental#/browse",
+    accent: "mint",
+  },
+  {
     id: "code-lab",
     title: "宇宙をつくるコード実験室",
     subtitle: "Java・Rustの短いコードを編集し、結果と天体の変化を確かめる。",

@@ -114,6 +114,9 @@ export interface VerifiedFixture {
   /** 検証したソース（ハーネスで包む前の断片ではなく、包んだ後の完全なソース） */
   compiledSource?: string;
   harness?: 'body' | 'unit';
+  checkedAt?: string;
+  sourceSha256?: string;
+  scope?: 'compile-only' | 'compile-and-run';
 }
 
 /**
@@ -149,6 +152,7 @@ export interface Problem {
   code?: string;
   /** コードの前提。バージョン差・ハーネスの説明に使う。 */
   codeNote?: string;
+  displayLanguage?: 'javascript' | 'text';
   langVersion?: string;
   answer: Answer;
   /** 検証時にコンパイル・実行するか。false の概念問題では実測しない。 */

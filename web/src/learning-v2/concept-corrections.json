@@ -1,0 +1,209 @@
+{
+  "j-type": {
+    "rule": "数値の拡大変換と縮小変換を区別する",
+    "summary": "intからlongへの変換は値を保つ。longからdoubleも拡大変換だが、精度が失われる場合がある。縮小には原則キャストが必要で、範囲内の定数式などの例外もある。",
+    "contrast": "Rustの数値変換にはasやFrom/TryFromを使う。型の強制変換には参照のderefなど別の規則もあり、すべての変換が禁止されるわけではない。"
+  },
+  "j-division": {
+    "rule": "整数の除算はゼロ方向へ丸める",
+    "summary": "int同士の7/2は3、-7/2は-3。小数の結果が必要なら、除算前に少なくとも片方をdoubleなどに変換する。"
+  },
+  "j-compound-assignment": {
+    "rule": "複合代入は左辺を一度だけ評価する",
+    "summary": "byte bのb+=1は演算後の縮小変換を伴うが、b=b+1はそのままでは代入できない。副作用のある左辺を二度評価する単純な展開とは異なる。"
+  },
+  "j-string": {
+    "rule": "Stringの内容は不変。連結の結果と元の値を区別する",
+    "summary": "中身の比較はequalsを使う。大きな文字列を反復して組み立てるときはStringBuilderを検討する。変更のない操作が必ず別のオブジェクトを作るとは限らない。",
+    "contrast": "RustのStringは所有するUTF-8文字列で、可変に扱うこともできる。JavaのStringと同じ不変性の規則ではない。"
+  },
+  "j-immutability": {
+    "rule": "参照の再代入禁止と、参照先の不変性を区別する",
+    "summary": "String自体は不変。List.ofのリストは構造を変更できないが、可変な要素は変わりうる。finalやrecordの参照先まで自動的に不変にはならない。"
+  },
+  "j-record": {
+    "rule": "recordは構成要素とアクセサなどを提供する",
+    "summary": "Java 16以降。構成要素のフィールドはprivate finalで、アクセサはname()の形。equals・hashCode・toStringは明示しなければ提供される。可変な参照先までは不変にならない。"
+  },
+  "j-static": {
+    "rule": "staticなメンバーはクラスに属する",
+    "summary": "staticメソッドには暗黙のthisがない。インスタンスフィールドを読むには、明示的にオブジェクトの参照を用意する。staticだからオブジェクトへ一切アクセスできないわけではない。"
+  },
+  "j-override": {
+    "rule": "インスタンスメソッドの上書きと、隠蔽を区別する",
+    "summary": "上書き可能なインスタンスメソッドは、実行時のオブジェクトの型に応じて選ばれる。staticメソッドやフィールドの隠蔽は別の規則。@Overrideで上書きの成立を確認できる。",
+    "contrast": "Rustのtraitには静的ディスパッチとdynによる動的ディスパッチがある。Javaのクラス継承をそのまま移した仕組みではない。"
+  },
+  "j-default-method": {
+    "rule": "interfaceはdefaultメソッドで既定の実装を持てる",
+    "summary": "実装クラスから上書きできる。複数のinterfaceで既定実装が衝突する場合は解決が必要になるため、追加しても常に無影響とは限らない。"
+  },
+  "j-encapsulation": {
+    "rule": "不正な状態を作る経路を制限する",
+    "summary": "フィールドを隠すだけでなく、コンストラクタや公開操作で不変条件を守る。setterを増やせば安全になるわけではなく、必要な操作を小さく公開する。"
+  },
+  "j-final": {
+    "rule": "finalが禁止するものは、付ける場所で異なる",
+    "summary": "クラスでは継承、メソッドでは上書き、変数では再代入を禁止する。finalな参照変数でも、参照先の可変オブジェクトの内容は変えられることがある。"
+  },
+  "j-private": {
+    "rule": "privateは外部への公開を制限する",
+    "summary": "Javaでは同じトップレベルのクラスやinterfaceに含まれるネストした型どうしにprivateへのアクセスが認められる場合がある。単純に「別クラスなら必ず不可」とはしない。"
+  },
+  "j-set": {
+    "rule": "Setは、その実装の等価性の規則で重複を除く",
+    "summary": "HashSetはequalsとhashCodeの契約を使い、反復順序を保証しない。TreeSetは比較結果に基づく。同じ内容と見なしたい独自型では適切な等価性を定義する。",
+    "contrast": "RustのHashSetではEqとHashを整合させる。言語の型システムや実装は同一ではない。"
+  },
+  "j-map": {
+    "rule": "Mapのgetでnullが返る理由を区別する",
+    "summary": "HashMapなどnull値を許す実装では、getのnullは未登録と登録済みnullの両方を意味する。必要ならcontainsKeyで区別する。すべてのMap実装がnullを許すわけではない。"
+  },
+  "j-generics": {
+    "rule": "型パラメータと型消去の範囲を理解する",
+    "summary": "List<String>は要素型の検査に役立つ。Javaのジェネリクスは型消去を使うが、すべての型情報や宣言のメタデータが消えるという意味ではない。",
+    "contrast": "Rustはジェネリックなコードを具体型ごとに単相化するのが基本。任意の型情報を実行時に自動反射できるという意味ではない。"
+  },
+  "j-iterator": {
+    "rule": "コレクションごとの反復中変更の規則を読む",
+    "summary": "ArrayListなどのイテレータは構造変更を検出するとConcurrentModificationExceptionを投げる場合がある。fail-fastは最善努力で、正しさの保証に使わない。Iterator.removeも未対応の実装がある。"
+  },
+  "j-optional": {
+    "rule": "Optionalは主に戻り値で、値がない状態を表す",
+    "summary": "空のgetは例外になる。mapやorElseなどで空の場合を扱う。フィールドや引数への利用が言語で禁止されているわけではなく、設計に応じて判断する。"
+  },
+  "j-throws": {
+    "rule": "throwsは投げうる例外を宣言する",
+    "summary": "throwsを書くだけでは例外は発生しない。検査例外はcatchまたは宣言が必要になる。未捕捉例外はそのスレッドを終了させうるが、必ずJVM全体が停止するとは限らない。"
+  },
+  "j-finally": {
+    "rule": "finallyは通常の制御移動で後処理を行う",
+    "summary": "returnや例外でtryを抜ける際にも通常は実行される。プロセスの強制終了などでは保証されない。リソースにはtry-with-resourcesも使う。"
+  },
+  "j-return": {
+    "rule": "finallyのreturnは、それまでの結果を置き換えうる",
+    "summary": "finallyがreturnやthrowで終了すると、tryやcatchで決まっていた戻り値や例外を覆い隠すことがある。後処理と結果の決定を分ける。"
+  },
+  "j-stacktrace": {
+    "rule": "例外の原因と、自分のコードの位置を追う",
+    "summary": "例外の型とメッセージ、呼び出し履歴を読む。Caused byやsuppressedの例外も確認し、最初に見える行だけを根本原因と断定しない。"
+  },
+  "j-arithmetic": {
+    "rule": "整数除算と浮動小数点除算の0を区別する",
+    "summary": "整数の0除算はArithmeticException。doubleの0.0除算は符号付きInfinityになる場合があり、0.0/0.0はNaNになる。"
+  },
+  "j-validation": {
+    "rule": "信頼の境界と、業務の不変条件を別々に守る",
+    "summary": "入力の型・形式・範囲は入口で検証する。別経路からも守る必要がある業務ルールやDB制約は適切な層でも保証する。「検証は一度だけ」とは一般化しない。"
+  },
+  "j-testing": {
+    "rule": "仕様から期待値を決め、実装と照合する",
+    "summary": "入力・操作・期待を分ける。期待値を検査対象の実装と同じ計算だけで作ると同じ誤りを見逃す。境界値、独立した例、必要に応じて性質や不変条件も調べる。"
+  },
+  "r-array": {
+    "rule": "配列[T;N]は長さNを型に含む",
+    "summary": "配列の長さは変えられない。スタックに置く場合も、Boxや他のデータの中に置く場合もあり、常にスタック上とは限らない。",
+    "contrast": "Javaの配列の長さは実行時の値で、int[3]の3は型名に含まれない。"
+  },
+  "r-type": {
+    "rule": "数値型と、変換の規則を区別する",
+    "summary": "u8やi32の幅は型名で決まるが、usizeの幅はターゲットに依存する。数値型の間には一般的な暗黙の拡大変換はなく、asやFrom/TryFromを使い分ける。"
+  },
+  "r-function": {
+    "rule": "関数の引数型と戻り値型を確かめる",
+    "summary": "末尾の式を値として返せる。returnで明示して返すこともでき、早期returnにも使える。末尾にセミコロンを付けた場合の型の変化を区別する。"
+  },
+  "r-string-vs-str": {
+    "rule": "Stringは所有する文字列、&strは借りた文字列のビュー",
+    "summary": "len()はUTF-8バイト数、chars().count()はUnicodeスカラー値の個数。結合文字や複数スカラーの絵文字があるため、見た目の文字数とは必ずしも同じでない。"
+  },
+  "r-slice": {
+    "rule": "スライスの添字の単位は、対象で異なる",
+    "summary": "&[T]の添字は要素数、&strの範囲はUTF-8バイト位置。strを範囲で切る場合は文字境界である必要がある。getを使うと失敗をOptionで扱える。"
+  },
+  "r-ownership": {
+    "rule": "所有する値と、その値への参照を区別する",
+    "summary": "値は所有者により管理され、moveで所有が移る。RcやArcでは所有するハンドルを共有できる。借用や参照の数と、所有を同じ数え方にしない。"
+  },
+  "r-copy": {
+    "rule": "Copyが実装された型は、移動の位置で値をコピーする",
+    "summary": "i32やbool、共有参照などはCopy。Stringと&mut TはCopyではない。スタックに置かれるかどうかだけでCopyは決まらない。"
+  },
+  "r-clone": {
+    "rule": "cloneが複製するものは、型の契約で異なる",
+    "summary": "Stringのcloneは内容を持つ独立したStringを作る。RcやArcのcloneは同じ値を指すハンドルを増やす。cloneを常に深いコピーとは説明しない。"
+  },
+  "r-reference": {
+    "rule": "&Tは共有参照。通常は参照先を直接書き換えない",
+    "summary": "共有参照は複数使える。Cell、RefCell、Mutexなどの内部可変性は別の仕組みで変更を制御する。共有参照があるなら一切変更不能、とは一般化しない。"
+  },
+  "r-mut-borrow": {
+    "rule": "同じ場所への、重なる有効な借用の衝突を避ける",
+    "summary": "同じ値へ有効な&mutと、競合する別の借用は同時に使えない。異なるフィールドやsplit_at_mutで分けた領域なら、複数の可変参照を安全に扱える場合がある。"
+  },
+  "r-scope": {
+    "rule": "字句的なスコープと、借用の有効範囲を区別する",
+    "summary": "所有する値は通常スコープ終端で破棄される。NLLでは借用は最後の使用までに短くなりうるため、必ずブロック末尾まで続くわけではない。",
+    "prereqs": [
+      "r-let"
+    ]
+  },
+  "r-drop": {
+    "rule": "通常の破棄と、破棄が保証されない経路を区別する",
+    "summary": "drop(x)で所有する値を早めに破棄できる。mem::forgetやプロセス終了など、Dropが必ず呼ばれるとは限らない経路もある。参照のdropは参照先の値の破棄ではない。"
+  },
+  "r-struct": {
+    "rule": "structは、フィールドに名前を付けたデータの組",
+    "summary": "Copyでないフィールドを部分moveした後も、残ったフィールドを使える場合がある。ただしDropを実装する型からの部分moveなどには制約がある。"
+  },
+  "r-enum": {
+    "rule": "enumは選択肢ごとに異なるデータを持てる",
+    "summary": "Option<T>やResult<T,E>もenum。matchでどの形かを調べ、その形のデータを取り出せる。",
+    "contrast": "Javaのenumもフィールドを持てるが、Rustのバリアントごとに形が異なるデータ型と同じ仕組みではない。Javaのsealedな型階層との比較もできる。"
+  },
+  "r-match": {
+    "rule": "matchでは対象の可能な値を網羅する",
+    "summary": "パターンを網羅するか、必要に応じて_で残りを扱う。到達できないパターンの警告も確認する。",
+    "contrast": "Javaの従来のswitch文とswitch式では網羅性の条件が異なる。単にJavaのswitchは網羅しなくてよい、とまとめない。"
+  },
+  "r-unwrap": {
+    "rule": "unwrapもexpectも、NoneやErrでpanicする",
+    "summary": "expectはメッセージを付けるが、panicを防ぐ仕組みではない。回復や伝播が必要ならmatch、if let、?などを使う。"
+  },
+  "r-error-propagation": {
+    "rule": "?は、失敗や値なしを早く返すために使える",
+    "summary": "ResultではErrを早く返し、必要に応じてFromによるエラー変換を行う。OptionではNoneを早く返す。戻り値の型など、使える文脈に条件がある。"
+  },
+  "r-trait": {
+    "rule": "traitの境界と、dynで扱える条件を確かめる",
+    "summary": "ジェネリクスは静的ディスパッチの基本となる。dyn Traitは対応するtraitで動的ディスパッチに使えるが、すべてのtraitがdyn互換ではない。"
+  },
+  "r-visibility": {
+    "rule": "privateな項目は、そのモジュールと子孫で扱える",
+    "summary": "pubで項目を公開しても、外部から辿る経路の可視性も必要。pub(crate)やpub(super)などで公開範囲を絞れる。"
+  },
+  "r-testing": {
+    "rule": "#[test]の関数で期待する性質を確認する",
+    "summary": "assert_eq!は二つの値が等しいかを検査し、違えばpanicする。左を実測、右を期待値に置くのは読みやすさの慣習であり、引数位置が役割を強制するものではない。"
+  },
+  "r-panic": {
+    "rule": "panicの扱いはビルド設定やターゲットにも依存する",
+    "summary": "unwindならスタックを巻き戻し、abortならプロセスを終了する。通常の回復可能な失敗はResultで表す。catch_unwindですべてのpanicを捕捉できるわけではない。"
+  },
+  "r-wasm-boundary": {
+    "rule": "この教材のWasmでは数値と線形メモリのABIを使う",
+    "summary": "文字列をポインタと長さで受け渡すのは、この教材で採用した方式。WebAssembly全体が数値しか渡せないわけではなく、参照型やコンポーネントモデルなどもある。",
+    "contrast": "JavaもJNIなど異なる実行系との境界を持ちうる。JVMがあるから境界の問題が一切ないわけではない。"
+  },
+  "r-determinism": {
+    "rule": "同じ結果の再現には、入力と環境の条件も揃える",
+    "summary": "乱数は種を固定するだけでなく、生成器や呼び出し順序も揃える。時刻、浮動小数点、HashMapの反復順などにも依存しうるため、種だけで万能な保証にはしない。"
+  },
+  "r-format": {
+    "rule": "DisplayとDebugは、異なる整形の契約",
+    "summary": "{}はDisplay、{:?}はDebugを使う。Debugも実装が必要で、すべての型を無条件に表示できるわけではない。println!は表示後に改行するマクロ。",
+    "prereqs": [
+      "r-type"
+    ]
+  }
+}

@@ -160,7 +160,7 @@ export default function App() {
   const known = routes.has(path);
   return (
     <div onClick={links} className={path === "/" ? "home-route" : undefined}>
-      <a className="skip-link" href="#main">
+      <a className="skip-link" href="#main" onClick={e=>{e.preventDefault();const main=document.getElementById("main");main?.focus();main?.scrollIntoView();}}>
         本文へ
       </a>
       <header className="site-header">

@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import stats from "../src/generated/learning-stats.json";
 import { readFileSync } from "node:fs";
+import { PROBLEMS as supplemental } from "../src/academy/content";
 import { LESSONS } from "../src/orbit/domain/lessons";
 import { ART_EXHIBITS, readExhibit } from "../src/art/exhibits";
 
@@ -14,6 +15,9 @@ test("public counts match the published problems, without counting experiments a
   assert.equal(stats.total, all.length);
   assert.equal(stats.java + stats.rust, stats.total);
   assert.equal(stats.experiments, LESSONS.length);
+  assert.equal(stats.supplemental,supplemental.length);
+  assert.equal(stats.supplementalJava + stats.supplementalRust,stats.supplemental);
+  assert.equal(stats.exams,packs.reduce((n,p)=>n+p.counts.exams,0));
 });
 test("art links survive reloads and preserve older galaxy view links", () => {
   for (const [id] of ART_EXHIBITS) assert.equal(readExhibit("?exhibit="+id), id);
@@ -23,4 +27,5 @@ test("art links survive reloads and preserve older galaxy view links", () => {
   assert.equal(readExhibit("?model=galaxy"), "galaxy");
   assert.equal(readExhibit("?exhibit=../../private"), "solar");
   assert.equal(readExhibit(""), "solar");
+  assert.equal(readExhibit("?exhibit=celestial"), "galaxy");
 });

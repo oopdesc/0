@@ -22,8 +22,8 @@ const RUST_KEYWORDS = new Set([
 
 type Tok = { t: 'kw' | 'str' | 'num' | 'com' | 'fn' | 'ty' | 'punc' | 'id' | 'ws'; v: string };
 
-function tokenize(line: string, lang: 'java' | 'rust'): Tok[] {
-  const kw = lang === 'java' ? JAVA_KEYWORDS : RUST_KEYWORDS;
+function tokenize(line: string, lang: 'java' | 'rust' | 'javascript' | 'text'): Tok[] {
+  const kw = lang === 'java' ? JAVA_KEYWORDS : lang === 'rust' ? RUST_KEYWORDS : new Set<string>();
   const out: Tok[] = [];
   const re = /(\/\/[^\n]*|\/\*[\s\S]*?\*\/|#\[[^\]]*\]|"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|\b\d[\w.]*\b|[A-Za-z_$][\w$]*|\s+|.)/g;
   let m: RegExpExecArray | null;
@@ -52,7 +52,7 @@ export function CodeBlock({
   dense,
 }: {
   code: string;
-  lang: 'java' | 'rust';
+  lang: 'java' | 'rust' | 'javascript' | 'text';
   highlight?: number[];
   startLine?: number;
   label?: string;

@@ -1,9 +1,13 @@
 {
   "schema": 1,
-  "total": 1181,
+  "supplemental": 1130,
+  "supplementalJava": 630,
+  "supplementalRust": 500,
+  "total": 1261,
   "questionBank": 922,
-  "executionPractice": 259,
+  "executionPractice": 339,
   "experiments": 6,
-  "java": 838,
-  "rust": 343
+  "exams": 12,
+  "java": 878,
+  "rust": 383
 }

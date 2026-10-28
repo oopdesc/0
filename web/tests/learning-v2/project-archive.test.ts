@@ -18,3 +18,14 @@ test('project archive refuses traversal, duplicate paths, oversized entries and 
  const large=structuredClone(bundle);large.files[0].content='x'.repeat(200_001);assert.throws(()=>makeProjectArchive(large,bundle.missionId));
  assert.throws(()=>makeProjectArchive(bundle,'java:mission-other'));
 });
+
+const rustBundle=JSON.parse(readFileSync(new URL('../../public/learning-v2/rust/examples/projects/mission-http-json.json',import.meta.url),'utf8'));
+test('Rust mission ZIP carries its starter, locked dependencies and real test, without Java paths',()=>{
+ const out=unzipSync(makeProjectArchive(rustBundle,rustBundle.missionId));
+ assert.ok(out['projects/rust/book-api-http/Cargo.lock']);
+ assert.ok(strFromU8(out['projects/rust/book-api-http/src/main.rs']).includes('mission_json'));
+ assert.ok(strFromU8(out['README-START.md']).includes('cargo test'));
+ assert.ok(!Object.keys(out).some(p=>p.startsWith('backend/')));
+ const wrong=structuredClone(rustBundle);wrong.files[1].path='backend/java-learning-v2/pom.xml';assert.throws(()=>makeProjectArchive(wrong,wrong.missionId));
+ assert.throws(()=>makeProjectArchive(rustBundle,'java:mission-http-json'));
+});

@@ -12,10 +12,14 @@ export interface RouterState {
 
 const Ctx = createContext<RouterState>({ path: '/', navigate: () => {} });
 
-function currentPath(): string {
-  const p = decodeURIComponent((window.location.hash.slice(1) || '/').split('?')[0]).replace(/\/+$/, '');
-  return p === '' ? '/' : p;
+export function supplementalPath(hash: string): string {
+  if (!hash.startsWith('#/')) return '/';
+  try {
+    const path = decodeURIComponent(hash.slice(1).split('?')[0]).replace(/\/+$/, '');
+    return path === '' ? '/' : path;
+  } catch { return '/browse'; }
 }
+function currentPath(): string { return supplementalPath(window.location.hash); }
 
 export function RouterProvider({ children }: { children: ReactNode }) {
   const [path, setPath] = useState(currentPath);

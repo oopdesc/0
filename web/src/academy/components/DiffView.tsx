@@ -22,7 +22,7 @@ export function predictionText(p: Problem, v: AnswerValue | null): string[] {
 
 export function actualText(p: Problem): string[] {
   const e = p.expect;
-  if (!e) return ['（この問題は実行しません）'];
+  if (!e) return p.answer.mode==='choice' ? [p.answer.options[p.answer.correct].text] : ['（この問題は実行しません）'];
   if (e.kind === 'output') return e.output.length ? e.output : ['（出力なし）'];
   if (e.kind === 'compile-error') return [`コンパイルエラー: ${e.errorCode}`];
   if (e.kind === 'runtime-error') return [`実行時例外: ${e.exception}`, ...(e.outputBefore ?? [])];
@@ -66,10 +66,10 @@ export function DiffView({ p, value, correct }: { p: Problem; value: AnswerValue
     <div className="diff">
       <div className="diff__head">
         <span className={`diff__verdict ${ungraded ? '' : correct ? 'is-ok' : 'is-bad'}`}>
-          {ungraded ? '未判定' : correct ? '一致' : 'ずれ'}
+          {ungraded ? '未判定' : correct ? (p.runnable===false?'正解':'一致') : (p.runnable===false?'見直す':'ずれ')}
         </span>
         <span className="diff__caption">
-          {ungraded ? '実行できていないため、正誤を確定しません。' : correct ? '予測と実際が一致しました。次は同じ核心を別の形で。' : 'どこでずれたかを確認する。'}
+          {ungraded ? '実行できていないため、正誤を確定しません。' : correct ? (p.runnable===false?'正解です。解説を読み、理由も確かめてください。':'予測と実際が一致しました。次は同じ核心を別の形で。') : 'どこでずれたかを確認する。'}
         </span>
       </div>
       <div className="diff__cols">
@@ -87,7 +87,7 @@ export function DiffView({ p, value, correct }: { p: Problem; value: AnswerValue
         </div>
         <div className="diff__col">
           <h4 className="diff__title">
-            検証記録の結果
+            {p.runnable===false?'解説で確かめる':'検証記録の結果'}
             {p.verified && <span className="badge badge--verified">{p.verified.tool === 'javac' || p.verified.tool === 'java' ? 'JDK検証記録' : 'rustc検証記録'}</span>}
           </h4>
           <ol className="diff__lines">

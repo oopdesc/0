@@ -20,6 +20,7 @@ const sections = [
   ["overview", "学習の入口"],
   ["concepts", "概念図"],
   ["drill", "問題を選ぶ"],
+  ["supplemental", "補充問題集"],
   ["writing", "コードを書く"],
   ["diagnostics", "途中確認"],
   ["exams", "試験"],
@@ -193,7 +194,7 @@ export default function LearningHub({
       ) : section === "concepts" ? (
         <Suspense fallback={<p className="hub-content">概念図を読み込んでいます…</p>}><ConceptOverview/></Suspense>
       ) : section === "supplemental" ? (
-        <Suspense fallback={<p className="hub-content">補充問題集を読み込んでいます…</p>}><p className="hub-content">以前の教材を追加の練習に使えます。新教材と一部重複し、全問の再検証は終えていません。確認された誤りは除外し、修正版を新教材に収録しています。 <a href="/learn?section=drill">新しい問題集へ →</a></p><Supplemental/></Suspense>
+        <Suspense fallback={<p className="hub-content">補充問題集を読み込んでいます…</p>}><p className="hub-content">追加の練習に使える別の問題集です。通常問題集との重複を含みます。1,126問のコードを実コンパイラで照合し、実行対象外の例にはその範囲を記しています。 <a href="/learn?section=drill">新しい問題集へ →</a></p><Supplemental/></Suspense>
       ) : section === "orbit" ? (
         <Suspense fallback={<p>宇宙の実験を読み込んでいます…</p>}>
           <OrbitLab />
@@ -213,7 +214,7 @@ export default function LearningHub({
       ) : section === "flow" ? (
           <Suspense fallback={<p className="hub-content">処理の流れを読み込んでいます…</p>}><FlowView search={search} /></Suspense>
       ) : section === "projects" ? (
-        <Suspense fallback={<p className="hub-content">小プロジェクトを読み込んでいます…</p>}><ProjectView /></Suspense>
+        <Suspense fallback={<p className="hub-content">小プロジェクトを読み込んでいます…</p>}><ProjectView search={search} /></Suspense>
       ) : section === "legacy-flow" ? (
         <RequestFlow />
       ) : section === "references" ? (
