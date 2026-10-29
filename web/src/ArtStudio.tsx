@@ -4,6 +4,7 @@ import "./art-gallery.css";
 import { ART_EXHIBITS, readExhibit, type ExhibitId } from "./art/exhibits";
 import UniverseCanvas, { type CameraPosition } from "./UniverseCanvas";
 import type { UniverseHandle, UniverseOptions } from "./art/universe3d";
+import ObservationGuide from "./art/ObservationGuide";
 const OrbitShowcase = lazy(() => import("./art/OrbitShowcase"));
 const NebulaExperience = lazy(() => import("./art/NebulaExperience"));
 const ParticleExperience = lazy(() => import("./art/ParticleExperience"));
@@ -16,6 +17,8 @@ const scenes = [
     description:
       "星の密度や色、塵の筋を参考に、渦巻く円盤を立体で描いています。正面と側面で、同じ星の配置がどう見えるか比べてください。",
     image: "/cosmos/m51-hubble.webp",
+    modelPreview: "/cosmos/m51-model-preview.webp",
+    referencePreview: "/cosmos/m51-reference-preview.webp",
     reference: "M51（子持ち銀河）",
     source: "https://svs.gsfc.nasa.gov/30852/",
     credit:
@@ -29,6 +32,8 @@ const scenes = [
     description:
       "中心に星を置かず、その周囲に降着円盤を描くモデルです。回転と視点の変化を観察できます。相対論的な光の軌道や重力レンズを計算するシミュレーションではありません。",
     image: "/cosmos/black-hole-nasa.jpg",
+    modelPreview: "/cosmos/black-hole-model-preview.webp",
+    referencePreview: "/cosmos/black-hole-reference-preview.webp",
     reference: "NASAの降着円盤の科学可視化",
     source: "https://svs.gsfc.nasa.gov/13326/",
     credit: "NASA’s Goddard Space Flight Center / Jeremy Schnittman",
@@ -41,6 +46,8 @@ const scenes = [
     description:
       "同じ渦巻銀河を低い視点から見ると、円盤の薄さと中心のふくらみが見えます。横からの姿を、ソンブレロ銀河の観測画像と比較してください。",
     image: "/cosmos/m104-hubble.webp",
+    modelPreview: "/cosmos/m104-model-preview.webp",
+    referencePreview: "/cosmos/m104-reference-preview.webp",
     reference: "M104（ソンブレロ銀河）",
     source: "https://svs.gsfc.nasa.gov/30855/",
     credit: "NASA and The Hubble Heritage Team (STScI/AURA)",
@@ -100,7 +107,7 @@ export default function ArtStudio({
     [mode, setMode] = useState(0),
     [seed, setSeed] = useState(42),
     [brightness, setBrightness] = useState(1.15),
-    [distance, setDistance] = useState(3.8),
+    [distance, setDistance] = useState(3.4),
     [speed, setSpeed] = useState(1),
     [autoCamera, setAutoCamera] = useState(false),
     [quality, setQuality] = useState<"standard" | "high">("standard"),
@@ -139,7 +146,7 @@ export default function ArtStudio({
       java.orbit(
         read("az", -70),
         read("el", scenes[m].elevation),
-        read("distance", 3.8),
+        read("distance", 3.4),
         read("light", 1.15),
       ),
     );
@@ -169,7 +176,11 @@ export default function ArtStudio({
     setMode(m);
     setNotice("");
     if (m !== mode) setReady(false);
-    camera(-70, scenes[m].elevation, 3.8);
+    camera(-70, scenes[m].elevation, 3.4);
+  }
+  function previewView(elevation:number) {
+    camera(-70,elevation);
+    stage.current?.scrollIntoView({block:"center",behavior:matchMedia("(prefers-reduced-motion: reduce)").matches?"auto":"smooth"});
   }
   function zoom(d: number) {
     const v = handle.current?.readView();
@@ -296,9 +307,7 @@ export default function ArtStudio({
             onClick={() => selectExhibit(id)}
           >
             <span className="art-choice-preview" aria-hidden="true">
-              <i />
-              <i />
-              <b />
+              {id === "galaxy" ? <img src="/cosmos/m51-model-preview.webp" alt="" loading="lazy"/> : <><i /><i /><b /></>}
             </span>
             <span className="art-choice-number">{n}</span>
             <strong>{title}</strong>
@@ -427,7 +436,7 @@ export default function ArtStudio({
               >
                 <img
                   className="scene-swatch"
-                  src={s.image}
+                  src={observation?s.referencePreview:s.modelPreview}
                   alt=""
                   loading="lazy"
                 />
@@ -465,7 +474,7 @@ export default function ArtStudio({
                 </button>
                 <button
                   disabled={observation || !java}
-                  onClick={() => camera(-70, scene.elevation, 3.8)}
+                  onClick={() => camera(-70, scene.elevation, 3.4)}
                 >
                   視点を戻す
                 </button>
@@ -623,6 +632,7 @@ export default function ArtStudio({
               {notice}
             </p>
           )}
+          {!observation && <ObservationGuide onFront={()=>previewView(85)} onSide={()=>previewView(7)} available={!!java&&ready}/> }
           <section className="art-colophon">
             <div>
               <span className="eyebrow">ソースを読む</span>

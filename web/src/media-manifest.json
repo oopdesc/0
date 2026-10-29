@@ -28,5 +28,41 @@
     "bytes": 2877866,
     "sha256": "e4cf160a9d115717fb8c095f037ff73fb421b5675e7374934d992ec32460e95f",
     "gitBlob": "3ca9e66d52a1b0ec5a060b02ddd32bfe4e8369be"
+  },
+  {
+    "path": "cosmos/black-hole-model-preview.webp",
+    "bytes": 2366,
+    "sha256": "ca41cfdc25fec57f5bc3c17695335d0c543a5fedd21f0a4c03962ccac7f263ce",
+    "gitBlob": "d65945eb5a8fbb51fd840d23edd9fb60a722a750"
+  },
+  {
+    "path": "cosmos/black-hole-reference-preview.webp",
+    "bytes": 2340,
+    "sha256": "2b72e88826446c47abfab84a51d5c36a66ce67d8ca7199a4e53470aeaa279cc6",
+    "gitBlob": "5599a97b222f36f67b3fc47a78356758dcee20a6"
+  },
+  {
+    "path": "cosmos/m104-model-preview.webp",
+    "bytes": 1580,
+    "sha256": "71a1336d26aa879ef21a80a1a5a17e9d60b9ac08417565819f6c01651cee29d2",
+    "gitBlob": "e534b53e33ef12be105afd797ec2ae81cfcc211d"
+  },
+  {
+    "path": "cosmos/m104-reference-preview.webp",
+    "bytes": 2244,
+    "sha256": "f06efa8659b808c38093fe39fa48a1a505e6c66b5be49363880342483cb595c1",
+    "gitBlob": "1444781fd05f5749b5e92ee0976841d651734f2c"
+  },
+  {
+    "path": "cosmos/m51-model-preview.webp",
+    "bytes": 2780,
+    "sha256": "d1d4b71625d189a323fcc3638ee2342e674a8d5bd853e546b57f2b3a2ecd6d4d",
+    "gitBlob": "ba9ef0771f00f228f7f95fb9d20af93ffae5bf3b"
+  },
+  {
+    "path": "cosmos/m51-reference-preview.webp",
+    "bytes": 4210,
+    "sha256": "c75499e6087eaf6f97c719048f70779dff0b8c27a3aba3e92a5125e87d6b34cb",
+    "gitBlob": "6fa1a6b99e8231668b0d37337f212a167d312ce3"
   }
 ]

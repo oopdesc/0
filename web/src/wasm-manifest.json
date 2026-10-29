@@ -1,10 +1,10 @@
 {
-  "url": "/wasm/cosmic-core-09319f759243.wasm",
-  "sha256": "09319f7592437a7fcfc617739f776714503ee2399c2f0ddc0e05985d4769b483",
+  "url": "/wasm/cosmic-core-235435cd4e73.wasm",
+  "sha256": "235435cd4e73d63edcd19893a41d7d27f6857933d19c55d1c0ef41047edb8d8e",
   "bytes": 28806,
   "sourceHashes": {
     "backend/rust/Cargo.toml": "c86be39b2b9ec3362a1e70c28af58f176ac93806f5f033f6aa64af442443a2d0",
     "backend/rust/cosmic-core/Cargo.toml": "1231420c83380b4c50e97ed349cb40437ea09c387f3b58bb0b3fe8d125560fbf",
-    "backend/rust/cosmic-core/src/lib.rs": "d842d8875dd03be2b0dc954c6b6c0e0217b119bc78e5ee458aa014daac7b3977"
+    "backend/rust/cosmic-core/src/lib.rs": "3cd749e159efc16b7a72e52804e867c7afba7b8872d1cc244ef130290e650812"
   }
 }

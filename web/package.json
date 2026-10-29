@@ -11,7 +11,7 @@
     "build": "npm run stats && tsc -b && vite build && node ../tools/check-release.mjs",
     "preview": "vite preview --host 127.0.0.1 --port 18420 --strictPort",
     "test": "tsx --test --test-concurrency=2 tests/*.test.ts tests/learning-v2/*.test.ts",
-    "stats": "tsx tools/generate-learning-stats.ts"
+    "stats": "tsx tools/generate-learning-stats.ts && tsx tools/generate-study-index.ts"
   },
   "dependencies": {
     "lucide-react": "0.468.0",

@@ -147,3 +147,21 @@
 @media(max-width:640px){.zlv-units{max-height:175px}.zlv-problem-list{max-height:165px;grid-template-columns:1fr}.zlv-layout{gap:14px}.zlv-header{padding:22px 0}.zlv-card{scroll-margin-top:90px}}
 
 .zlv-supplemental{display:flex;align-items:center;justify-content:space-between;gap:1.5rem;padding:clamp(18px,3vw,30px);border:1px solid var(--line,#d5dbdf);border-radius:18px;margin:1.5rem 0;background:var(--panel,#fff)}.zlv-supplemental h3{font-size:clamp(22px,3vw,30px);margin:.5rem 0}.zlv-supplemental h3 strong{font-size:.8em}.zlv-supplemental p{max-width:65ch;line-height:1.8}.zlv-supplemental>a{flex-shrink:0;padding:12px 18px;border-radius:12px;border:1px solid currentColor;font-weight:700}[data-theme=dark] .zlv-supplemental{background:#141c24;color:#e5ecf2;border-color:#34414c}@media(max-width:700px){.zlv-supplemental{display:block}.zlv-supplemental>a{display:inline-block}}
+.zlv-exam-review{margin:26px 0;padding:22px;border:1px solid var(--zlv-border,#d4dce6);background:var(--zlv-card,#fff);border-radius:12px}.zlv-exam-review h4{margin:0 0 10px;font-size:21px}.zlv-exam-review p{font-size:13px;line-height:1.8}.zlv-exam-review>label{display:flex;align-items:center;gap:12px;font-size:13px;flex-wrap:wrap}.zlv-exam-review select{font:inherit;border:1px solid currentColor;background:transparent;color:inherit;padding:9px;min-height:44px;border-radius:8px}.zlv-exam-review ol{padding:0;list-style:none}.zlv-exam-review li{display:grid;grid-template-columns:105px minmax(0,1fr);gap:15px;border-bottom:1px solid var(--zlv-border,#d4dce6);padding:14px 0}.zlv-exam-review li button{font:inherit;color:inherit;border:0;background:transparent;text-align:left;cursor:pointer;min-height:40px;padding:0;line-height:1.7}.zlv-exam-review li button:hover{text-decoration:underline}.zlv-exam-review li small,.zlv-exam-review li a{display:block;font-size:12px;margin:5px 0;line-height:1.8}.exam-result-tag{align-self:start;text-align:center;font-size:11px;border:1px solid currentColor;border-radius:5px;padding:5px;color:#5d6170}.exam-result-tag.result-correct{color:#286549}.exam-result-tag.result-wrong{color:#83531f}[data-theme=dark] .zlv-exam-review{background:#131e2b;border-color:#3c5067;color:#eaf1fa}[data-theme=dark] .exam-result-tag{color:#bdcbdc}[data-theme=dark] .exam-result-tag.result-correct{color:#9cdbba}[data-theme=dark] .exam-result-tag.result-wrong{color:#f0c58e}.zlv-exam-question:focus-visible{outline:3px solid #6584c9;outline-offset:7px;scroll-margin-top:110px}@media(max-width:600px){.zlv-exam-review{padding:15px}.zlv-exam-review li{grid-template-columns:1fr;gap:5px}.exam-result-tag{justify-self:start}}
+.zlv-backend-path {margin:34px 0;border-top:1px solid var(--z-line);padding-top:24px}
+.zlv-backend-path h3 {font-size:25px;margin:0 0 8px}
+.zlv-backend-path p {font-size:13px}
+.zlv-backend-path ol {display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px;list-style:none;padding:0;margin:20px 0}
+.zlv-backend-path li a {display:grid;gap:12px;height:100%;padding:22px;background:var(--z-panel);border:1px solid var(--z-line);border-radius:10px}
+.zlv-backend-path li a:hover {border-color:var(--z-blue)}
+.zlv-backend-path small {color:var(--z-blue);font-size:11px}
+.zlv-backend-path strong {font-size:17px}
+.zlv-backend-path li span {font-size:12px;line-height:1.8;color:var(--z-muted)}
+.zlv-backend-path p a {text-decoration:underline;color:var(--z-blue)}
+@media(max-width:700px){.zlv-backend-path ol{grid-template-columns:1fr}}
+.zlv-exam-answered {display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap;margin:20px 0;font-size:12px;color:var(--z-muted)}
+.zlv-exam-answered button,.zlv-submit-confirm>button {min-height:44px;border:1px solid var(--z-line);padding:10px 13px;border-radius:7px;background:var(--z-panel);color:var(--z-fg)}
+.zlv-exam-nav button.is-answered {border-color:var(--z-blue);background:color-mix(in srgb,var(--z-blue) 9%,var(--z-panel));color:var(--z-fg)}
+.zlv-submit-confirm {padding:18px;border:1px solid var(--z-line);background:var(--z-panel);border-radius:10px;margin-top:20px;display:flex;gap:12px;flex-wrap:wrap}
+.zlv-submit-confirm p {width:100%;font-size:13px;margin:0 0 8px}
+.zlv-submit-confirm .zlv-primary {margin:0;background:var(--z-blue);color:#fff}

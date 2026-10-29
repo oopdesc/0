@@ -66,7 +66,7 @@ export default function HomeHero({ paused }: { paused: boolean }) {
             問題を選ぶ <span aria-hidden="true">→</span>
           </a>
         </div>
-        <div className="home-quick-links"><a href={resume}>続きから →</a><a href="/learn?section=concepts">概念図 →</a><a href="/learn?section=exams">試験 →</a><a href="/learn?section=supplemental#/browse">補充問題 {stats.supplemental.toLocaleString()}問 →</a><a href="/art">太陽系の模型 →</a><a href="https://github.com/oopdesc/all-beings-flourishing" target="_blank" rel="noreferrer">著作を読む ↗</a></div>
+        <div className="home-quick-links"><a href={resume}>続きから →</a><a href="/learn?section=today">今日の学習 →</a><a href="/learn?section=concepts">概念図 →</a><a href="/learn?section=exams">試験 →</a><a href="/learn?section=supplemental#/browse">補充問題 {stats.supplemental.toLocaleString()}問 →</a><a href="/art">太陽系の模型 →</a><a href="https://github.com/oopdesc/all-beings-flourishing" target="_blank" rel="noreferrer">著作を読む ↗</a></div>
         <div className="home-learning-numbers" aria-label="新しい教材の実際の件数">
           <a href="/learn?section=drill&lang=java">
             <strong>{counts.java ?? "—"}</strong><span>Javaの問題（コード記述を含む）</span>

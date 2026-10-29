@@ -28,9 +28,11 @@ pub fn galaxy(count: usize, seed: u32) -> Vec<f32> {
         let angle = if !central && i % 4 == 0 {
             random() * TAU
         } else {
-            arm + r * 5.7 + (random() + random() + random() - 1.5) * (0.65 + r * 0.7)
+            // Keep two recognisable arms, with a diffuse population between
+            // them. This is an illustrative density model, not an N-body run.
+            arm + r * 5.7 + (random() + random() + random() - 1.5) * (0.40 + r * 0.50)
         };
-        let scatter = (1.0 - r) * 0.1;
+        let scatter = (1.0 - r) * 0.07;
         out.extend_from_slice(&[
             r * angle.cos() + (random() - 0.5) * scatter,
             r * angle.sin() + (random() - 0.5) * scatter,

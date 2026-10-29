@@ -76,3 +76,21 @@ export function gradeExamChoices(attempt: ExamAttempt, exam: Exam, questions: Qu
   }
   return {correct,total:exam.choiceQuestionIds.length,unanswered,ungradedCode:exam.codeQuestionIds.length};
 }
+
+/** Restore exported attempts without replacing an existing submitted answer with an older draft. */
+export function importExamState(raw:string,current:ExamState):{ok:true;state:ExamState;added:number;retained:number}|{ok:false;error:string}{
+ try{
+  const incoming=parseExamState(raw),safeCurrent=parseExamState(JSON.stringify(current));
+  const attempts=[...safeCurrent.attempts],positions=new Map(attempts.map((a,i)=>[a.attemptId,i]));let added=0,retained=0;
+  for(const next of incoming.attempts){
+   const at=positions.get(next.attemptId);
+   if(at===undefined){positions.set(next.attemptId,attempts.length);attempts.push(next);added++;continue;}
+   const old=attempts[at];
+   if(['examId','packVersion','examFingerprint','startedAt','deadlineAt'].some(k=>old[k as keyof ExamAttempt]!==next[k as keyof ExamAttempt]))throw Error('同じ受験IDに異なる試験内容が含まれています。');
+   if(old.submittedAt===null&&next.submittedAt!==null)attempts[at]=next;
+   else retained++;
+  }
+  const state=parseExamState(JSON.stringify({schema:'zero-exam-state/1',attempts}));
+  return {ok:true,state,added,retained};
+ }catch(e){return {ok:false,error:e instanceof Error?e.message:'取り込めません。'};}
+}

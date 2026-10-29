@@ -29,15 +29,19 @@ case "${1:-help}" in
   java-browser) exec node tools/build-java-browser.mjs ;;
   problem-java-browser) exec node tools/build-problem-java.mjs ;;
   test-web) exec npm --prefix web test ;;
+  test-backend-contracts)
+    export JAVA_HOME
+    exec node tools/verify-backend-contracts.mjs ;;
   build) exec npm --prefix web run build ;;
   wasm) exec node tools/build-wasm.mjs ;;
   verify)
     "$ROOT/tools/portfolio.sh" test-java
     "$ROOT/tools/portfolio.sh" test-java-browser
     "$ROOT/tools/portfolio.sh" test-rust
+    "$ROOT/tools/portfolio.sh" test-backend-contracts
     "$ROOT/tools/portfolio.sh" test-web
     node tools/test-wasm.mjs
     node tools/check-build-inputs.mjs
     npm --prefix web run build ;;
-  *) print 'Usage: ./tools/portfolio.sh web | local-learning | java | rust | java-browser | problem-java-browser | test-java-browser | test-java | test-rust | test-web | wasm | build | verify' ;;
+  *) print 'Usage: ./tools/portfolio.sh web | local-learning | java | rust | java-browser | problem-java-browser | test-java-browser | test-java | test-rust | test-backend-contracts | test-web | wasm | build | verify' ;;
 esac

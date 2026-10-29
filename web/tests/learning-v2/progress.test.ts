@@ -77,3 +77,36 @@ test('merging live and stale state retains later other-language records and draf
  const combined=mergeProgress(live,old);
  assert.equal(combined.drafts[rust].content,'new Rust draft');assert.equal(combined.records[rustRecord].wrong,1);assert.equal(combined.records[k].blindCorrect,1);
 });
+
+import {recordCodeCheck,recordManualCodeCheck} from '../../src/learning-v2/progress';
+test('a later blind retrieval is not permanently labelled assisted after an earlier solution',()=>{
+ const yesterday=now-2*86400000;let s=recordPrediction(emptyProgress(),k,true,yesterday);
+ s=recordPrediction(s,k,true,yesterday+1000);assert.equal(s.records[k].assistedCorrect,1);
+ s=recordPrediction(s,k,true,now);assert.equal(s.records[k].blindCorrect,2);assert.equal(s.records[k].lastOutcome,'correct');
+ s=markExposure(s,k,'hint',now+1000);s=recordPrediction(s,k,true,now+2000);assert.equal(s.records[k].assistedCorrect,2);
+});
+
+test('a past hint alone does not taint future retrieval; an answer still visible does',()=>{
+ const past=markExposure(emptyProgress(),k,'hint',now-2*86400000);
+ const fresh=recordPrediction(past,k,true,now);assert.equal(fresh.records[k].blindCorrect,1);
+ const visible=recordPrediction(past,k,true,now,true);assert.equal(visible.records[k].assistedCorrect,1);assert.equal(visible.records[k].blindCorrect,0);
+});
+test('fixed-test history, self-report, and prediction remain separate and roundtrip safely',()=>{
+ let s=recordCodeCheck(emptyProgress(),rust,'passed',now-2000);s=recordCodeCheck(s,rust,'failed',now-1000);s=recordManualCodeCheck(s,rust,now);
+ assert.equal(s.records[rust].codePasses,1);assert.equal(s.records[rust].codeFailures,1);assert.equal(s.records[rust].manualCodeChecks,1);assert.equal(s.records[rust].blindCorrect,0);assert.equal(s.records[rust].lastOutcome,'self-check');
+ const out=importProgress(exportProgress(s),emptyProgress());assert.ok(out.ok);assert.deepEqual(out.state,s);
+ for(const status of ['timeout','unsupported','not-run'])assert.equal(recordCodeCheck(s,rust,status,now),s);
+ assert.equal(recordCodeCheck(s,k,'passed',now),s);
+ const bad=JSON.parse(exportProgress(s));bad.records[rust].codePasses=-1;assert.equal(importProgress(JSON.stringify(bad),s).ok,false);
+});
+
+test('a failed attempt restarts the review ladder; a clock reversal cannot extend it',()=>{
+ let s=recordPrediction(emptyProgress(),k,true,now-9*86400000);
+ s=recordRecall(s,k,now-7*86400000);s=recordRecall(s,k,now-4*86400000);
+ assert.equal(s.records[k].reviewStep,2);
+ assert.equal(recordRecall(s,k,now-5*86400000),s);
+ s=recordPrediction(s,k,false,now);assert.equal(s.records[k].reviewStep,0);
+ const code=recordCodeCheck(emptyProgress(),rust,'passed',now-4*86400000);
+ const recalled=recordRecall(code,rust,now-2*86400000);
+ assert.equal(recordCodeCheck(recalled,rust,'failed',now).records[rust].reviewStep,0);
+});

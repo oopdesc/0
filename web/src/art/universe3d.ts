@@ -56,14 +56,14 @@ void main(){
  float c=cos(spin),s=sin(spin);p.xy=mat2(c,s,-s,c)*p.xy;
  vec4 v=modelViewMatrix*vec4(p,1.0);gl_Position=projectionMatrix*v;
  float bright=pow(luminosity,6.0);
- gl_PointSize=clamp((.65+bright*2.8)*pixelRatio*3.7/max(.6,-v.z),.65,5.5*pixelRatio);
+ gl_PointSize=clamp((.38+bright*2.6)*pixelRatio*3.7/max(.6,-v.z),.45,5.5*pixelRatio);
  float random=fract(sin(dot(position.xy,vec2(12.9898,78.233)))*43758.5453);
- vec3 warm=vec3(1.0,.58,.23),cool=vec3(.22,.47,1.0);
- tint=mix(warm,cool,smoothstep(.12,.55,r)*.87);
+ vec3 warm=vec3(1.0,.68,.35),cool=vec3(.28,.49,1.0);
+ tint=mix(warm,cool,smoothstep(.12,.55,r)*.86);
  if(mode==1.0)tint=mix(vec3(1.0,.27,.06),vec3(1.0,.86,.58),smoothstep(.24,.65,r));
  if(mode==3.0)tint=mix(vec3(.68,.78,1.),vec3(1.,.85,.68),random);
  if(mode==0.0&&r>.27&&random>.96)tint=vec3(1.0,.46,.56);
- intensity=(.07+luminosity*.5)*(mode==3.0?.75:mode==1.0?.13:mix(.09,.8,smoothstep(.01,.28,r)));
+ intensity=(.07+luminosity*.5)*(mode==3.0?.75:mode==1.0?.13:mix(.06,.32,smoothstep(.01,.28,r)));
 }`;
 const starFragment = `
 uniform float brightness;varying vec3 tint;varying float intensity;
@@ -86,13 +86,13 @@ void main(){vec2 p=point;float r=length(p);if(r>1.22)discard;float a=atan(p.y,p.
  if(mode==1.){float orbit=a-time*.05/(r+.2);float lanes=.55+.45*sin(r*120.+orbit*13.+n*8.);
  density=smoothstep(.23,.28,r)*(1.-smoothstep(.8,1.1,r))*exp(-r*1.2)*(.25+n*.8)*lanes;
  col=mix(vec3(1.,.18,.025),vec3(1.,.85,.55),pow(1.-r,1.4));
- }else{float spiral=a*2.-r*11.4-time*.012/(r+.3);float arm=pow(.5+.5*cos(spiral+n*2.2),2.);
- float dust=smoothstep(.42,.63,fbm(p*27.+2.))*(.4+.6*arm);
+ }else{float spiral=a*2.-r*11.4-time*.012/(r+.3);float arm=pow(.5+.5*cos(spiral+(n-.5)*1.35),3.);
+ float dust=pow(.5+.5*cos(spiral+.48+(n-.5)*.7),9.)*smoothstep(.08,.28,r);
  float cloud=fbm(p*35.+vec2(seed*.02,seed*.04));
- density=exp(-r*2.8)*(.32+arm*1.8)*(.2+cloud*1.8)*(1.-dust*.78);
- density+=exp(-r*r*68.)*.55;density*=1.-smoothstep(.87,1.21,r);
- col=mix(vec3(1.,.53,.21),vec3(.10,.29,.72),smoothstep(.08,.39,r));
- col=mix(col,vec3(.9,.24,.42),arm*pow(fine,4.)*.65);
+ density=exp(-r*2.55)*(.18+arm*2.65)*(.38+cloud*1.35)*(1.-dust*.86);
+ density+=exp(-r*r*62.)*.62;density*=1.-smoothstep(.87,1.21,r);
+ col=mix(vec3(1.,.66,.35),vec3(.16,.34,.74),smoothstep(.09,.42,r));
+ col=mix(col,vec3(.94,.28,.43),arm*pow(fine,4.)*.9);
  }
  gl_FragColor=vec4(col*brightness,density*layer*(mode==1.?2.5:1.));
  #include <tonemapping_fragment>
@@ -101,7 +101,7 @@ void main(){vec2 p=point;float r=length(p);if(r>1.22)discard;float a=atan(p.y,p.
 const glowFragment = `varying vec2 point;uniform float brightness;uniform float mode;
 void main(){float r=length(point);float alpha;vec3 c;
 if(mode==1.){alpha=exp(-pow((r-.226)*75.,2.))*.8+exp(-pow((r-.235)*22.,2.))*.14;c=vec3(1.,.64,.28);}
-else{alpha=exp(-r*r*38.)*.24;c=vec3(1.,.78,.5);}
+else{alpha=exp(-r*r*38.)*.28;c=vec3(1.,.86,.66);}
 gl_FragColor=vec4(c*brightness,alpha);
 #include <tonemapping_fragment>
 #include <colorspace_fragment>
@@ -128,7 +128,7 @@ export function createUniverse(
   renderer.toneMappingExposure = 1.15;
   renderer.setClearColor(0x02040a, 1);
   const scene = new THREE.Scene(),
-    camera = new THREE.PerspectiveCamera(42, 1, 0.05, 40);
+    camera = new THREE.PerspectiveCamera(38, 1, 0.05, 40);
   camera.up.set(0, 0, 1);
   camera.position.set(1.1, -2.8, 2.6);
   const controls = new OrbitControls(camera, canvas);

@@ -4,6 +4,7 @@ import { requestTrace } from "./request-flow";
 import { store, type Route } from "./arena/orrery/core/appStore";
 import "./learning-hub.css";
 import LearningOverview from "./LearningOverview";
+const TodayView = lazy(() => import("./learning-v2/TodayView"));
 const PackLearning = lazy(() => import("./learning-v2/PackLearning"));
 const FlowView = lazy(() => import("./learning-v2/FlowView"));
 const ProjectView = lazy(() => import("./learning-v2/ProjectView"));
@@ -18,6 +19,7 @@ const Source = lazy(() => import("./Secondary"));
 const ConceptOverview = lazy(() => import("./ConceptOverview"));
 const sections = [
   ["overview", "学習の入口"],
+  ["today", "今日の学習"],
   ["concepts", "概念図"],
   ["drill", "問題を選ぶ"],
   ["supplemental", "補充問題集"],
@@ -191,6 +193,8 @@ export default function LearningHub({
       </section>
       {section === "overview" ? (
         <LearningOverview />
+      ) : section === "today" ? (
+        <Suspense fallback={<p className="hub-content">今日の学習を読み込んでいます…</p>}><TodayView search={search}/></Suspense>
       ) : section === "concepts" ? (
         <Suspense fallback={<p className="hub-content">概念図を読み込んでいます…</p>}><ConceptOverview/></Suspense>
       ) : section === "supplemental" ? (

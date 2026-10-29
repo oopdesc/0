@@ -3,11 +3,11 @@
   "supplemental": 1130,
   "supplementalJava": 630,
   "supplementalRust": 500,
-  "total": 1261,
+  "total": 1287,
   "questionBank": 922,
-  "executionPractice": 339,
+  "executionPractice": 365,
   "experiments": 6,
   "exams": 12,
-  "java": 878,
-  "rust": 383
+  "java": 892,
+  "rust": 395
 }
