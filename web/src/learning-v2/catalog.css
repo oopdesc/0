@@ -253,3 +253,10 @@
   margin-top: 7px;
   line-height: 1.7;
 }
+.catalog-result {
+  scroll-margin-top: 110px;
+}
+.catalog-result:focus-visible {
+  outline: 2px solid var(--text);
+  outline-offset: 4px;
+}

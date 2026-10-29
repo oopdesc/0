@@ -121,14 +121,36 @@ export function validateCatalog(data: unknown): CatalogItem[] {
   });
 }
 export async function loadCatalog(signal?: AbortSignal) {
-  const r = await fetch("/learning-v2/catalog.json", { signal });
+  let r: Response;
+  try {
+    r = await fetch("/learning-v2/catalog.json", { signal });
+  } catch (error) {
+    if (signal?.aborted) throw error;
+    throw Error(
+      "問題一覧に接続できません。通信状況を確認して、読み直してください。",
+    );
+  }
   if (!r.ok) throw Error("問題一覧を取得できません。");
   if (Number(r.headers.get("content-length") || 0) > 1500000)
     throw Error("問題一覧が大きすぎます。");
-  const s = await r.text();
+  let s: string;
+  try {
+    s = await r.text();
+  } catch (error) {
+    if (signal?.aborted) throw error;
+    throw Error(
+      "問題一覧の受信が途中で止まりました。もう一度読み直してください。",
+    );
+  }
   if (new TextEncoder().encode(s).byteLength > 1500000)
     throw Error("問題一覧が大きすぎます。");
-  return validateCatalog(JSON.parse(s));
+  let data: unknown;
+  try {
+    data = JSON.parse(s);
+  } catch {
+    throw Error("問題一覧の形式を読み取れません。画面を更新してください。");
+  }
+  return validateCatalog(data);
 }
 export function searchCatalog(items: CatalogItem[], filter: CatalogFilter) {
   const terms = filter.query

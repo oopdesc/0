@@ -4,6 +4,7 @@ import { readFileSync } from "node:fs";
 import { buildLearningInventory } from "../tools/learning-inventory";
 import {
   catalogHref,
+  loadCatalog,
   catalogState,
   catalogSearch,
   searchCatalog,
@@ -158,4 +159,14 @@ test("direct links preserve question identity, and reject unknown URLs, traversa
   const g = raw();
   g.items[0][6] = ["not a text topic"];
   assert.throws(() => validateCatalog(g));
+});
+
+test("catalogue connection and malformed-data errors give Japanese recovery guidance", async (t) => {
+  let calls = 0;
+  t.mock.method(globalThis, "fetch", async () => {
+    if (++calls === 1) throw new TypeError("Failed to fetch");
+    return new Response("{broken", { status: 200 });
+  });
+  await assert.rejects(() => loadCatalog(), /通信状況/);
+  await assert.rejects(() => loadCatalog(), /形式を読み取れません/);
 });

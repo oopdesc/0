@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   catalogHref,
   catalogState,
@@ -19,6 +19,7 @@ const sourceNames = {
 const levels = { beginner: "初級", intermediate: "中級", advanced: "上級" };
 const pageSize = 30;
 export default function QuestionCatalog({ search }: { search: string }) {
+  const resultArea = useRef<HTMLDivElement>(null);
   const { filter, page } = catalogState(search);
   const { language, level, kind, source, query } = filter;
   const [items, setItems] = useState<CatalogItem[] | null>(null),
@@ -55,6 +56,13 @@ export default function QuestionCatalog({ search }: { search: string }) {
       source: "all",
       query: "",
     });
+  const turnPage = (next: number) => {
+    change({}, next);
+    requestAnimationFrame(() => {
+      resultArea.current?.scrollIntoView({ block: "start", behavior: "instant" });
+      resultArea.current?.focus({ preventScroll: true });
+    });
+  };
   return (
     <main className="question-catalog" aria-labelledby="catalog-title">
       <header className="catalog-heading">
@@ -150,7 +158,7 @@ export default function QuestionCatalog({ search }: { search: string }) {
         <p role="status">全問題の索引を読み込んでいます…</p>
       ) : (
         <>
-          <div className="catalog-result">
+          <div className="catalog-result" ref={resultArea} tabIndex={-1}>
             <p role="status">
               <strong>{filtered.length.toLocaleString("ja-JP")}問</strong>{" "}
               {filtered.length > 0 &&
@@ -214,7 +222,7 @@ export default function QuestionCatalog({ search }: { search: string }) {
             <nav className="catalog-pages" aria-label="問題一覧のページ">
               <button
                 disabled={current === 0}
-                onClick={() => change({}, current - 1)}
+                onClick={() => turnPage(current - 1)}
               >
                 ← 前の30問
               </button>
@@ -223,7 +231,7 @@ export default function QuestionCatalog({ search }: { search: string }) {
               </span>
               <button
                 disabled={current === pages - 1}
-                onClick={() => change({}, current + 1)}
+                onClick={() => turnPage(current + 1)}
               >
                 次の30問 →
               </button>
