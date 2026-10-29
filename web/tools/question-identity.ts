@@ -13,6 +13,9 @@ export type CountedQuestion = {
   predictive?: boolean;
   title?: string;
   topics?: string[];
+  prerequisites?: string[];
+  introduces?: string[];
+  courseRank?: number;
   level?: "beginner" | "intermediate" | "advanced";
 };
 

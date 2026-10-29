@@ -10,7 +10,7 @@ export type LegacyEntry = { source: 'academy' | 'practice'; id: string; targetId
 export type Progress = { schema: 'zero-learning-progress/1'; records: Record<string, ProgressRecord>; drafts: Record<string, Draft>; legacy: Record<string, LegacyEntry> };
 export const emptyProgress = (): Progress => ({ schema: 'zero-learning-progress/1', records: {}, drafts: {}, legacy: {} });
 export const recordKey = (id: string, version: string, step: 'prediction' | 'code') => `${id}@${version}#${step}`;
-const validKey = (s: string) => /^(?:java|rust):q[0-9]{4,}@[A-Za-z0-9._-]{1,64}#(?:prediction|code)$/.test(s);
+const validKey = (s: string) => /^(?:java|rust):(?:q[0-9]{4,}|[A-Za-z0-9_-]{1,80}:q[0-9]{1,8})@[A-Za-z0-9._-]{1,64}#(?:prediction|code)$/.test(s);
 const validDraftKey = (s: string) => validKey(s) || /^(?:java|rust):mission-[A-Za-z0-9._-]{1,80}@[A-Za-z0-9._-]{1,64}#file-[0-9]{1,2}$/.test(s);
 export const projectDraftKey = (id: string, version: string, fileIndex: number) => `${id}@${version}#file-${fileIndex}`;
 const object = (x: unknown): x is Record<string, unknown> => !!x && typeof x === 'object' && !Array.isArray(x);

@@ -1,3 +1,4 @@
+import { questionCompleted } from "../learning-v2/journey-state";
 import { TOPIC_MAP } from "./topics";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Problem } from "./schema";
@@ -211,6 +212,7 @@ export default function Player({ problem, record, state, onChange, onExit }: Pla
         blind: hintStep === 0,
       });
       onChange(next.state);
+      if(ok) questionCompleted("practice:"+problem.id,hintStep===0?"correct":"assisted");
     }
     setPhase("committed");
     setVerdict(problem.answerKind === 'code'
@@ -240,6 +242,7 @@ export default function Player({ problem, record, state, onChange, onExit }: Pla
     });
     onChange(next.state);
     if (ok) {
+      questionCompleted("practice:"+problem.id,hintStep===0?"correct":"assisted");
       setVerdict({ text: hintStep === 0 ? "答えを隠したまま書けました。" : "ヒントを使って答えました。次は時間を空けて自力でも試しましょう。", kind: "ok" });
       if (problem.transfer) setPhase("transfer");
       else setPhase("done");

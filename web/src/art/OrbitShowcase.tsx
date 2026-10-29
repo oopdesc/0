@@ -8,7 +8,7 @@ const css =
   raw.replaceAll(":root", ":host").replace(/\bbody\s*\{/g, ":host {") +
   theme +
   ".orbit-scene{min-height:600px;height:65vh;max-height:780px}.shell{padding:0}:host{display:block}.scene-top,.scene-bottom,.scene-helper,.scene-selection{color:#eeeae0}";
-export default function OrbitShowcase({ paused }: { paused: boolean }) {
+export default function OrbitShowcase({ paused, background = false, immersive = false }: { paused: boolean; background?: boolean; immersive?:boolean }) {
   const host = useRef<HTMLDivElement>(null);
   const [root, setRoot] = useState<ShadowRoot | null>(null),
     [stopped, setStopped] = useState(false),
@@ -32,7 +32,7 @@ export default function OrbitShowcase({ paused }: { paused: boolean }) {
         {root &&
           createPortal(
             <>
-              <style>{css}</style>
+              <style>{css+((background||immersive)?".orbit-scene{height:100vh;min-height:0;max-height:none}.scene-top,.scene-bottom,.scene-helper,.scene-selection{display:none}":"")}</style>
               <OrbitScene
                 model={{
                   radii: [1, 2, 3, 4, 6, 8].slice(0, count),
@@ -41,7 +41,8 @@ export default function OrbitShowcase({ paused }: { paused: boolean }) {
                 playing={!paused && !stopped && !reduced}
                 onToggle={() => setStopped((x) => !x)}
                 speed={0.5}
-                quality="balanced"
+                quality={background?"battery":"balanced"}
+                pixelBudget={background?500000:immersive?850000:undefined}
               />
             </>,
             root,

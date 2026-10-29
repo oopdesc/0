@@ -1,3 +1,4 @@
+import { questionCompleted } from "../../learning-v2/journey-state";
 import { useEffect, useMemo } from 'react';
 import { Link, useRouter } from '../lib/router';
 import { useStore, recordAttempt } from '../state/useStore';
@@ -37,6 +38,7 @@ export function ProblemPage({ id }: { id: string }) {
   const next = PROBLEMS[index + 1];
 
   function finish(r: LoopResult) {
+    if(r.ok) questionCompleted("academy:"+problem!.id, r.usedSolution ? "assisted" : "correct");
     recordAttempt({
       pid: problem!.id,
       ok: r.ok,

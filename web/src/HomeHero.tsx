@@ -4,7 +4,7 @@ import QuestionInventory from "./QuestionInventory";
 import stats from "./generated/learning-stats.json";
 import { loadLast } from "./learning-v2/progress";
 import "./home.css";
-export default function HomeHero({ paused }: { paused: boolean }) {
+export default function HomeHero({ paused, onStartMotion, suspended }: { paused: boolean; onStartMotion: () => void; suspended: boolean }) {
   const [last] = useState(() => {
     try {
       return loadLast(localStorage);
@@ -34,16 +34,17 @@ export default function HomeHero({ paused }: { paused: boolean }) {
         <div className="home-actions">
           <a
             className="home-primary"
-            href="/learn?section=drill&lang=java&q=java%3Aq0001"
+            href="/learn?section=journey"
           >
-            はじめての一問 <span aria-hidden="true">↗</span>
+            Lv. 0 から始める <span aria-hidden="true">↗</span>
           </a>
           <a className="home-secondary" href="/learn?section=catalog">
             問題を選ぶ <span aria-hidden="true">→</span>
           </a>
         </div>
         <div className="home-quick-links">
-          <a href={resume}>続きから →</a>
+          <a href="/learn?section=journey">全{stats.unique.total.toLocaleString()}問を一本の道で →</a>
+          <a href={resume}>最近の問題 →</a>
           <a href="/learn?section=today">今日の学習 →</a>
           <a href="/learn?section=concepts">概念図 →</a>
           <a href="/learn?section=exams">試験 {stats.exams}本 →</a>
@@ -66,7 +67,7 @@ export default function HomeHero({ paused }: { paused: boolean }) {
           <span aria-hidden="true">→</span>
         </a>
       </div>
-      <HomeNebula paused={paused} />
+      <HomeNebula suspended={suspended} paused={paused} onStartMotion={onStartMotion} />
     </section>
   );
 }

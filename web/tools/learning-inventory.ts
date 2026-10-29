@@ -28,6 +28,7 @@ export function buildLearningInventory() {
         c.name,
       ]),
     );
+    let courseOrder = 0;
     const convert = (
       q: Question,
       source: "normal" | "exam",
@@ -39,6 +40,9 @@ export function buildLearningInventory() {
             .sort();
       return {
         key: q.id,
+        courseRank: courseOrder++,
+        prerequisites: q.prerequisiteConceptIds.map(id => language + ":" + id),
+        introduces: q.introducesConceptIds.map(id => language + ":" + id),
         language,
         source,
         prompt: q.prompt,

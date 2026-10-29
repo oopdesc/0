@@ -1,3 +1,4 @@
+import { questionCompleted } from "./journey-state";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { compareOutput } from './comparison';
 import { loadAliases, loadChunk, loadConcepts, loadExams, loadManifest } from './loader';
@@ -247,7 +248,7 @@ export default function PackLearning({ search, view = 'all' }: { search: string;
 }
 
 type Update = (fn: (s: Progress) => Progress) => void;
-function QuestionPanel({ q, packVersion, lang, view, concepts, progress, update, prev, next }: { q: Question; packVersion: string; lang: Lang; view: View; concepts: Concept[]; progress: Progress; update: Update; prev: string | null; next: string | null }) {
+export function QuestionPanel({ q, packVersion, lang, view, concepts, progress, update, prev, next }: { q: Question; packVersion: string; lang: Lang; view: View; concepts: Concept[]; progress: Progress; update: Update; prev: string | null; next: string | null }) {
   const key = recordKey(q.id, q.contentVersion, q.writingRequired ? 'code' : 'prediction');
   const [selected, setSelected] = useState<string[]>([]);
   const [text, setText] = useState('');
@@ -283,6 +284,7 @@ function QuestionPanel({ q, packVersion, lang, view, concepts, progress, update,
       const result = await runLocalGrade(question, packVersion, code, localToken, controller.signal);
       if (localSequence.current === sequence && draftRef.current === code && questionRef.current === question) {
         setLocalResult(result);
+        if(result.status==='passed' && result.cases.length>0) questionCompleted(q.id,'code-passed');
         if(result.status!=='passed'||result.cases.length>0)update(s=>recordCodeCheck(s,key,result.status));
         setFeedback('この編集内容に対する固定テストの結果を表示しました。編集すると未実行に戻ります。');
       }
@@ -308,6 +310,7 @@ function QuestionPanel({ q, packVersion, lang, view, concepts, progress, update,
     submitted.current = true; setResult(ok); setSolution(true);
     setFeedback(ok ? '予測が合っています。理由と境界も確かめましょう。' : '予測と答えが違いました。どの規則を使うか一緒に見直しましょう。');
     update(s => recordPrediction(s, key, ok, Date.now(), solution||hints>0));
+    if(ok) questionCompleted(q.id, solution||hints>0 ? 'assisted' : 'correct');
   };
   const move = (i: number, d: number) => { const j = i + d; if (j < 0 || j >= order.length) return; setOrder(old => { const a = [...old]; [a[i], a[j]] = [a[j], a[i]]; return a; }); };
   return <article className="zlv-card" aria-labelledby="zlv-question-title">

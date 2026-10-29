@@ -386,3 +386,5 @@
     padding: 22px;
   }
 }
+
+.hub-journey .hub-heading>h1,.hub-journey .hub-heading>p,.hub-journey .hub-heading>.eyebrow{display:none}.hub-journey .hub-heading{padding-top:1rem;padding-bottom:1rem}.hub-journey .hub-heading nav a:not([href*="section=journey"]):not([href*="section=concepts"]):not([href*="section=catalog"]):not([href*="section=today"]){display:none}

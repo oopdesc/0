@@ -1,7 +1,9 @@
+import { DesignButtons, useSky } from "./SkyContext";
 import { useEffect, useRef, useState } from "react";
 import type { NurseryHandle, NurseryStats } from "./nursery/renderer";
 
-export default function HomeNebula({ paused }: { paused: boolean }) {
+export default function HomeNebula({ paused, onStartMotion, suspended = false }: { paused: boolean; onStartMotion: () => void; suspended?: boolean }) {
+  const sky = useSky();
   const canvas = useRef<HTMLCanvasElement>(null),
     handle = useRef<NurseryHandle | null>(null),
     stage = useRef<HTMLElement>(null);
@@ -18,11 +20,13 @@ export default function HomeNebula({ paused }: { paused: boolean }) {
     let alive = true;
     setReady(false);
     setFailed(false);
+    if(suspended) return;
     import("./nursery/renderer")
       .then(({ createNursery }) => {
         if (!alive) return;
         handle.current = createNursery(canvas.current!, {
           paused: pause.current,
+          onVisibility: sky.setForegroundActive,
           onFailure: () => {
             if (alive) {
               setFailed(true);
@@ -45,7 +49,7 @@ export default function HomeNebula({ paused }: { paused: boolean }) {
       handle.current?.dispose();
       handle.current = null;
     };
-  }, [version]);
+  }, [version,suspended]);
   useEffect(() => handle.current?.pause(paused || stopped), [paused, stopped]);
   function save() {
     try {
@@ -79,10 +83,10 @@ export default function HomeNebula({ paused }: { paused: boolean }) {
         <img
           className="home-nebula-poster"
           src="/cosmos/nursery-poster.webp"
-          alt={ready ? "" : "青い星雲の層と、琥珀色に縁取られた暗い塵。"}
+          alt={ready ? "" : "青い星雲と、遠い星、かすかな光の線。"}
           aria-hidden={ready}
-          width="814"
-          height="708"
+          width="739"
+          height="696"
           fetchPriority="high"
         />
         <canvas
@@ -90,7 +94,7 @@ export default function HomeNebula({ paused }: { paused: boolean }) {
           tabIndex={ready && !failed ? 0 : -1}
           aria-hidden={!ready || failed}
           role="img"
-          aria-label="星雲の立体作品。左右にドラッグして視点を変えられます。矢印キー、拡大縮小ボタンも使えます。"
+          aria-label="星雲の立体作品。ドラッグで360度回転し、光を描けます。矢印キー、拡大縮小ボタンも使えます。"
           onKeyDown={(e) => {
             const keys: Record<string, Parameters<NurseryHandle["view"]>[0]> = {
               ArrowLeft: "left",
@@ -110,13 +114,13 @@ export default function HomeNebula({ paused }: { paused: boolean }) {
         />
         <div className="home-nebula-caption">
           <span>0 / 光と塵のあいだ</span>
-          <strong>星の生まれる場所。</strong>
-          <p>視点を変えると、雲の向こうが見えてくる。</p>
+          <strong>星雲の中へ。</strong>
+          <p>ゆっくり回る宇宙を、好きな方向へ。</p>
         </div>
         <div className="home-nebula-status">
           <span>
             <i />
-            {failed || stats?.lowPower
+            {suspended ? "背景・全画面に表示中" : failed || stats?.lowPower
               ? "静止画"
               : !ready
                 ? "星雲を描いています"
@@ -126,18 +130,17 @@ export default function HomeNebula({ paused }: { paused: boolean }) {
                     ? "表示設定で停止中"
                     : stopped
                       ? "停止中"
-                      : "動かせる星雲"}
+                      : "ゆっくり自動回転"}
           </span>
-          <span>ドラッグで回転</span>
+          <span>360°回転・光の線を描く</span>
         </div>
       </div>
       <figcaption className="home-nebula-controls">
+        <DesignButtons id="nursery"/>
         <div className="home-nebula-controls-main">
           <span>雲の奥を、のぞいてみる。</span>
           {paused ? (
-            <a className="home-nebula-motion-link" href="/settings">
-              動きの設定 →
-            </a>
+            <button onClick={() => {setStopped(false); onStartMotion();}} disabled={stats?.reduced || stats?.lowPower}>自動回転を開始</button>
           ) : (
             <button
               disabled={
@@ -201,18 +204,16 @@ export default function HomeNebula({ paused }: { paused: boolean }) {
           </p>
         )}
         <p className="home-nebula-note">
-          光の吸収と雲の重なりを描く作品です。天体観測の再現ではありません。
+          雲と星の奥行きを描く作品です。天体観測の再現ではありません。
           <a href="/art?exhibit=nebula">宇宙の作品をもっと見る ↗</a>
         </p>
         <details className="home-nebula-making">
           <summary>この星雲は、どう描く？</summary>
           <ol>
-            <li>奥行きのある空間に、雲の濃い場所と薄い場所をつくります。</li>
-            <li>
-              画面から奥へ視線を伸ばし、途中にある雲の光を少しずつ重ねます。
-            </li>
-            <li>手前の塵で光を遮ると、暗い筋や光る縁が生まれます。</li>
-            <li>星を別の層に描き、視点を変えるときも雲と一緒に動かします。</li>
+            <li>視線の向きを、周囲の球面の座標に置き換えます。</li>
+            <li>大きさの違うノイズを重ね、雲の濃い場所と薄い場所を描きます。</li>
+            <li>星を立体空間に置き、近い点どうしを細い線で結びます。</li>
+            <li>カーソルから生まれた点を、流れに沿って散らします。</li>
           </ol>
           <p>
             数値から描くので、画像のダウンロードを繰り返さずに視点を変えられます。

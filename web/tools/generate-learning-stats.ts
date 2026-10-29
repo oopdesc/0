@@ -1,4 +1,5 @@
 import { readFileSync, writeFileSync } from "node:fs";
+import { buildJourneyOrder } from "./journey-order";
 import { LESSONS } from "../src/orbit/domain/lessons";
 import { PROBLEMS } from "../src/academy/content";
 import { buildLearningInventory } from "./learning-inventory";
@@ -57,3 +58,5 @@ writeFileSync(
     }),
   }) + "\n",
 );
+
+writeFileSync(new URL("../public/learning-v2/journey.json",import.meta.url), JSON.stringify({schema:"zero-journey-order/1",order:buildJourneyOrder(inventory.groups)})+"\n");

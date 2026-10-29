@@ -6,6 +6,10 @@ import {
   useState,
   type MouseEvent,
 } from "react";
+import { useSkyControl, SkySettings } from "./art/SkyContext";
+import { SkyContext } from "./art/sky-context";
+import "./art/sky.css";
+import ZeroMark from "./ZeroMark";
 import ArtStudio from "./ArtStudio";
 import { ThemeButton } from "./DisplayPreferences";
 import { resources, type Resource } from "./data";
@@ -14,6 +18,7 @@ import ResourceArtwork from "./ResourceArtwork";
 import learningStats from "./generated/learning-stats.json";
 import { filterResources, parseState, STORAGE_KEY } from "./state";
 
+const SkyLayer = lazy(() => import("./art/SkyLayer"));
 const LearningHub = lazy(() => import("./LearningHub"));
 const Secondary = lazy(() => import("./Secondary"));
 const routes = new Set([
@@ -51,6 +56,7 @@ export default function App() {
   const searchTrigger = useRef<HTMLButtonElement>(null);
   const [command, setCommand] = useState("");
   const path = url.split("?")[0];
+  const sky = useSkyControl(path,state.motion === "paused",()=>setState(s=>({...s,motion:"auto"})));
   useEffect(() => {
     const pop = () => setUrl(location.pathname + location.search);
     addEventListener("popstate", pop);
@@ -161,6 +167,7 @@ export default function App() {
   );
   const known = routes.has(path);
   return (
+    <SkyContext.Provider value={sky}>
     <div onClick={links} className={path === "/" ? "home-route" : undefined}>
       <a
         className="skip-link"
@@ -177,10 +184,7 @@ export default function App() {
       <header className="site-header">
         <div className="header-inner">
           <a className="brand" href="/" aria-label="0 ホーム">
-            <span className="brand-symbol">0</span>
-            <span>
-              0<small>みんなの学習</small>
-            </span>
+            <ZeroMark/><span className="brand-caption">みんなの学習</span>
           </a>
           <nav aria-label="メイン">
             <a href="/" aria-current={path === "/" ? "page" : undefined}>
@@ -200,6 +204,7 @@ export default function App() {
           </nav>
           <div className="header-actions">
             <ThemeButton />
+            <button className="sky-trigger" aria-label="背景のデザインを選ぶ" onClick={sky.openSettings}>✧</button>
             <button
               ref={searchTrigger}
               className="search-trigger"
@@ -225,10 +230,10 @@ export default function App() {
           ブラウザ保存が使えません。今回の進捗は画面を閉じると失われます。
         </p>
       )}
-      <div id="main" tabIndex={-1}>
+      <div className={"site-paper"+(path==="/"?" site-paper-home":"")}><div id="main" tabIndex={-1}>
         {path === "/" ? (
           <main className="home-page">
-            <HomeHero paused={state.motion === "paused"} />
+            <HomeHero suspended={!!sky.full} paused={state.motion === "paused"||sky.settings} onStartMotion={() => setState({ ...state, motion: "auto" })} />
             <section
               className="explore-section"
               aria-labelledby="explore-title"
@@ -335,7 +340,7 @@ export default function App() {
             />
           </Suspense>
         ) : path === "/art" || path === "/game" || path === "/cosmicGameV3" ? (
-          <ArtStudio
+          <ArtStudio suspended={!!sky.active||!!sky.full}
             paused={state.motion === "paused"}
             onPause={() =>
               setState((s) => ({
@@ -368,11 +373,8 @@ export default function App() {
       </div>
       <footer className="site-footer">
         <div className="footer-main">
-          <a className="brand" href="/">
-            <span className="brand-symbol">0</span>
-            <span>
-              0<small>みんなの学習</small>
-            </span>
+          <a className="brand" href="/" aria-label="0 ホーム">
+            <ZeroMark/><span className="brand-caption">みんなの学習</span>
           </a>
           <p>
             誰でも使える、プログラミングの学習サイト。
@@ -415,7 +417,7 @@ export default function App() {
             ソースコード：MIT License ↗
           </a>
         </div>
-      </footer>
+      </footer></div>
       <dialog
         ref={dialog}
         className="command-dialog"
@@ -479,6 +481,9 @@ export default function App() {
           {!commandResults.length && <p>該当する項目はありません。</p>}
         </div>
       </dialog>
+      {(sky.active||sky.full)&&<Suspense fallback={null}><SkyLayer globalPaused={state.motion === "paused"}/></Suspense>}
+      <SkySettings globalPaused={state.motion === "paused"}/>
     </div>
+    </SkyContext.Provider>
   );
 }

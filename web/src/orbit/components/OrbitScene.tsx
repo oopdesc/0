@@ -19,6 +19,7 @@ interface Props {
   speed: number;
   quality: Quality;
   compact?: boolean;
+  pixelBudget?: number;
 }
 export function OrbitScene({
   model,
@@ -27,6 +28,7 @@ export function OrbitScene({
   speed,
   quality,
   compact = false,
+  pixelBudget,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -64,7 +66,7 @@ export function OrbitScene({
       if (disposed) return;
       const { width, height } = wrapper.getBoundingClientRect();
       if (!width || !height) return;
-      const dpr = Math.min(window.devicePixelRatio || 1, dprCap);
+      const dpr = Math.min(window.devicePixelRatio || 1, dprCap, pixelBudget?Math.sqrt(pixelBudget/(width*height)):Infinity);
       const w = Math.max(1, Math.round(width * dpr));
       const h = Math.max(1, Math.round(height * dpr));
       if (canvas.width !== w || canvas.height !== h) {
@@ -135,7 +137,7 @@ export function OrbitScene({
       document.removeEventListener("visibilitychange", update);
       drawRef.current = () => {};
     };
-  }, [model, playing, speed, quality]);
+  }, [model, playing, speed, quality, pixelBudget]);
 
   const changeZoom = useCallback((next: number) => {
     const v = Math.max(0.65, Math.min(1.6, next));

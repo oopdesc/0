@@ -4,6 +4,7 @@ import { requestTrace } from "./request-flow";
 import { store, type Route } from "./arena/orrery/core/appStore";
 import "./learning-hub.css";
 import LearningOverview from "./LearningOverview";
+const Journey = lazy(() => import("./learning-v2/Journey"));
 const QuestionCatalog = lazy(() => import("./learning-v2/QuestionCatalog"));
 const TodayView = lazy(() => import("./learning-v2/TodayView"));
 const PackLearning = lazy(() => import("./learning-v2/PackLearning"));
@@ -20,6 +21,7 @@ const Source = lazy(() => import("./Secondary"));
 const ConceptOverview = lazy(() => import("./ConceptOverview"));
 const sections = [
   ["overview", "学習の入口"],
+  ["journey", "レベルアップの道"],
   ["today", "今日の学習"],
   ["concepts", "概念図"],
   ["catalog", "全問題から探す"],
@@ -176,7 +178,7 @@ export default function LearningHub({
     if (section === "legacy-practice" && mode === "code") store.navigate(exercise);
   }, [section, mode, exercise]);
   return (
-    <div className="learning-hub">
+    <div className={"learning-hub"+(section==="journey"?" hub-journey":"")}>
       <section className="hub-heading">
         <span className="eyebrow">ひとつの場所で、仕組みから実装まで</span>
         <h1>Java・Rustの学習</h1>
@@ -193,7 +195,9 @@ export default function LearningHub({
           ))}
         </nav>
       </section>
-      {section === "overview" ? (
+      {section === "journey" ? (
+        <Suspense fallback={<p className="hub-content">カリキュラムを読み込んでいます…</p>}><Journey search={search}/></Suspense>
+      ) : section === "overview" ? (
         <LearningOverview />
       ) : section === "today" ? (
         <Suspense fallback={<p className="hub-content">今日の学習を読み込んでいます…</p>}><TodayView search={search}/></Suspense>

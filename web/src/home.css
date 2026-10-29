@@ -916,3 +916,7 @@
   background: var(--home-paper);
   white-space: nowrap;
 }
+
+.home-nebula-frame canvas.home-nebula-lace{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:2}.home-nebula-caption,.home-nebula-status{z-index:3}
+
+.home-nebula-caption{left:24px;top:24px;right:auto;max-width:calc(100% - 48px);padding:15px 18px;background:linear-gradient(110deg,#071321d9,#0c1d2f99);border:1px solid #aecdd12e;border-radius:12px;backdrop-filter:blur(7px)}.home-nebula-caption>strong{font-size:clamp(20px,2.15vw,28px);margin-top:5px}.home-nebula-caption p{margin:5px 0 0}@media(max-width:600px){.home-nebula-caption{left:16px;top:16px;max-width:calc(100% - 32px);padding:10px 13px}.home-nebula-caption>strong{font-size:21px}.home-nebula-status{font-size:8px;left:16px;right:16px;gap:8px}}

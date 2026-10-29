@@ -21,7 +21,7 @@ export function supplementalPath(hash: string): string {
 }
 function currentPath(): string { return supplementalPath(window.location.hash); }
 
-export function RouterProvider({ children }: { children: ReactNode }) {
+export function RouterProvider({ children, standalone = false }: { children: ReactNode; standalone?: boolean }) {
   const [path, setPath] = useState(currentPath);
 
   useEffect(() => {
@@ -35,6 +35,7 @@ export function RouterProvider({ children }: { children: ReactNode }) {
     () => ({
       path,
       navigate(to, opts) {
+        if(standalone) { window.location.assign("/learn?section=supplemental#"+to); return; }
         if (to === currentPath()) return;
         if (opts?.replace) window.history.replaceState(null, '', '/learn?section=supplemental#' + to);
         else window.history.pushState(null, '', '/learn?section=supplemental#' + to);
@@ -42,7 +43,7 @@ export function RouterProvider({ children }: { children: ReactNode }) {
         window.scrollTo({ top: 0, behavior: 'instant' as ScrollBehavior });
       },
     }),
-    [path],
+    [path, standalone],
   );
 
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>;

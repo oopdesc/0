@@ -10,6 +10,7 @@
  *    offscreen / reduced-motion / context-loss / page transition.
  *  - Procedural only: no video, no large textures — shaders + CPU noise.
  */
+import { farStars } from "./far-stars";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
@@ -48,7 +49,8 @@ const LINK_DIST = 0.9;
 const FLOW = 1.6;
 
 export interface SpaceHandle {
-  view?(action: "left" | "right" | "in" | "out" | "reset"): void;
+  view?(action: "left" | "right" | "up" | "down" | "in" | "out" | "reset"): void;
+  image?():string;
   dispose(): void;
   setQuality(q: Quality): void;
   setReducedMotion(on: boolean): void;
@@ -59,6 +61,12 @@ export function createSpaceScene(
   canvas: HTMLCanvasElement,
   opts: {
     quality: Quality;
+    maxFps?: number;
+    maxPixels?: number;
+    homeVariant?: boolean;
+    panorama?: boolean;
+    onActivity?: (active:boolean)=>void;
+    pointerSurface?: EventTarget;
     reducedMotion: boolean;
     onStats?: (s: { fps: number; particles: number; engine: string }) => void;
   },
@@ -70,6 +78,12 @@ export function createSpaceScene(
   const webglOpts = {
     reducedMotion: opts.reducedMotion,
     onStats: opts.onStats,
+    maxFps: opts.maxFps,
+    maxPixels: opts.maxPixels,
+    homeVariant: opts.homeVariant,
+    panorama: opts.panorama,
+    onActivity: opts.onActivity,
+    pointerSurface: opts.pointerSurface,
   };
 
   // Report WebGPU capability honestly in the HUD; the render path stays WebGL2
@@ -88,6 +102,7 @@ export function createSpaceScene(
     (h) => h,
     (err) => {
       console.warn("[space] WebGL2 init failed, using minimal fallback", err);
+      opts.onStats?.({fps:0,particles:0,engine:"minimal"});
       return createMinimal(canvas);
     },
   );
@@ -102,6 +117,12 @@ async function createWebGL(
   quality: Exclude<Quality, "auto">,
   opts: {
     reducedMotion: boolean;
+    maxFps?: number;
+    maxPixels?: number;
+    homeVariant?: boolean;
+    panorama?: boolean;
+    onActivity?: (active:boolean)=>void;
+    pointerSurface?: EventTarget;
     onStats?: (s: { fps: number; particles: number; engine: string }) => void;
   },
 ): Promise<SpaceHandle> {
@@ -120,7 +141,7 @@ async function createWebGL(
     powerPreference: "default",
   });
   renderer.setPixelRatio(
-    Math.min(window.devicePixelRatio || 1, quality === "battery" ? 1 : 1.5),
+    Math.min(window.devicePixelRatio || 1, quality === "battery" ? 1 : 1.5, opts.maxPixels ? Math.sqrt(opts.maxPixels/Math.max(1,canvas.clientWidth*canvas.clientHeight)):Infinity),
   );
   renderer.setSize(
     Math.max(1, canvas.clientWidth),
@@ -181,6 +202,7 @@ async function createWebGL(
       }`,
   });
   scene.add(new THREE.Mesh(new THREE.SphereGeometry(80, 32, 24), nebulaMat));
+  if(opts.homeVariant||opts.panorama)scene.add(farStars(!!opts.panorama));
 
   // ---- particle system ----
   let count = COUNTS[quality];
@@ -211,7 +233,7 @@ async function createWebGL(
     uniforms: {
       uTime: { value: 0 },
       uPixelRatio: { value: renderer.getPixelRatio() },
-      uSize: { value: 26 },
+      uSize: { value: opts.homeVariant ? 16 : 26 },
     },
     vertexShader: `
       attribute vec3 aColor; attribute float aLife; attribute float aSeed;
@@ -268,7 +290,7 @@ async function createWebGL(
   composer.addPass(new RenderPass(scene, camera));
   const bloom = new UnrealBloomPass(
     new THREE.Vector2(window.innerWidth, window.innerHeight),
-    0.9,
+    opts.homeVariant ? .5 : .9,
     0.6,
     0.2,
   );
@@ -283,15 +305,16 @@ async function createWebGL(
   let cursorActive = false;
   const spawnAcc = new THREE.Vector3();
   function onPointer(e: PointerEvent) {
-    ndc.x = (e.clientX / window.innerWidth) * 2 - 1;
-    ndc.y = -(e.clientY / window.innerHeight) * 2 + 1;
+    const rect=canvas.getBoundingClientRect();
+    ndc.x = ((e.clientX-rect.left) / Math.max(1,rect.width)) * 2 - 1;
+    ndc.y = -((e.clientY-rect.top) / Math.max(1,rect.height)) * 2 + 1;
     ray.setFromCamera(ndc, camera);
     if (ray.ray.intersectPlane(spawnPlane, cursorWorld)) {
       cursorActive = true;
       spawnAcc.copy(cursorWorld);
     }
   }
-  canvas.addEventListener("pointermove", onPointer);
+  (opts.pointerSurface??canvas).addEventListener("pointermove", onPointer as EventListener);
 
   // ---- particle update ----
   let spawnIndex = 0;
@@ -304,16 +327,17 @@ async function createWebGL(
         Math.random() * 2 - 1,
         Math.random() * 2 - 1,
       ).normalize();
-      p.pos.copy(spawnAcc).addScaledVector(dir, 0.05);
-      p.vel.copy(dir).multiplyScalar(FLOW * (0.6 + Math.random() * 0.6));
+      p.pos.copy(spawnAcc).addScaledVector(dir, opts.homeVariant ? .28 : .05);
+      p.vel.copy(dir).multiplyScalar(FLOW * (0.6 + Math.random() * 0.6) * (opts.homeVariant ? 1.65 : 1));
       p.life = 1;
-      p.maxLife = 2.4 + Math.random() * 1.6;
+      p.maxLife = opts.homeVariant ? 4 + Math.random()*2 : 2.4 + Math.random() * 1.6;
       p.seed = Math.random();
     }
   }
 
   // spatial grid for nearest-neighbour links
-  const cell = LINK_DIST;
+  const linkDistance = opts.homeVariant ? 1.6 : LINK_DIST;
+  const cell = linkDistance;
   const grid = new Map<string, number[]>();
   function gridKey(x: number, y: number, z: number) {
     return `${Math.floor(x / cell)},${Math.floor(y / cell)},${Math.floor(z / cell)}`;
@@ -334,16 +358,19 @@ async function createWebGL(
   let visible = !document.hidden;
   let inView = true;
   let disposed = false;
-  let reduced = opts.reducedMotion;
+  let requestedReduced = opts.reducedMotion;
+  let reduced = requestedReduced || window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   let last = performance.now();
   let fpsAcc = 0,
     fpsFrames = 0,
-    fps = 0;
+    fps = 0, drawnFrames = 0;
 
   function frame(now: number) {
     raf = 0;
     if (disposed || !visible || !inView) return;
-    if (now - last < 1000 / 30) {
+    canvas.dataset.orbitYaw=controls.getAzimuthalAngle().toFixed(4);
+    canvas.dataset.animationStopped=String(reduced);
+    if (now - last < 1000 / (opts.maxFps??30)) {
       raf = requestAnimationFrame(frame);
       return;
     }
@@ -359,9 +386,11 @@ async function createWebGL(
     if (reduced) composer.render();
     else composer.render();
 
+    drawnFrames++;canvas.dataset.drawnFrames=String(drawnFrames);
+    opts.onActivity?.(!reduced&&visible&&inView&&!document.hidden&&!disposed);
     fpsAcc += dt;
     fpsFrames++;
-    if (fpsAcc >= 0.5) {
+    if (drawnFrames === 1 || fpsAcc >= 0.5) {
       fps = fpsFrames / fpsAcc;
       fpsAcc = 0;
       fpsFrames = 0;
@@ -379,7 +408,7 @@ async function createWebGL(
     // spawn from cursor
     if (cursorActive) {
       spawnAcc.lerp(cursorWorld, 0.3);
-      const rate = quality === "battery" ? 3 : quality === "ultra" ? 6 : 5;
+      const rate = opts.homeVariant ? 2 : quality === "battery" ? 3 : quality === "ultra" ? 6 : 5;
       spawnBurst(rate);
     }
     // integrate + flow field
@@ -452,7 +481,7 @@ async function createWebGL(
       if (arr) arr.push(i);
       else grid.set(k, [i]);
     }
-    const maxD2 = LINK_DIST * LINK_DIST;
+    const maxD2 = linkDistance * linkDistance;
     let li = 0;
     for (let i = 0; i < count && li < MAX_LINKS; i++) {
       if (particles[i].life <= 0) continue;
@@ -501,6 +530,7 @@ async function createWebGL(
         li++;
       }
     }
+    canvas.dataset.lightLinks=String(li);
     linkGeo.setDrawRange(0, li * 2);
     linkGeo.attributes.position.needsUpdate = true;
     linkGeo.attributes.color.needsUpdate = true;
@@ -512,9 +542,10 @@ async function createWebGL(
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
     renderer.setPixelRatio(
-      Math.min(window.devicePixelRatio || 1, quality === "battery" ? 1 : 1.5),
+      Math.min(window.devicePixelRatio || 1, quality === "battery" ? 1 : 1.5, opts.maxPixels ? Math.sqrt(opts.maxPixels/Math.max(1,canvas.clientWidth*canvas.clientHeight)):Infinity),
     );
     renderer.setSize(w, h, false);
+    composer.setPixelRatio(renderer.getPixelRatio());
     composer.setSize(w, h);
     bloom.setSize(w, h);
     pMat.uniforms.uPixelRatio.value = renderer.getPixelRatio();
@@ -538,6 +569,7 @@ async function createWebGL(
   });
 
   function onVisibility() {
+    opts.onActivity?.(visible&&inView&&!document.hidden&&!reduced&&!disposed);
     visible = !document.hidden;
     if (!visible || !inView) {
       cancelAnimationFrame(raf);
@@ -550,12 +582,17 @@ async function createWebGL(
   document.addEventListener("visibilitychange", onVisibility);
   const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
   const onRM = (e: MediaQueryListEvent) => {
-    reduced = e.matches;
+    reduced = requestedReduced || e.matches;
     controls.autoRotate = !reduced;
   };
   mq.addEventListener?.("change", onRM);
 
   return {
+    image() {
+      if (disposed) throw new Error("描画は終了しています。");
+      composer.render();
+      return canvas.toDataURL("image/png");
+    },
     view(action) {
       if (disposed) return;
       if (action === "reset") {
@@ -566,7 +603,11 @@ async function createWebGL(
           new THREE.Vector3(0, 1, 0),
           action === "left" ? -0.18 : 0.18,
         );
-      else
+      else if(action==='up'||action==='down') {
+        const spherical=new THREE.Spherical().setFromVector3(camera.position);
+        spherical.phi=THREE.MathUtils.clamp(spherical.phi+(action==='up'?-.14:.14),.05,Math.PI-.05);
+        camera.position.setFromSpherical(spherical);
+      } else
         camera.position.setLength(
           THREE.MathUtils.clamp(
             camera.position.length() * (action === "in" ? 0.85 : 1.15),
@@ -594,8 +635,11 @@ async function createWebGL(
               : 0.7;
     },
     setReducedMotion(on: boolean) {
-      reduced = on;
-      controls.autoRotate = !on;
+      requestedReduced = on;
+      reduced = requestedReduced || mq.matches;
+      canvas.dataset.animationStopped=String(reduced);
+      opts.onActivity?.(!reduced&&visible&&inView&&!document.hidden&&!disposed);
+      controls.autoRotate = !reduced;
       if (!disposed && visible && inView && !raf) {
         last = performance.now() - 34;
         raf = requestAnimationFrame(frame);
@@ -604,6 +648,8 @@ async function createWebGL(
     resize,
     dispose() {
       disposed = true;
+      canvas.dataset.animationStopped="true";
+      opts.onActivity?.(false);
       running = false;
       cancelAnimationFrame(raf);
       ro.disconnect();
@@ -621,7 +667,7 @@ async function createWebGL(
       });
       document.removeEventListener("visibilitychange", onVisibility);
       mq.removeEventListener?.("change", onRM);
-      canvas.removeEventListener("pointermove", onPointer);
+      (opts.pointerSurface??canvas).removeEventListener("pointermove", onPointer as EventListener);
       controls.dispose();
       for (const pass of composer.passes) pass.dispose();
       composer.dispose();

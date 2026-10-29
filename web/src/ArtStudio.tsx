@@ -1,3 +1,4 @@
+import { DesignButtons, useSky } from "./art/SkyContext";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { loadJavaArt, type JavaArt } from "./java-model";
 import "./art-gallery.css";
@@ -75,13 +76,16 @@ export function HomeUniverse({ paused }: { paused: boolean }) {
 }
 export default function ArtStudio({
   paused,
+  suspended=false,
   onPause,
   search,
 }: {
   paused: boolean;
+  suspended?: boolean;
   onPause: () => void;
   search: string;
 }) {
+  const sky=useSky();
   const [currentExhibit, setExhibit] = useState<ExhibitId>(() =>
     readExhibit(search),
   );
@@ -313,6 +317,7 @@ export default function ArtStudio({
           </button>
         ))}
       </div>
+      <div className="extra-art"><div><strong>天の川の内側</strong><span>星の帯を、内側から見渡す。</span></div><button onClick={()=>sky.show("milkyway")}>全画面で見る ⛶</button><button onClick={()=>sky.choose("milkyway","all")}>背景にする ✧</button></div>
       <div className="art-collection-note">
         <span>眺めたい宇宙を選び、視点を変えてみてください。</span>
         <button
@@ -322,7 +327,8 @@ export default function ArtStudio({
           観測資料と比べる ↗
         </button>
       </div>
-      {guest ? (
+      {currentExhibit!=="observation"&&<DesignButtons id={currentExhibit}/>}
+      {suspended&&!observation?<div className="art-background-placeholder"><p>宇宙は背景に表示しています。作品だけを眺めるときは「全画面で見る」を押してください。</p></div>:guest ? (
         <Suspense
           fallback={
             <p className="guest-loading">宇宙を描く準備をしています…</p>
