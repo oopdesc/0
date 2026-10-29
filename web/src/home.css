@@ -905,3 +905,14 @@
     transition: none;
   }
 }
+.home-nebula-motion-link {
+  font: inherit;
+  font-size: 11px;
+  color: var(--home-ink);
+  text-decoration: none;
+  border: 1px solid var(--home-border);
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: var(--home-paper);
+  white-space: nowrap;
+}

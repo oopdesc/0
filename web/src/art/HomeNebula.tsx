@@ -134,21 +134,27 @@ export default function HomeNebula({ paused }: { paused: boolean }) {
       <figcaption className="home-nebula-controls">
         <div className="home-nebula-controls-main">
           <span>雲の奥を、のぞいてみる。</span>
-          <button
-            disabled={
-              !ready || failed || paused || stats?.reduced || stats?.lowPower
-            }
-            onClick={() => setStopped((s) => !s)}
-            aria-pressed={stopped}
-          >
-            {paused
-              ? "設定で停止中"
-              : stats?.reduced || stats?.lowPower
-                ? "静止表示中"
-                : stopped
-                  ? "▷ 再開"
-                  : "Ⅱ 停止"}
-          </button>
+          {paused ? (
+            <a className="home-nebula-motion-link" href="/settings">
+              動きの設定 →
+            </a>
+          ) : (
+            <button
+              disabled={
+                !ready || failed || paused || stats?.reduced || stats?.lowPower
+              }
+              onClick={() => setStopped((s) => !s)}
+              aria-pressed={stopped}
+            >
+              {paused
+                ? "設定で停止中"
+                : stats?.reduced || stats?.lowPower
+                  ? "静止表示中"
+                  : stopped
+                    ? "▷ 再開"
+                    : "Ⅱ 停止"}
+            </button>
+          )}
         </div>
         <div className="home-nebula-views" aria-label="星雲の視点">
           <button
