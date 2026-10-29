@@ -64,5 +64,11 @@
     "bytes": 4210,
     "sha256": "c75499e6087eaf6f97c719048f70779dff0b8c27a3aba3e92a5125e87d6b34cb",
     "gitBlob": "6fa1a6b99e8231668b0d37337f212a167d312ce3"
+  },
+  {
+    "path": "cosmos/nursery-poster.webp",
+    "bytes": 84002,
+    "sha256": "d298d99de803cbbb7d9c590951810ca9516562c4472a9f88f0af5f2aea2d67c2",
+    "gitBlob": "ab81328e5ca3e04d6a213db1e63ded80742dc615"
   }
 ]

@@ -9,6 +9,7 @@ import "./player.css";
 interface TrackPageProps {
   language: Language | "bridge";
   onNavigate: (href: string) => void;
+  initialQuestionId?: string;
 }
 
 const TITLE: Record<string, string> = {
@@ -23,9 +24,9 @@ const LEAD: Record<string, string> = {
   bridge: "Java と Rust は対応しているように見えますが、対応が破れる場所を知っています。その違いこそが学習の要点です。",
 };
 
-export default function TrackPage({ language, onNavigate }: TrackPageProps) {
+export default function TrackPage({ language, onNavigate, initialQuestionId }: TrackPageProps) {
   const [state, setState] = useState<ProgressState>(() => loadProgress());
-  const [selected, setSelected] = useState<string | null>(null);
+  const [selected, setSelected] = useState<string | null>(initialQuestionId ?? null);
   const [bucket, setBucket] = useState<ProgressBucket | "all">("all");
   const [topic, setTopic] = useState<string>("すべて");
   const [query, setQuery] = useState("");

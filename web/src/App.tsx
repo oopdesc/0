@@ -11,6 +11,7 @@ import { ThemeButton } from "./DisplayPreferences";
 import { resources, type Resource } from "./data";
 import HomeHero from "./HomeHero";
 import ResourceArtwork from "./ResourceArtwork";
+import learningStats from "./generated/learning-stats.json";
 import { filterResources, parseState, STORAGE_KEY } from "./state";
 
 const LearningHub = lazy(() => import("./LearningHub"));
@@ -66,7 +67,8 @@ export default function App() {
   useEffect(() => {
     const key = (e: KeyboardEvent) => {
       const origin = e.composedPath()[0];
-      if (origin instanceof Node && origin.getRootNode() instanceof ShadowRoot) return;
+      if (origin instanceof Node && origin.getRootNode() instanceof ShadowRoot)
+        return;
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
         e.preventDefault();
         setSearchOpen(true);
@@ -160,7 +162,16 @@ export default function App() {
   const known = routes.has(path);
   return (
     <div onClick={links} className={path === "/" ? "home-route" : undefined}>
-      <a className="skip-link" href="#main" onClick={e=>{e.preventDefault();const main=document.getElementById("main");main?.focus();main?.scrollIntoView();}}>
+      <a
+        className="skip-link"
+        href="#main"
+        onClick={(e) => {
+          e.preventDefault();
+          const main = document.getElementById("main");
+          main?.focus();
+          main?.scrollIntoView();
+        }}
+      >
         本文へ
       </a>
       <header className="site-header">
@@ -398,7 +409,9 @@ export default function App() {
             rel="noreferrer"
             aria-label="ソースコードのMITライセンスを読む"
           >
-            <span className="license-mark" aria-hidden="true">&lt;/&gt;</span>
+            <span className="license-mark" aria-hidden="true">
+              &lt;/&gt;
+            </span>
             ソースコード：MIT License ↗
           </a>
         </div>
@@ -424,12 +437,30 @@ export default function App() {
         <input
           autoFocus
           id="command-query"
-          placeholder="Java、Rust、作品…"
+          placeholder="教材名、分野、問題ID…"
           maxLength={80}
           value={command}
           onChange={(e) => setCommand(e.target.value)}
         />
         <div className="command-results">
+          <a
+            href={
+              "/learn?" +
+              new URLSearchParams({ section: "catalog", query: command.trim() })
+            }
+            onClick={() => setSearchOpen(false)}
+          >
+            <span>
+              {command.trim()
+                ? `「${command.trim()}」を問題名・分野・IDから探す`
+                : "全問題から探す"}
+              <small>
+                重複をまとめた
+                {learningStats.unique.total.toLocaleString("ja-JP")}問
+              </small>
+            </span>
+            <b>↗</b>
+          </a>
           {commandResults.map((x) => (
             <a
               key={x.id}

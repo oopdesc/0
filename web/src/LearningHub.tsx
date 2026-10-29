@@ -4,6 +4,7 @@ import { requestTrace } from "./request-flow";
 import { store, type Route } from "./arena/orrery/core/appStore";
 import "./learning-hub.css";
 import LearningOverview from "./LearningOverview";
+const QuestionCatalog = lazy(() => import("./learning-v2/QuestionCatalog"));
 const TodayView = lazy(() => import("./learning-v2/TodayView"));
 const PackLearning = lazy(() => import("./learning-v2/PackLearning"));
 const FlowView = lazy(() => import("./learning-v2/FlowView"));
@@ -21,7 +22,8 @@ const sections = [
   ["overview", "学習の入口"],
   ["today", "今日の学習"],
   ["concepts", "概念図"],
-  ["drill", "問題を選ぶ"],
+  ["catalog", "全問題から探す"],
+  ["drill", "単元を選ぶ"],
   ["supplemental", "補充問題集"],
   ["writing", "コードを書く"],
   ["diagnostics", "途中確認"],
@@ -195,6 +197,8 @@ export default function LearningHub({
         <LearningOverview />
       ) : section === "today" ? (
         <Suspense fallback={<p className="hub-content">今日の学習を読み込んでいます…</p>}><TodayView search={search}/></Suspense>
+      ) : section === "catalog" ? (
+        <Suspense fallback={<p className="hub-content">問題一覧を読み込んでいます…</p>}><QuestionCatalog search={search}/></Suspense>
       ) : section === "concepts" ? (
         <Suspense fallback={<p className="hub-content">概念図を読み込んでいます…</p>}><ConceptOverview/></Suspense>
       ) : section === "supplemental" ? (
@@ -205,7 +209,7 @@ export default function LearningHub({
         </Suspense>
       ) : section === "legacy-verified" ? (
         <Suspense fallback={<p>従来の演習を読み込んでいます…</p>}>
-          <p className="hub-content">従来の実行演習です。新packとは別に保管しています。</p><Curated />
+          <p className="hub-content">コードの実行例と、読んで考える演習です。確認できる範囲は問題ごとに記しています。</p><Curated key={search} initialLanguage={params.get("lang")==="bridge"?"bridge":params.get("lang")==="rust"?"rust":"java"} initialQuestionId={params.get("legacyQuestion")??undefined}/>
         </Suspense>
       ) : section === "archive" ? (
         <Suspense fallback={<p>従来の問題集を読み込んでいます…</p>}>

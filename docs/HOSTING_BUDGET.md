@@ -12,11 +12,12 @@ CDNから閲覧者へ送るデータも転送量に含まれます。CDNのキ�
 
 ## 今回の静的成果物
 
-- 全静的ファイル：約30.60MB。リポジトリ内の検査上限は30MiBです。
-- 初回JavaScript：約90.7KB gzip。静的なimport先まで含めて測ります。
-- トップのHTML/CSS/JavaScript：約108KB gzip推計。
-- 問題集を開くまでのHTML/CSS/JavaScript：約170KB gzip推計。問題本文のJSONは選んだ単元に応じて追加で取得します。
-- 星雲の描画コードまで：約254KB gzip推計。
+- 全静的ファイル：31,095,964 bytes（約31.10MB）。リポジトリ内の検査上限は30MiBで、今回も引き上げていません。
+- 初回JavaScript：88,179 bytes gzip（約88.2KB）。静的なimport先まで含めて測ります。
+- トップの星雲・静止画まで含むHTML/CSS/JavaScript/画像：約194.6KB gzip推計。静止画84KBは圧縮済みの実サイズで加算しています。
+- 全問題の索引を開くまでのHTML/CSS/JavaScript/JSON：約204.1KB gzip推計。索引に解答は含みません。問題本文は選んだ教材から取得します。
+- 通常の問題集を開くまでのHTML/CSS/JavaScript：約175.3KB gzip推計。本文JSONは選んだ単元に応じて追加で取得します。
+- 宇宙ページの「星雲の奥へ」の描画コードまで：約251.2KB gzip推計。
 - 作品は選んだものだけ起動し、離れると描画資源を解放します。
 - 観測資料の動画は自動再生せず、再生を押した場合だけ読み込みます。
 
@@ -26,7 +27,7 @@ Hobbyの静的アップロード上限は100MBです。配信するものはビ�
 
 ## 今回確認したアカウント使用量
 
-HobbyのUsage表示で、Fast Data Transfer 319.24MB / 100GB、Fast Origin Transfer 16.02kB / 10GB、CDN Requests 5,807 / 100万回、Deployment Storage 598.29MBを確認しました。表示対象期間は9月28日16:00〜10月28日16:00でした。このスナップショットは将来の残量を保証しません。アカウント全体の利用量で、今回のサイトの静的ビルドはFunctions 0です。既存のHobbyプランを維持します。
+2026年10月29日にHobbyのアカウント画面で「Last 30 days」を確認しました。Fast Data Transfer 323.18MB / 100GB、Fast Origin Transfer 16.02kB / 10GB、CDN Requestsは約6,000 / 100万回でした。これはアカウント全体の表示で、将来の残量を保証するものではありません。今回のサイトのビルドにFunctionsは含めず、既存のHobbyプランを維持します。新しい有料契約やサービスは追加していません。
 
 ## アクセスが増えたときの目安
 

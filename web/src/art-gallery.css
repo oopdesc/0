@@ -1,6 +1,6 @@
 .art-collection {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 12px;
   margin: 26px 0 12px;
 }
@@ -118,26 +118,9 @@
 .art-choice-nebula i {
   display: none;
 }
-.art-choice-particles .art-choice-preview {
-  background: radial-gradient(ellipse at 50% 80%, #7b8ba855, #080b13 75%);
-}
-.art-choice-particles .art-choice-preview b {
-  width: 4px;
-  height: 4px;
-  background: #e8eef6;
-  box-shadow:
-    30px 12px 1px #fff,
-    -42px -17px 2px #b6cfff,
-    -20px 30px 1px #fff,
-    60px -25px 1px #ccc,
-    50px 30px 1px #fff,
-    -64px 25px 1px #a7c5e8,
-    75px 5px 1px #fff;
-}
-.art-choice-particles i {
-  border-style: dotted;
-  border-width: 2px;
-}
+
+
+
 .art-collection-note {
   display: flex;
   justify-content: space-between;

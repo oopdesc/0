@@ -165,3 +165,4 @@
 .zlv-submit-confirm {padding:18px;border:1px solid var(--z-line);background:var(--z-panel);border-radius:10px;margin-top:20px;display:flex;gap:12px;flex-wrap:wrap}
 .zlv-submit-confirm p {width:100%;font-size:13px;margin:0 0 8px}
 .zlv-submit-confirm .zlv-primary {margin:0;background:var(--z-blue);color:#fff}
+.zlv-catalog-exam-preview{border:1px solid var(--line);padding:24px;border-radius:12px;margin:20px 0;background:var(--panel)}.zlv-catalog-exam-preview>span{font-size:11px;color:var(--muted)}.zlv-catalog-exam-preview h4{font-size:20px;margin:12px 0}.zlv-catalog-exam-preview p{font-size:13px;line-height:1.9}.zlv-catalog-exam-preview>button{background:var(--text);color:var(--bg);border:1px solid var(--text);padding:10px 15px;border-radius:6px;cursor:pointer}.zlv-catalog-exam-preview details{margin-top:20px;font-size:13px;line-height:1.8}.zlv-catalog-exam-preview summary{cursor:pointer}.zlv-catalog-exam-preview pre{white-space:pre-wrap;overflow-wrap:anywhere}

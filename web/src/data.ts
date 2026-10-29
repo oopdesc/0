@@ -17,7 +17,7 @@ export const resources: Resource[] = [
     title: "Java・Rustの問題集と実行演習",
     subtitle: `${stats.questionBank.toLocaleString()}問の読み取り問題と${stats.executionPractice}問のコード記述。予測・理由・復習で理解を確かめる。`,
     category: "学習",
-    tag: `${stats.total.toLocaleString()}問収録`,
+    tag: `通常問題 ${stats.total.toLocaleString()}問`,
     href: "/learn",
     accent: "blue",
   },

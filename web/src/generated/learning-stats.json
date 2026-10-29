@@ -9,5 +9,19 @@
   "experiments": 6,
   "exams": 12,
   "java": 892,
-  "rust": 395
+  "rust": 395,
+  "unique": {
+    "method": "origin-and-content-v1",
+    "total": 2098,
+    "java": 1386,
+    "rust": 712,
+    "writing": 374,
+    "occurrences": 2922,
+    "removed": 824,
+    "normal": 1245,
+    "supplementalAdditional": 655,
+    "examAdditional": 124,
+    "legacyAdditional": 74,
+    "examOccurrences": 396
+  }
 }

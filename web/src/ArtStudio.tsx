@@ -7,7 +7,6 @@ import type { UniverseHandle, UniverseOptions } from "./art/universe3d";
 import ObservationGuide from "./art/ObservationGuide";
 const OrbitShowcase = lazy(() => import("./art/OrbitShowcase"));
 const NebulaExperience = lazy(() => import("./art/NebulaExperience"));
-const ParticleExperience = lazy(() => import("./art/ParticleExperience"));
 const AstraModels = lazy(() => import("./arena/astra/Models"));
 const scenes = [
   {
@@ -90,8 +89,7 @@ export default function ArtStudio({
   const observation = currentExhibit === "observation";
   const guest =
     currentExhibit === "orbit" ||
-    currentExhibit === "nebula" ||
-    currentExhibit === "particles"
+    currentExhibit === "nebula"
       ? currentExhibit
       : null;
   useEffect(() => setExhibit(readExhibit(search)), [search]);
@@ -332,10 +330,8 @@ export default function ArtStudio({
         >
           {guest === "orbit" ? (
             <OrbitShowcase paused={paused} />
-          ) : guest === "nebula" ? (
-            <NebulaExperience paused={paused} />
           ) : (
-            <ParticleExperience paused={paused} />
+            <NebulaExperience paused={paused} />
           )}
         </Suspense>
       ) : astra ? (

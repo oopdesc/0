@@ -29,8 +29,8 @@ const manifestFile = path.join(dist, 'release-manifest.json');
 const manifest = JSON.parse(readFileSync(manifestFile, 'utf8'));
 const entryKey = Object.keys(manifest).find(k => manifest[k].isEntry);
 assert(entryKey, 'Build manifest has no entry');
-function payload(keys) {
-  const chunks = new Set(), assets = new Set(['index.html']);
+function payload(keys, extraAssets = []) {
+  const chunks = new Set(), assets = new Set(['index.html', ...extraAssets]);
   function add(key) {
     if (chunks.has(key)) return;
     chunks.add(key);
@@ -54,9 +54,10 @@ const pagePayloads = {
   home: payload([entryKey]),
   learning: payload([entryKey, 'src/LearningHub.tsx']),
   questions: payload([entryKey, 'src/LearningHub.tsx', 'src/learning-v2/PackLearning.tsx']),
+  catalog: payload([entryKey, 'src/LearningHub.tsx', 'src/learning-v2/QuestionCatalog.tsx'], ['learning-v2/catalog.json']),
   orbit: payload([entryKey, 'src/art/OrbitShowcase.tsx']),
   nebula: payload([entryKey, 'src/art/NebulaExperience.tsx']),
-  particles: payload([entryKey, 'src/art/ParticleExperience.tsx']),
+  homeNebula: payload([entryKey, 'src/art/nursery/renderer.ts'], ['cosmos/nursery-poster.webp']),
 };
 // The manifest is a local verification input, not a deployed asset.
 unlinkSync(manifestFile);

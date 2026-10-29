@@ -28,4 +28,6 @@ test("art links survive reloads and preserve older galaxy view links", () => {
   assert.equal(readExhibit("?exhibit=../../private"), "solar");
   assert.equal(readExhibit(""), "solar");
   assert.equal(readExhibit("?exhibit=celestial"), "galaxy");
+  assert.equal(readExhibit("?exhibit=particles"), "nebula");
+  assert(!ART_EXHIBITS.some(([id])=>String(id)==="particles"));
 });

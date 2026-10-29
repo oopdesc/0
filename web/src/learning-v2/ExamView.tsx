@@ -12,8 +12,8 @@ function download(name: string, content: string) {
   const a=document.createElement('a');a.href=url;a.download=name.split('/').pop() || 'Main.java';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 
-export default function ExamView({manifest,exams}:{manifest:Manifest;exams:Exam[]}) {
-  const [examId,setExamId]=useState(exams[0]?.id ?? ''), [questions,setQuestions]=useState<Question[]|null>(null), [fingerprint,setFingerprint]=useState(''), [error,setError]=useState(''), [reload,setReload]=useState(0);
+export default function ExamView({manifest,exams,initialExamId,initialQuestionId}:{manifest:Manifest;exams:Exam[];initialExamId?:string;initialQuestionId?:string}) {
+  const [examId,setExamId]=useState(exams.find(e=>e.id===initialExamId)?.id??exams[0]?.id??''), [questions,setQuestions]=useState<Question[]|null>(null), [fingerprint,setFingerprint]=useState(''), [error,setError]=useState(''), [reload,setReload]=useState(0);
   const [current,setCurrent]=useState(0), [now,setNow]=useState(Date.now()), [previewed,setPreviewed]=useState<string[]>([]);
   const [storage]=useState(()=>{try{return window.localStorage;}catch{return null;}});
   const [initial]=useState(()=>storage?loadExamState(storage):{state:emptyExamState(),writable:false,error:'このブラウザでは試験記録を保存できません。'});
@@ -27,7 +27,7 @@ export default function ExamView({manifest,exams}:{manifest:Manifest;exams:Exam[
   const retained=state.attempts.filter(a=>a.examId===examId&&a.examFingerprint!==fingerprint).length;
   useEffect(()=>{
     if(!exam)return;const ctrl=new AbortController();setQuestions(null);setFingerprint('');setError('');setCurrent(0);setPreviewed([]);setSubmitConfirm(false);
-    loadExamQuestions(manifest,exam,ctrl.signal).then(async qs=>({qs,digest:await fingerprintExam(exam,qs)})).then(value=>{if(!ctrl.signal.aborted){setQuestions(value.qs);setFingerprint(value.digest);}}).catch(e=>{if(!ctrl.signal.aborted)setError(e instanceof Error?e.message:'試験を読み込めません。');});
+    loadExamQuestions(manifest,exam,ctrl.signal).then(async qs=>({qs,digest:await fingerprintExam(exam,qs)})).then(value=>{if(!ctrl.signal.aborted){setQuestions(value.qs);setFingerprint(value.digest);setCurrent(Math.max(0,value.qs.findIndex(q=>q.id===initialQuestionId)));}}).catch(e=>{if(!ctrl.signal.aborted)setError(e instanceof Error?e.message:'試験を読み込めません。');});
     return ()=>ctrl.abort();
   },[manifest,examId,reload]); // exam is selected by id from the validated list
   useEffect(()=>{if(!attempt||attempt.submittedAt!==null)return;setNow(Date.now());const timer=setInterval(()=>setNow(Date.now()),1000);return ()=>clearInterval(timer);},[attempt?.attemptId,attempt?.submittedAt]);
@@ -53,13 +53,14 @@ export default function ExamView({manifest,exams}:{manifest:Manifest;exams:Exam[
     if(!exam||!fingerprint)return;setSubmitConfirm(false);
     if(stateRef.current.attempts.length>=200){setNotice('試験記録の件数上限に達しました。既存記録は削除していません。');return;}
     const id=typeof crypto.randomUUID==='function'?crypto.randomUUID():`attempt-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    persist(s=>updateExam(startExam(s,exam,manifest.contentVersion,Date.now(),id,fingerprint),id,a=>({...a,revealed:previewed})));setCurrent(0);
+    persist(s=>updateExam(startExam(s,exam,manifest.contentVersion,Date.now(),id,fingerprint),id,a=>({...a,revealed:previewed})));setCurrent(Math.max(0,questions?.findIndex(q=>q.id===initialQuestionId)??0));
   }
   async function restoreFile(file?:File){
     if(!file)return;
     try{if(file.size>1_048_576)throw Error('試験記録は1MiBまで取り込めます。');if(!storage)throw Error('このブラウザでは保存できません。');const currentState=loadExamState(storage);if(!currentState.writable)throw Error(currentState.error||'既存記録を読み取れません。');const result=importExamState(await file.text(),currentState.state);if(!result.ok)throw Error(result.error);const saved=saveExamState(storage,result.state);if(!saved.ok)throw Error(saved.error||'保存できません。');stateRef.current=result.state;setState(result.state);setNotice('試験記録を統合しました。新しく追加 '+result.added+'件、既存を優先 '+result.retained+'件。異なる内容の受験も保管します。');}catch(e){setNotice(e instanceof Error?e.message:'取り込めません。');}finally{if(importFileRef.current)importFileRef.current.value='';}
   }
   function openReview(index:number){setCurrent(index);requestAnimationFrame(()=>{questionArea.current?.focus({preventScroll:true});questionArea.current?.scrollIntoView({block:'start',behavior:'auto'});});}
+  const target=questions?.find(q=>q.id===initialQuestionId);
   const q=questions?.[current], submitted=attempt?.submittedAt!==null && !!attempt;
   const remaining=attempt?Math.max(0,Math.min((exam?.durationMinutes??0)*60,Math.ceil((attempt.deadlineAt-now)/1000))):0;
   const summary=attempt&&submitted&&questions&&exam?gradeExamChoices(attempt,exam,questions):null;
@@ -76,6 +77,7 @@ export default function ExamView({manifest,exams}:{manifest:Manifest;exams:Exam[
         {exam && <>{exam.extensions?.note && <p className="zlv-write-note">{exam.extensions.note}</p>}<div className="zlv-card-top"><span>試験 / {manifest.language.toUpperCase()}</span><span className="zlv-tag">非公式</span></div><h3>{levelNames[exam.level]} {exam.form}</h3><p>選択 {exam.choiceQuestionIds.length}問 · 実装 {exam.codeQuestionIds.length}課題 · {exam.durationMinutes}分 · 選択 {exam.passingPercent}%を目安</p>
           {error&&<div role="alert" className="zlv-placeholder"><p>{error}</p><button onClick={()=>setReload(x=>x+1)}>読み直す</button></div>}
           {!questions&&!error&&<p role="status">試験問題を読み込んでいます…</p>}
+          {target&&!attempt&&<section className="zlv-catalog-exam-preview" aria-label="一覧から選んだ設問"><span>一覧から選んだ設問</span><h4>{target.title}</h4><p>{target.prompt}</p><pre className="zlv-code"><code>{target.setup.files.map(f=>f.content).join('\n')}</code></pre>{target.answer.options.length>0&&<ol type="A">{target.answer.options.map(o=><li key={o.id}>{o.text}</li>)}</ol>}<button type="button" onClick={begin}>この問題から受験を始める →</button><details onToggle={e=>{if(e.currentTarget.open)setPreviewed(prev=>[...new Set([...prev,target.id])]);}}><summary>この問題の解答と理由を見る</summary>{target.answer.correctOptionIds.length>0&&<p>答え: {target.answer.correctOptionIds.map(id=>target.answer.options.find(o=>o.id===id)?.text??id).join('、')}</p>}<p>{target.solution.explanation}</p><ol>{target.solution.reasoningSteps.map((text,i)=><li key={i}>{text}</li>)}</ol>{target.writingRequired&&target.solution.files.map(f=><pre key={f.path}><code>{f.content}</code></pre>)}</details><p>解答を見た場合は記録します。試験を始めると、この設問から他の問題へも進めます。</p></section>}
           {questions&&!attempt&&<div className="zlv-write-note"><p>回答・見直し印・下書きはこのブラウザに保存します。制限時間が過ぎると提出します。解説は開始前にも下で確認できます。</p><button type="button" onClick={begin}>受験を始める</button><details onToggle={e=>{if(e.currentTarget.open)setPreviewed(questions.map(x=>x.id));}}><summary>受験前に全問題と解説を見る</summary>{questions.map(x=><section key={x.id}><h4>{x.title}</h4><p>{x.prompt}</p><pre><code>{x.setup.files.map(f=>f.content).join('\n')}</code></pre>{x.answer.options.length>0&&<ul>{x.answer.options.map(o=><li key={o.id}>{o.text}</li>)}</ul>}<p>答え: {x.answer.correctOptionIds.map(id=>x.answer.options.find(o=>o.id===id)?.text??id).join('、') || (x.writingRequired?'模範コードを参照':'設定なし')}</p><p>{x.solution.explanation}</p><ol>{x.solution.reasoningSteps.map((v,i)=><li key={i}>{v}</li>)}</ol>{x.solution.wrongReasons.map(r=><p key={r.optionId}>{x.answer.options.find(o=>o.id===r.optionId)?.text??r.optionId} — {r.reason}</p>)}{x.writingRequired&&x.solution.files.map(f=><pre key={f.path}><code>{f.content}</code></pre>)}<p>境界: {x.solution.boundaries.join(' / ')}</p><p>別解: {x.solution.alternativeCriteria.join(' / ')}</p></section>)}</details></div>}
           {attempt&&questions&&<>
             <div className="zlv-exam-status" role="status"><strong>{submitted?'提出済み':`残り ${Math.floor(remaining/60)}分 ${String(remaining%60).padStart(2,'0')}秒`}</strong><span>受験 {state.attempts.filter(a=>a.examId===exam.id&&a.packVersion===manifest.contentVersion).length}回目</span>{submitted&&<button type="button" onClick={begin}>もう一度受ける</button>}</div>

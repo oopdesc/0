@@ -222,7 +222,7 @@ export default function PackLearning({ search, view = 'all' }: { search: string;
         {examError && <div className="zlv-placeholder" role="alert"><p>{examError}</p><button type="button" onClick={() => setReload(x => x + 1)}>読み直す</button></div>}
         {!exams && !examError && <p role="status">試験の一覧を読み込んでいます…</p>}
         {exams && !exams.length && <section className="zlv-empty"><span>試験 / 準備中</span><h3>試験はまだ追加されていません。</h3><p>非公式の独自模試を用意する予定です。通常問題とは別に数え、自由に開ける形にします。</p><a href={href('all', lang)}>問題を選ぶ →</a></section>}
-        {exams && exams.length > 0 && <Suspense fallback={<p>試験を読み込んでいます…</p>}><ExamView manifest={manifest} exams={exams} /></Suspense>}
+        {exams && exams.length > 0 && <Suspense fallback={<p>試験を読み込んでいます…</p>}><ExamView key={manifest.language+":"+params.get("exam")+":"+params.get("examQuestion")} manifest={manifest} exams={exams} initialExamId={params.get("exam")??undefined} initialQuestionId={params.get("examQuestion")??undefined} /></Suspense>}
       </> : <>
         {questionError && <div className="zlv-placeholder" role="alert"><p>{questionError}</p><button onClick={() => setReload(x => x + 1)}>読み直す</button></div>}
         <div className="zlv-layout">
