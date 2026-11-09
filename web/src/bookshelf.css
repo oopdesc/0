@@ -1,6 +1,12 @@
 .books-page .page-heading {
   margin-bottom: 28px;
 }
+.books-page .page-heading h1 {
+  text-wrap: balance;
+}
+.has-sky .books-page {
+  padding-inline: clamp(16px, 4vw, 36px);
+}
 .book-editions {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
