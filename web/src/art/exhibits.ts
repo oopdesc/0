@@ -14,5 +14,5 @@ export function readExhibit(search: string): ExhibitId {
   for (const [id] of ART_EXHIBITS) if (id === selected) return id;
   if (q.get("view") === "observation" || q.get("view") === "photo") return "observation";
   if (q.has("scene") || q.has("view") || q.get("model") === "galaxy") return "galaxy";
-  return "solar";
+  return "nebula";
 }

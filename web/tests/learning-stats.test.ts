@@ -25,8 +25,8 @@ test("art links survive reloads and preserve older galaxy view links", () => {
   assert.equal(readExhibit("?scene=black-hole"), "galaxy");
   assert.equal(readExhibit("?view=photo&scene=m51"), "observation");
   assert.equal(readExhibit("?model=galaxy"), "galaxy");
-  assert.equal(readExhibit("?exhibit=../../private"), "solar");
-  assert.equal(readExhibit(""), "solar");
+  assert.equal(readExhibit("?exhibit=../../private"), "nebula");
+  assert.equal(readExhibit(""), "nebula");
   assert.equal(readExhibit("?exhibit=celestial"), "galaxy");
   assert.equal(readExhibit("?exhibit=particles"), "nebula");
   assert(!ART_EXHIBITS.some(([id])=>String(id)==="particles"));

@@ -402,7 +402,7 @@ export default function App() {
           </div>
         </div>
         <div className="footer-bottom">
-          <span>© {new Date().getFullYear()} 0 制作者</span>
+          <span>© {new Date().getFullYear()} oopdesc</span>
           <span>宇宙 / Java / Rust</span>
           <a
             className="footer-status license-badge"

@@ -195,8 +195,11 @@ async function createWebGL(
         vec3 col = deep;
         col = mix(col, cool*0.5, smoothstep(0.4,0.75,n2)*0.5);
         col = mix(col, warm, smoothstep(0.55,0.85,n)*0.35);
-        // faint star specks
-        float sp = pow(nv(d*90.0), 40.0);
+        // Keep the bright core of each speck within one cell. Adjacent noise
+        // peaks otherwise join into bent streaks when the bloom amplifies them.
+        vec3 starGrid = d*90.0;
+        vec3 offset = starGrid - floor(starGrid+0.5);
+        float sp = pow(nv(starGrid),40.0) * (1.0-smoothstep(0.04,0.16,dot(offset,offset)));
         col += vec3(0.8,0.85,1.0)*sp*0.8;
         gl_FragColor = vec4(col,1.0);
       }`,

@@ -204,7 +204,7 @@ export default function LearningHub({
       ) : section === "catalog" ? (
         <Suspense fallback={<p className="hub-content">問題一覧を読み込んでいます…</p>}><QuestionCatalog search={search}/></Suspense>
       ) : section === "concepts" ? (
-        <Suspense fallback={<p className="hub-content">概念図を読み込んでいます…</p>}><ConceptOverview/></Suspense>
+        <Suspense fallback={<p className="hub-content">概念図を読み込んでいます…</p>}><ConceptOverview search={search}/></Suspense>
       ) : section === "supplemental" ? (
         <Suspense fallback={<p className="hub-content">補充問題集を読み込んでいます…</p>}><p className="hub-content">追加の練習に使える別の問題集です。通常問題集との重複を含みます。1,126問のコードを実コンパイラで照合し、実行対象外の例にはその範囲を記しています。 <a href="/learn?section=drill">新しい問題集へ →</a></p><Supplemental/></Suspense>
       ) : section === "orbit" ? (

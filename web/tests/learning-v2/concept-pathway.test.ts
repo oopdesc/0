@@ -1,8 +1,14 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {PATHWAY_CONCEPTS,layoutPathway,linkedPackQuestions,relatedPath} from '../../src/learning-v2/conceptPathway';
+import {PATHWAY_CONCEPTS,layoutPathway,linkedPackQuestions,readPathwayLocation,relatedPath} from '../../src/learning-v2/conceptPathway';
 import type {Concept as PackConcept,Manifest} from '../../src/learning-v2/types';
+
+test("map links honor the originating lesson language and reject a mismatched concept", () => {
+  assert.deepEqual(readPathwayLocation("?section=concepts&lang=rust"), { lang: "rust", conceptId: "r-let" });
+  assert.deepEqual(readPathwayLocation("?lang=java&mapLang=rust&concept=r-borrow"), { lang: "rust", conceptId: "r-borrow" });
+  assert.deepEqual(readPathwayLocation("?lang=rust&mapLang=java&concept=r-borrow"), { lang: "java", conceptId: "j-primitive" });
+});
 
 test('recovered pathway is acyclic and each prerequisite is present in its language',()=>{
  const ids=new Set(PATHWAY_CONCEPTS.map(n=>n.id));assert.equal(ids.size,PATHWAY_CONCEPTS.length);

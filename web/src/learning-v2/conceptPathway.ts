@@ -4,6 +4,16 @@ import {applyLegacyConceptCorrections} from './legacyConceptCorrections';
 import type {Concept as PackConcept, Lang, Manifest} from './types';
 applyLegacyConceptCorrections();
 export const PATHWAY_CONCEPTS = CONCEPTS;
+export function readPathwayLocation(search: string) {
+  const params = new URLSearchParams(search);
+  const mapLang = params.get("mapLang");
+  const lang: Lang = mapLang === "java" || mapLang === "rust"
+    ? mapLang
+    : params.get("lang") === "rust" ? "rust" : "java";
+  const conceptId = params.get("concept");
+  const concept = PATHWAY_CONCEPTS.find(node => node.lang === lang && node.id === conceptId);
+  return { lang, conceptId: concept?.id ?? (lang === "rust" ? "r-let" : "j-primitive") };
+}
 export const FAMILY_NAMES:Record<string,string> = {core:'値と制御',oop:'オブジェクトと型',collections:'コレクション',functional:'関数とStream',exceptions:'例外',errors:'例外',ownership:'所有権と借用',data:'データ構造',advanced:'寿命とモジュール',abstraction:'抽象化',interop:'テストとWasm',practical:'HTTPとDB','rust-core':'値と式','rust-ownership':'所有権と借用','rust-data':'データ構造','rust-abstraction':'抽象化','rust-lifetime':'寿命とモジュール','rust-practical':'テストとWasm'};
 export function relatedPath(id:string, nodes:readonly Concept[]=PATHWAY_CONCEPTS):Set<string>{
  const result=new Set<string>([id]),byId=new Map(nodes.map(n=>[n.id,n]));

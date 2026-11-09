@@ -4,12 +4,13 @@ import { CONCEPTS, EDGES } from '../../core/concepts/graph';
 interface Props {
   selectedId: string;
   onSelect: (id: string) => void;
+  scrollable?: boolean;
 }
 
 const W = 900;
 const H = 520;
 
-export function ConceptGraph({ selectedId, onSelect }: Props) {
+export function ConceptGraph({ selectedId, onSelect, scrollable }: Props) {
   const [hovered, setHovered] = useState<string | null>(null);
   const activeId = hovered ?? selectedId;
   const activeEdges = useMemo(
@@ -22,8 +23,7 @@ export function ConceptGraph({ selectedId, onSelect }: Props) {
     return s;
   }, [activeEdges, activeId]);
 
-  return (
-    <div className="graph">
+  const diagram = (
       <svg viewBox={`0 0 ${W} ${H}`} className="graph__svg" role="group"
         aria-label="Java と Rust の概念関係図。下の一覧から選択できます。">
         <defs>
@@ -61,7 +61,15 @@ export function ConceptGraph({ selectedId, onSelect }: Props) {
           );
         })}
       </svg>
+  );
 
+  return (
+    <div className="graph">
+      {scrollable ? (
+        <div className="graph__viewport" role="region" tabIndex={0} aria-label="横にスクロールできる比較図">
+          {diagram}
+        </div>
+      ) : diagram}
       <div className="graph__legend" aria-hidden="true">
         <span><i className="dot dot--java" /> Java</span>
         <span><i className="dot dot--rust" /> Rust</span>

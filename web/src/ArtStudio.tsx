@@ -86,9 +86,7 @@ export default function ArtStudio({
   search: string;
 }) {
   const sky=useSky();
-  const [currentExhibit, setExhibit] = useState<ExhibitId>(() =>
-    readExhibit(search),
-  );
+  const currentExhibit = readExhibit(search);
   const astra = currentExhibit === "solar";
   const observation = currentExhibit === "observation";
   const guest =
@@ -96,13 +94,12 @@ export default function ArtStudio({
     currentExhibit === "nebula"
       ? currentExhibit
       : null;
-  useEffect(() => setExhibit(readExhibit(search)), [search]);
   function selectExhibit(id: ExhibitId) {
-    setExhibit(id);
+    if (id === currentExhibit) return;
     const query = new URLSearchParams({ exhibit: id });
     if (id === "observation" || id === "galaxy")
       query.set("scene", scenes[mode].id);
-    history.replaceState(null, "", "/art?" + query);
+    history.pushState(null, "", "/art?" + query);
     dispatchEvent(new PopStateEvent("popstate"));
   }
   const [java, setJava] = useState<JavaArt | null>(null),
@@ -199,12 +196,12 @@ export default function ArtStudio({
   async function share() {
     const v = handle.current?.readView();
     const q = new URLSearchParams({
+      exhibit: observation ? "observation" : "galaxy",
       scene: scene.id,
       seed: String(seed),
       light: String(brightness),
     });
-    if (observation) q.set("view", "observation");
-    else if (v) {
+    if (!observation && v) {
       q.set("az", v.azimuth.toFixed(3));
       q.set("el", v.elevation.toFixed(3));
       q.set("distance", v.distance.toFixed(4));
