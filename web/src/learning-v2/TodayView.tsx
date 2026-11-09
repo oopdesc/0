@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   loadStudyIndex,
+  itemKey,
   planStudy,
   studyHref,
   studySummary,
@@ -13,8 +14,9 @@ import {
   loadProgress,
   saveProgress,
 } from "./progress";
-import type { Lang, Level } from "./types";
+import { readStudyFilter, readStudyRound, roundHref, startStudyRound } from "./studyRound";
 import "./today.css";
+import "./study-round.css";
 const levels = { beginner: "初級", intermediate: "中級", advanced: "上級" };
 const reasons = {
   due: "復習の時期",
@@ -39,30 +41,23 @@ function readState() {
         error: "このブラウザでは記録を保存できません。学習は続けられます。",
       };
 }
-export default function TodayView({ search = "" }: { search?: string }) {
+export default function TodayView({ search, navigate }: { search: string; navigate: (href: string) => void }) {
   const [index, setIndex] = useState<StudyIndex | null>(null),
     [error, setError] = useState(""),
     [retry, setRetry] = useState(0);
   const [saved, setSaved] = useState(readState),
-    [now, setNow] = useState(Date.now()),
+    [now, setNow] = useState(Date.now),
     [notice, setNotice] = useState(""),
     [skipped, setSkipped] = useState<Set<string>>(new Set());
-  const params = new URLSearchParams(search);
-  const [language, setLanguage] = useState<StudyFilter["language"]>(
-    params.get("lang") === "java" || params.get("lang") === "rust"
-      ? (params.get("lang") as Lang)
-      : "all",
-  );
-  const [level, setLevel] = useState<StudyFilter["level"]>(
-    ["beginner", "intermediate", "advanced"].includes(params.get("level") || "")
-      ? (params.get("level") as Level)
-      : "all",
-  );
-  const [kind, setKind] = useState<StudyFilter["kind"]>(
-      params.get("kind") === "code" ? "code" : "all",
-    ),
-    [limit, setLimit] = useState(10),
-    [includeNew, setIncludeNew] = useState(true);
+  const [defaults] = useState(() => readStudyFilter(new URLSearchParams(search)));
+  const [language, setLanguage] = useState(defaults.language);
+  const [level, setLevel] = useState(defaults.level);
+  const [kind, setKind] = useState(defaults.kind);
+  const [limit, setLimit] = useState(defaults.limit);
+  const [includeNew, setIncludeNew] = useState(defaults.includeNew);
+  const [roundNotice, setRoundNotice] = useState("");
+  const round = readStudyRound();
+  const activeRound = round && round.outcomes.length < round.ids.length ? round : null;
   const file = useRef<HTMLInputElement>(null);
   useEffect(() => {
     const ctrl = new AbortController();
@@ -100,7 +95,21 @@ export default function TodayView({ search = "" }: { search?: string }) {
     [index, saved.state, language, level, kind, limit, includeNew, now],
   );
   const summary = index ? studySummary(index, saved.state, now) : null;
+  const reviewAfterRound = round && !activeRound && index
+    ? round.ids.flatMap((id, i) => {
+        const item = index.items.find(q => q.id === id);
+        if (!item) return [];
+        const outcome = saved.state.records[itemKey(item)]?.lastOutcome;
+        const label = round.outcomes[i] === "skipped" ? "飛ばした" : outcome === "wrong" || outcome === "code-failed" ? "見直し" : null;
+        return label ? [{ item, label }] : [];
+      })
+    : [];
   const shown = plan.filter((x) => !skipped.has(x.item.id));
+  function beginRound() {
+    const started = startStudyRound(shown.map(p => p.item.id), { language, level, kind, limit, includeNew });
+    if (started) navigate(roundHref(started));
+    else setRoundNotice("このブラウザではセットを保存できません。一覧から一問ずつ開けます。");
+  }
   async function importFile(input?: File) {
     if (!input) return;
     setNotice("");
@@ -173,6 +182,19 @@ export default function TodayView({ search = "" }: { search?: string }) {
           <a href="/learn?section=concepts">学びの地図を開く ↗</a>
         </div>
       </header>
+      {round && (
+        <section className="study-round" aria-label={activeRound ? "中断した学習" : "前回の学習結果"}>
+          <div>
+            <strong>{activeRound ? "続きから学ぶ" : "このセットは終了しました"}</strong>
+            <p>取り組んだ問題 {round.outcomes.filter(x => x === "attempted").length}問 · 飛ばした問題 {round.outcomes.filter(x => x === "skipped").length}問 · 全{round.ids.length}問</p>
+          </div>
+          {activeRound && <a className="study-round-action" href={roundHref(activeRound)}>第{round.outcomes.length + 1}問から再開 →</a>}
+          {reviewAfterRound.length > 0 && <details className="study-round-review">
+            <summary>飛ばした問題・見直したい問題（{reviewAfterRound.length}問）</summary>
+            <ul>{reviewAfterRound.map(({item, label}) => <li key={item.id}><a href={studyHref(item)}>{item.title}</a> · {label}</li>)}</ul>
+          </details>}
+        </section>
+      )}
       {saved.error && (
         <p role="status" className="study-notice">
           {saved.error}
@@ -306,8 +328,13 @@ export default function TodayView({ search = "" }: { search?: string }) {
               </label>
             </div>
             <p className="study-method">
-              復習日は1・3・7・14・30日を目安にしています。個人に最適な日数を自動推定する機能ではありません。記録がない前提は案内だけに使い、学習順序をロックしません。
+              復習時期が来た問題に自力で正答すると、次の間隔が1・3・7・14・30日の順に延びます。前提の確認は自由です。
             </p>
+            {shown.length > 0 && <div className="study-round-start">
+              <button type="button" className="study-round-action" onClick={beginRound}>この{shown.length}問を始める →</button>
+              <span>{activeRound ? "新しいセットを始めると、前の続きは置き換わります。学習記録は残ります。" : "一問ずつ進めます。途中で閉じても、このブラウザから再開できます。"}</span>
+            </div>}
+            {roundNotice && <p className="study-notice" role="status">{roundNotice}</p>}
             <ol className="study-list">
               {shown.map((p, i) => (
                 <li key={p.item.id}>

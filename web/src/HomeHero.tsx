@@ -3,6 +3,7 @@ import HomeNebula from "./art/HomeNebula";
 import QuestionInventory from "./QuestionInventory";
 import stats from "./generated/learning-stats.json";
 import { loadLast } from "./learning-v2/progress";
+import { resumeStudyRound } from "./learning-v2/studyRound";
 import "./home.css";
 export default function HomeHero({ paused, onStartMotion, suspended }: { paused: boolean; onStartMotion: () => void; suspended: boolean }) {
   const [last] = useState(() => {
@@ -12,9 +13,10 @@ export default function HomeHero({ paused, onStartMotion, suspended }: { paused:
       return null;
     }
   });
-  const resume = last
+  const [roundResume] = useState(resumeStudyRound);
+  const resume = roundResume ?? (last
     ? `/learn?section=drill&lang=${last.language}&q=${encodeURIComponent(last.id)}`
-    : "/learn?section=drill&lang=java&q=java%3Aq0001";
+    : "/learn?section=drill&lang=java&q=java%3Aq0001");
   return (
     <section className="home-hero" aria-labelledby="home-title">
       <div className="home-intro">
@@ -44,7 +46,7 @@ export default function HomeHero({ paused, onStartMotion, suspended }: { paused:
         </div>
         <div className="home-quick-links">
           <a href="/learn?section=journey">全{stats.unique.total.toLocaleString()}問を一本の道で →</a>
-          <a href={resume}>最近の問題 →</a>
+          <a href={resume}>{roundResume ? "学習セットの続き" : "最近の問題"} →</a>
           <a href="/learn?section=today">今日の学習 →</a>
           <a href="/learn?section=concepts">概念図 →</a>
           <a href="/learn?section=exams">試験 {stats.exams}本 →</a>

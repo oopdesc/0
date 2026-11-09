@@ -5,10 +5,13 @@ import { loadAliases, loadChunk, loadConcepts, loadExams, loadManifest } from '.
 import { localGradeToken, runLocalGrade } from './localGrade';
 import type { LocalGradeResult } from './localGrade';
 import { buildExerciseArchive, canArchiveExercise } from './exerciseArchive';
-import { emptyProgress, exportProgress, importProgress, loadProgress, markExposure, mergeProgress, recordKey, recordPrediction, recordRecall, recordCodeCheck, recordManualCodeCheck, saveDraft, saveLast, saveProgress } from './progress';
+import { canRecordRecall, emptyProgress, exportProgress, importProgress, loadProgress, markExposure, mergeProgress, recordKey, recordPrediction, recordRecall, recordCodeCheck, recordManualCodeCheck, saveDraft, saveLast, saveProgress } from './progress';
 import type { Progress } from './progress';
 import type { Concept, Exam, Lang, Manifest, Question } from './types';
+import { readStudyRound, roundHref, saveStudyRound, todayHref } from './studyRound';
+import type { StudyRound } from './studyRound';
 import './learning-v2.css';
+import './study-round.css';
 
 const LegacyProblems = lazy(() => import('../CuratedProblems'));
 const ExamView = lazy(() => import('./ExamView'));
@@ -67,7 +70,7 @@ function isValidAnswer(q: Question, selected: string[], text: string, order: str
   return false;
 }
 
-export default function PackLearning({ search, view = 'all' }: { search: string; view?: View }) {
+export default function PackLearning({ search, view = 'all', navigate }: { search: string; view?: View; navigate?: (href: string) => void }) {
   const params = useMemo(() => new URLSearchParams(search), [search]);
   const lang: Lang = params.get('lang') === 'rust' || params.get('track') === 'Rust' ? 'rust' : 'java';
   const hash = useHash();
@@ -200,8 +203,40 @@ export default function PackLearning({ search, view = 'all' }: { search: string;
   const allIds = manifest?.chunks.flatMap(c => view === 'writing' ? c.writingIds ?? c.ids : c.ids) ?? [];
   const index = current ? allIds.indexOf(current.id) : -1;
   const legacyPending = Object.values(progress.legacy).filter(x => !x.targetId).length;
+  const savedRound = navigate && view === 'all' && params.has('study') ? readStudyRound() : null;
+  const round = savedRound?.token === params.get('study') ? savedRound : null;
+  const roundIndex = round?.outcomes.length ?? 0;
+  const focused = !!round && requested === round.ids[roundIndex];
+  const [roundNotice, setRoundNotice] = useState('');
+  function advance(attempted: boolean) {
+    if (!round || !focused || !navigate) return;
+    const latest = readStudyRound();
+    if (latest?.token !== round.token || latest.outcomes.length !== roundIndex) {
+      setRoundNotice('別の画面でセットが進みました。今日の学習から、続きへ戻れます。');
+      return;
+    }
+    const next: StudyRound = { ...latest, outcomes: [...latest.outcomes, attempted ? 'attempted' : 'skipped'] };
+    if (!saveStudyRound(next)) {
+      setRoundNotice('続きの位置を保存できませんでした。もう一度試してください。');
+      return;
+    }
+    setRoundNotice('');
+    navigate(roundHref(next));
+  }
 
-  return <main className="zlv" aria-label="共通学習画面">
+  return <main className={focused ? "zlv zlv--round" : "zlv"} aria-label="共通学習画面">
+    {params.has('study') && (
+      <section className="study-round" aria-label="今回の学習セット">
+        <div>
+          <strong>{focused && round ? `第${roundIndex + 1}問 / 全${round.ids.length}問` : '学習セットの続き'}</strong>
+          <p>{focused ? '一問ずつ、自分の速さで。' : 'この問題とは別に、現在の続きの位置を保存しています。'}</p>
+        </div>
+        {round && !focused && roundIndex < round.ids.length && <a className="study-round-action" href={roundHref(round)}>現在の問題へ →</a>}
+        <a href={round ? todayHref(round.filter) : '/learn?section=today'}>{focused ? '中断して一覧へ' : '今日の学習へ'}</a>
+      </section>
+    )}
+    {focused && (unresolved === requested || questionError || manifestError) && <p className="zlv-notice">この問題を開けませんでした。 <button type="button" onClick={() => advance(false)}>この問題を飛ばす →</button></p>}
+    {roundNotice && <p role="status" className="zlv-notice">{roundNotice}</p>}
     <div className="zlv-topline"><span>0 / 学習のノート</span><span>自分の速さで、何度でも</span></div>
     <header className="zlv-header">
       <div><span className="zlv-kicker">手を動かして学ぶ <span>✳</span></span><h2>{view === 'exams' ? '試験で、理解を確かめる。' : view === 'diagnostics' ? 'これまでを、振り返る。' : view === 'writing' ? '小さく書いて、確かめる。' : 'ひとつずつ、わかるまで。'}</h2><p>予測して、理由を追って、自分の手で試す。どこからでも始められます。</p></div>
@@ -237,7 +272,7 @@ export default function PackLearning({ search, view = 'all' }: { search: string;
             <ol className="zlv-problem-list">{visible.map((q) => <li key={q.id}><a href={href(view, lang, q.id)} aria-current={q.id === current?.id ? 'step' : undefined}><span>{String(q.order).padStart(2, '0')}</span><span>{q.title}<small>{q.writingRequired ? 'コードを書く' : '予測する'}</small></span><span aria-hidden="true">›</span></a></li>)}</ol>
             <div className="zlv-sidebar-foot">⌁ <span>前提に戻るのも、立派な一歩。</span></div>
           </aside>
-          {current ? <QuestionPanel key={`${current.id}@${current.contentVersion}`} q={current} packVersion={manifest.contentVersion} lang={lang} view={view} concepts={concepts} progress={progress} update={update} prev={index > 0 ? allIds[index - 1] : null} next={index >= 0 && index < allIds.length - 1 ? allIds[index + 1] : null} /> : <div className="zlv-empty"><h3>問題を選んでください</h3><p>単元を選ぶと、その中の問題が表示されます。</p></div>}
+          {current && (!focused || current.id === requested) ? <QuestionPanel key={`${current.id}@${current.contentVersion}`} q={current} packVersion={manifest.contentVersion} lang={lang} view={view} concepts={concepts} progress={progress} update={update} prev={index > 0 ? allIds[index - 1] : null} next={index >= 0 && index < allIds.length - 1 ? allIds[index + 1] : null} round={focused && round ? round : undefined} advance={advance} /> : focused ? !unresolved && !questionError && <p role="status">問題を読み込んでいます…</p> : <div className="zlv-empty"><h3>問題を選んでください</h3><p>単元を選ぶと、その中の問題が表示されます。</p></div>}
         </div>
         <ConceptMap concepts={concepts} lang={lang} />
       </>}
@@ -248,7 +283,7 @@ export default function PackLearning({ search, view = 'all' }: { search: string;
 }
 
 type Update = (fn: (s: Progress) => Progress) => void;
-export function QuestionPanel({ q, packVersion, lang, view, concepts, progress, update, prev, next }: { q: Question; packVersion: string; lang: Lang; view: View; concepts: Concept[]; progress: Progress; update: Update; prev: string | null; next: string | null }) {
+export function QuestionPanel({ q, packVersion, lang, view, concepts, progress, update, prev, next, round, advance }: { q: Question; packVersion: string; lang: Lang; view: View; concepts: Concept[]; progress: Progress; update: Update; prev: string | null; next: string | null; round?: StudyRound; advance?: (attempted: boolean) => void }) {
   const key = recordKey(q.id, q.contentVersion, q.writingRequired ? 'code' : 'prediction');
   const [selected, setSelected] = useState<string[]>([]);
   const [text, setText] = useState('');
@@ -300,6 +335,20 @@ export function QuestionPanel({ q, packVersion, lang, view, concepts, progress, 
   const [feedback, setFeedback] = useState('');
   const submitted = useRef(false);
   const record = progress.records[key];
+  const attempted = !!round && (record?.lastAttemptAt ?? 0) >= round.startedAt;
+  const heading = useRef<HTMLHeadingElement>(null);
+  const inRound = !!round;
+  useEffect(() => { if (inRound) heading.current?.focus(); }, [inRound]);
+  function confirmRecall() {
+    const now = Date.now();
+    let recorded = false;
+    update(s => {
+      const next = recordRecall(s, key, now);
+      recorded = next !== s;
+      return next;
+    });
+    setFeedback(recorded ? '後日の自己確認として記録しました。コードの実行合格とは別です。' : '復習の時期が来たら、ヒントや解答を開く前に記録できます。');
+  }
   const conceptName = (id: string) => concepts.find(c => c.id === id)?.name ?? id;
   const before = isValidAnswer(q, selected, text, order);
   const showSolution = () => { update(s => markExposure(s, key, 'solution')); setSolution(true); };
@@ -309,14 +358,19 @@ export function QuestionPanel({ q, packVersion, lang, view, concepts, progress, 
     if (ok === null) { setFeedback('この回答形式の判定条件はまだ利用できません。未判定として扱います。'); return; }
     submitted.current = true; setResult(ok); setSolution(true);
     setFeedback(ok ? '予測が合っています。理由と境界も確かめましょう。' : '予測と答えが違いました。どの規則を使うか一緒に見直しましょう。');
-    update(s => recordPrediction(s, key, ok, Date.now(), solution||hints>0));
-    if(ok) questionCompleted(q.id, solution||hints>0 ? 'assisted' : 'correct');
+    let outcome: 'assisted' | 'correct' = 'assisted';
+    update(s => {
+      const next = recordPrediction(s, key, ok, Date.now(), solution || hints > 0);
+      if (next.records[key]?.lastOutcome === 'correct') outcome = 'correct';
+      return next;
+    });
+    if (ok) questionCompleted(q.id, outcome);
   };
   const move = (i: number, d: number) => { const j = i + d; if (j < 0 || j >= order.length) return; setOrder(old => { const a = [...old]; [a[i], a[j]] = [a[j], a[i]]; return a; }); };
   return <article className="zlv-card" aria-labelledby="zlv-question-title">
-    <p className="zlv-question-links"><a href="/learn?section=today">今日の学習へ →</a>　<a href="/learn?section=concepts">概念図を開く →</a></p>
+    <p className="zlv-question-links">{!round && <><a href="/learn?section=today">今日の学習へ →</a>　</>}<a href="/learn?section=concepts">概念図を開く →</a></p>
     <div className="zlv-card-top"><span>問題 {String(q.order).padStart(2, '0')} <i> / </i> {lang.toUpperCase()}</span><span className="zlv-tag">{q.writingRequired ? 'コード記述' : '結果を予測する'}</span></div>
-    <div className="zlv-card-title"><div><p>ひとつ、考えてみよう。</p><h3 id="zlv-question-title">{q.title}</h3></div><span aria-hidden="true">✳</span></div>
+    <div className="zlv-card-title"><div><p>ひとつ、考えてみよう。</p><h3 id="zlv-question-title" ref={heading} tabIndex={inRound ? -1 : undefined}>{q.title}</h3></div><span aria-hidden="true">✳</span></div>
     <p className="zlv-prompt">{q.prompt}</p>
     <div className="zlv-prereq"><span>この問題の前提</span>{q.prerequisiteConceptIds.length ? q.prerequisiteConceptIds.map(id => <a href="#zlv-concepts" key={id}>{conceptName(id)}</a>) : <em>ここから始められます</em>}</div>
     <div className="zlv-code-head"><span><i /> {q.setup.files[0]?.path ?? 'code'} <small> / {q.setup.languageVersion}</small></span><span>{q.writingRequired ? '編集できます' : '読むコード'}</span></div>
@@ -344,8 +398,16 @@ export function QuestionPanel({ q, packVersion, lang, view, concepts, progress, 
     {q.writingRequired && q.tests.length > 0 && <details className="zlv-tests"><summary>テストの入力と期待値を見る（実測結果ではありません）</summary>{q.tests.flatMap(t => t.cases.map(c => <div key={`${t.id}-${c.id}`}><code>{c.stdin.trim() || '入力なし'}</code><span>→</span><code>{c.expectedStdout.join(' / ') || '出力なし'}</code></div>))}</details>}
     <details className="zlv-evidence"><summary>この教材の検査情報</summary>{q.evidence.compilerRun ? <p>{q.evidence.compilerRun.version} · {q.evidence.compilerRun.status} · {q.evidence.compilerRun.checkedAt}。検査したのは教材の提示コード／模範コードで、あなたの編集内容ではありません。</p> : <p>この問題のコンパイラ実測は未記録です。</p>}<p>仕様確認の記録: {q.evidence.specReviewed ? '記録あり' : '継続中'}。ブラウザ確認: {q.evidence.browserRun ? '記録あり' : '未記録'}。</p></details>
     {q.writingRequired && <p className="zlv-write-note"><button type="button" onClick={()=>{update(s=>recordManualCodeCheck(s,key));setFeedback('手元で結果を確認した自己記録を残しました。自動採点の合格とは分け、明日の復習候補にします。');}}>手元で実行して確かめた（自己記録）</button><small>このボタンはコンパイルや採点を行いません。下書きとは別に、復習の目安だけを残します。</small></p>}
-    {record && <div className="zlv-progress">{q.writingRequired?<p>過去の固定テスト合格 {record.codePasses??0} · 固定テストでの差分/エラー {record.codeFailures??0} · 手元での確認（自己記録）{record.manualCodeChecks??0} · 後日の自己確認 {record.recalls}。過去の記録は、現在の編集内容の合格を表しません。</p>:<p>自力の予測正答 {record.blindCorrect} · 当日再挑戦/ヒント後の正答 {record.assistedCorrect} · 誤答 {record.wrong} · 後日の自己確認 {record.recalls}</p>}{record.dueAt && <p>次の復習目安: {new Date(record.dueAt).toLocaleDateString('ja-JP')}（初期案: 1・3・7・14・30日）</p>}{record.lastAttemptAt && <button type="button" onClick={() => { const old = progress.records[key]; const today = old?.lastAttemptAt && new Date(old.lastAttemptAt).toDateString() === new Date().toDateString(); if (today) setFeedback('後日の自己確認として、日を空けてから記録できます。'); else { update(s => recordRecall(s, key)); setFeedback('後日の自己確認として記録しました。コードの実行合格とは別です。'); } }}>後日、自力で説明できた（自己申告）</button>}</div>}
-    <div className="zlv-next"><div>{prev && <a href={href(view, lang, prev)}>← 前の問題</a>}</div><div>{next && <a className="zlv-next-link" href={href(view, lang, next)}>次の問題へ <span>→</span></a>}</div></div>
+    {record && <div className="zlv-progress">{q.writingRequired?<p>過去の固定テスト合格 {record.codePasses??0} · 固定テストでの差分/エラー {record.codeFailures??0} · 手元での確認（自己記録）{record.manualCodeChecks??0} · 後日の自己確認 {record.recalls}。過去の記録は、現在の編集内容の合格を表しません。</p>:<p>自力の予測正答 {record.blindCorrect} · 当日再挑戦/ヒント後の正答 {record.assistedCorrect} · 誤答 {record.wrong} · 後日の自己確認 {record.recalls}</p>}{record.dueAt && <p>次の復習目安: {new Date(record.dueAt).toLocaleDateString('ja-JP')}（初期案: 1・3・7・14・30日）</p>}{canRecordRecall(record) && <button type="button" onClick={confirmRecall}>後日、自力で説明できた（自己申告）</button>}</div>}
+    {round ? <section className="study-round" aria-label="セットを進める">
+      <div>
+        <strong>{attempted ? '取り組みを記録しました' : '回答を記録すると、今回の取り組みに数えます'}</strong>
+        <p>{attempted ? '正誤や自己記録は学習記録で区別しています。' : '飛ばした問題は、次回の候補に残ります。'}</p>
+      </div>
+      <button type="button" className="study-round-action" onClick={() => advance?.(attempted)}>
+        {attempted ? (round.outcomes.length + 1 === round.ids.length ? 'セットを終える →' : '次の一問へ →') : (round.outcomes.length + 1 === round.ids.length ? '飛ばして終了 →' : '飛ばして次へ →')}
+      </button>
+    </section> : <div className="zlv-next"><div>{prev && <a href={href(view, lang, prev)}>← 前の問題</a>}</div><div>{next && <a className="zlv-next-link" href={href(view, lang, next)}>次の問題へ <span>→</span></a>}</div></div>}
     {q.relatedIds.length > 0 && <p className="zlv-related">関連する問題: {q.relatedIds.map(id => <a key={id} href={href('all', lang, id)}>{id.replace(`${lang}:`, '')}</a>)}</p>}
   </article>;
 }

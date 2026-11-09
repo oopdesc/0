@@ -5,6 +5,26 @@ const now = Date.now();
 const k = recordKey('java:q0001','1.0.0','prediction');
 const rust = recordKey('rust:q0001','1.0.0','code');
 
+test('due blind predictions grow the review interval, while early and assisted attempts do not', () => {
+ const day = 86_400_000, first = now - 12 * day, second = first + day;
+ let s = recordPrediction(emptyProgress(), k, true, first);
+ assert.equal(s.records[k].dueAt, second);
+ s = recordPrediction(s, k, true, second);
+ const third = second + 3 * day;
+ assert.equal(s.records[k].dueAt, third);
+ s = recordPrediction(s, k, true, second + day);
+ assert.equal(s.records[k].dueAt, third);
+ const exposed = markExposure(s, k, 'solution', third);
+ assert.equal(recordRecall(exposed, k, third), exposed);
+ const assisted = recordPrediction(exposed, k, true, third);
+ assert.equal(assisted.records[k].dueAt, third + day);
+ assert.equal(assisted.records[k].assistedCorrect, 1);
+ s = recordPrediction(s, k, true, third);
+ assert.equal(s.records[k].dueAt, third + 7 * day);
+ s = recordPrediction(s, k, false, third + 7 * day);
+ assert.equal(s.records[k].dueAt, third + 8 * day);
+});
+
 test('blind, assisted, and later recall are separate; content versions do not share mastery', () => {
  let s = recordPrediction(emptyProgress(), k, true, now - 2 * 86_400_000);
  assert.equal(s.records[k].blindCorrect, 1); assert.equal(s.records[k].assistedCorrect, 0);

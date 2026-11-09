@@ -338,6 +338,7 @@ export default function App() {
               update={setState}
               path={path}
               search={url.split("?")[1] || ""}
+              navigate={navigate}
             />
           </Suspense>
         ) : path === "/art" || path === "/game" || path === "/cosmicGameV3" ? (
@@ -390,7 +391,7 @@ export default function App() {
             >
               GitHub ↗
             </a>
-            <a href="/books">作成者の著作</a>
+            <a href="/books">oopdesc の著作</a>
             <a href="/contact">このサイトについて</a>
             <a href="/privacy">プライバシー</a>
             <a href="/accessibility">アクセシビリティ</a>

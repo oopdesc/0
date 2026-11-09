@@ -142,11 +142,13 @@ export default function LearningHub({
   update,
   search,
   path,
+  navigate,
 }: {
   state: SavedState;
   update: (s: SavedState) => void;
   search: string;
   path: string;
+  navigate: (href: string) => void;
 }) {
   const params = new URLSearchParams(search);
   const [legacyHash, setLegacyHash] = useState(() => window.location.hash);
@@ -200,7 +202,7 @@ export default function LearningHub({
       ) : section === "overview" ? (
         <LearningOverview />
       ) : section === "today" ? (
-        <Suspense fallback={<p className="hub-content">今日の学習を読み込んでいます…</p>}><TodayView search={search}/></Suspense>
+        <Suspense fallback={<p className="hub-content">今日の学習を読み込んでいます…</p>}><TodayView key={search} search={search} navigate={navigate}/></Suspense>
       ) : section === "catalog" ? (
         <Suspense fallback={<p className="hub-content">問題一覧を読み込んでいます…</p>}><QuestionCatalog search={search}/></Suspense>
       ) : section === "concepts" ? (
@@ -221,7 +223,7 @@ export default function LearningHub({
         </Suspense>
       ) : section === "drill" || section === "writing" || section === "exams" || section === "diagnostics" ? (
         <Suspense fallback={<p className="hub-content">教材を読み込んでいます…</p>}>
-          <PackLearning search={search} view={section === "writing" ? "writing" : section === "exams" ? "exams" : section === "diagnostics" ? "diagnostics" : "all"} />
+          <PackLearning search={search} navigate={navigate} view={section === "writing" ? "writing" : section === "exams" ? "exams" : section === "diagnostics" ? "diagnostics" : "all"} />
         </Suspense>
       ) : section === "flow" ? (
           <Suspense fallback={<p className="hub-content">処理の流れを読み込んでいます…</p>}><FlowView search={search} /></Suspense>

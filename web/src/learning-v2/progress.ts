@@ -118,17 +118,28 @@ export function markExposure(state: Progress, key: string, kind: 'hint' | 'solut
   const previous = state.records[key] ?? blankRecord(now);
   return { ...state, records: { ...state.records, [key]: { ...previous, updatedAt: now, ...(kind === 'hint' ? { hintsAt: now } : { solutionAt: now }) } } };
 }
+const onSameDay = (at: number | null, now: number) =>
+  at !== null && new Date(at).toDateString() === new Date(now).toDateString();
+
 export function recordPrediction(state: Progress, key: string, ok: boolean, now = Date.now(), assistanceVisible = false): Progress {
   if (!validKey(key)) return state;
   const old = state.records[key] ?? blankRecord(now);
-  const sameDay=(at:number|null)=>at!==null&&new Date(at).toDateString()===new Date(now).toDateString();
-  const assisted = assistanceVisible || sameDay(old.lastAttemptAt) || [old.hintsAt,old.solutionAt].some(sameDay);
+  const sameDay = onSameDay(old.lastAttemptAt, now);
+  const assisted = assistanceVisible || sameDay || [old.hintsAt, old.solutionAt].some(at => onSameDay(at, now));
+  const keepDate = ok && old.dueAt !== null && old.dueAt > now && (sameDay || !assisted);
+  const advance = ok && !assisted && canRecordRecall(old, now);
+  const reviewStep = advance ? Math.min(old.reviewStep + 1, INTERVALS.length - 1) : keepDate ? old.reviewStep : 0;
   const next: ProgressRecord = { ...old, updatedAt: now, lastAttemptAt: now, solutionAt: now, lastOutcome:ok?(assisted?'assisted':'correct'):'wrong',
-    blindCorrect: old.blindCorrect + Number(ok && !assisted), assistedCorrect: old.assistedCorrect + Number(ok && assisted), wrong: old.wrong + Number(!ok), reviewStep:ok?old.reviewStep:0, dueAt: now + DAY };
+    blindCorrect: old.blindCorrect + Number(ok && !assisted), assistedCorrect: old.assistedCorrect + Number(ok && assisted), wrong: old.wrong + Number(!ok), reviewStep, dueAt: keepDate ? old.dueAt : now + INTERVALS[reviewStep] * DAY };
   return { ...state, records: { ...state.records, [key]: next } };
 }
+export function canRecordRecall(record: ProgressRecord, now = Date.now()): boolean {
+  return record.lastAttemptAt !== null && record.lastAttemptAt < now &&
+    record.dueAt !== null && record.dueAt <= now &&
+    ![record.lastAttemptAt, record.hintsAt, record.solutionAt].some(at => onSameDay(at, now));
+}
 export function recordRecall(state: Progress, key: string, now = Date.now()): Progress {
-  const old = state.records[key]; if (!validKey(key) || !old || old.lastAttemptAt===null || now<=old.lastAttemptAt || new Date(old.lastAttemptAt).toDateString() === new Date(now).toDateString()) return state;
+  const old = state.records[key]; if (!validKey(key) || !old || !canRecordRecall(old, now)) return state;
   const step = Math.min(old.reviewStep + 1, INTERVALS.length - 1);
   return { ...state, records: { ...state.records, [key]: { ...old, updatedAt: now, lastAttemptAt: now, recalls: old.recalls + 1, lastOutcome:'self-recall', reviewStep: step, dueAt: now + INTERVALS[step] * DAY } } };
 }

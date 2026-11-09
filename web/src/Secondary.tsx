@@ -217,7 +217,7 @@ function Info({ path }: { path: string }) {
       ) : (
         <>
           <p>
-            誰でも使えるオープンソースの学習サイトです。結果を予想し、Javaを動かし、自分で説明し、日を空けて復習するための教材と演習を用意しています。
+            <strong>oopdesc</strong> が制作・運営する、誰でも使えるオープンソースの学習サイトです。JavaとRustの結果を予想し、動かし、自分で説明し、日を空けて復習する教材を用意しています。
           </p>
           <div className="contact-links">
             <a
