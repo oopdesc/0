@@ -10,7 +10,7 @@
  *    offscreen / reduced-motion / context-loss / page transition.
  *  - Procedural only: no video, no large textures — shaders + CPU noise.
  */
-import { farStars } from "./far-stars";
+import { farStars, polarFadeGlsl } from "./far-stars";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
@@ -163,7 +163,7 @@ async function createWebGL(
   camera.position.set(0, 3.2, 13);
 
   const controls = new OrbitControls(camera, canvas);
-  controls.enableDamping = true;
+  controls.enableDamping = !opts.reducedMotion;
   controls.dampingFactor = 0.08;
   controls.autoRotate = !opts.reducedMotion;
   controls.autoRotateSpeed = 0.35;
@@ -179,6 +179,7 @@ async function createWebGL(
     vertexShader: `varying vec3 vDir; void main(){ vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
     fragmentShader: `
       varying vec3 vDir; uniform float uTime;
+      ${polarFadeGlsl}
       // hash + value noise (matches src/space/noise.ts)
       float hash(vec3 p){ p = fract(p*0.3183099 + 0.1); p *= 17.0; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
       float nv(vec3 x){ vec3 i=floor(x), f=fract(x); f=f*f*(3.0-2.0*f);
@@ -186,7 +187,12 @@ async function createWebGL(
                    mix(mix(hash(i+vec3(0,0,1)),hash(i+vec3(1,0,1)),f.x),mix(hash(i+vec3(0,1,1)),hash(i+vec3(1,1,1)),f.x),f.y),f.z); }
       float fbm(vec3 p){ float s=0.0,a=0.5; for(int i=0;i<5;i++){ s+=a*nv(p); p*=2.02; a*=0.5;} return s; }
       void main(){
-        vec3 d = vDir;
+        vec3 d = normalize(vDir);
+        float fade = polarFade(d);
+        if (fade == 1.0) {
+          gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+          return;
+        }
         float n = fbm(d*2.2 + vec3(0.0,0.0,uTime*0.03));
         float n2 = fbm(d*4.0 - vec3(uTime*0.02));
         vec3 deep = vec3(0.015,0.02,0.04);
@@ -195,17 +201,11 @@ async function createWebGL(
         vec3 col = deep;
         col = mix(col, cool*0.5, smoothstep(0.4,0.75,n2)*0.5);
         col = mix(col, warm, smoothstep(0.55,0.85,n)*0.35);
-        // Keep the bright core of each speck within one cell. Adjacent noise
-        // peaks otherwise join into bent streaks when the bloom amplifies them.
-        vec3 starGrid = d*90.0;
-        vec3 offset = starGrid - floor(starGrid+0.5);
-        float sp = pow(nv(starGrid),40.0) * (1.0-smoothstep(0.04,0.16,dot(offset,offset)));
-        col += vec3(0.8,0.85,1.0)*sp*0.8;
-        gl_FragColor = vec4(col,1.0);
+        gl_FragColor = vec4(col * (1.0 - fade), 1.0);
       }`,
   });
   scene.add(new THREE.Mesh(new THREE.SphereGeometry(80, 32, 24), nebulaMat));
-  if(opts.homeVariant||opts.panorama)scene.add(farStars(!!opts.panorama));
+  scene.add(farStars(opts.panorama, opts.homeVariant));
 
   // ---- particle system ----
   let count = COUNTS[quality];
@@ -307,17 +307,23 @@ async function createWebGL(
   const cursorWorld = new THREE.Vector3();
   let cursorActive = false;
   const spawnAcc = new THREE.Vector3();
+  const pointerSurface = opts.pointerSurface ?? canvas;
+  const stopDrawing = () => { cursorActive = false; };
   function onPointer(e: PointerEvent) {
-    const rect=canvas.getBoundingClientRect();
-    ndc.x = ((e.clientX-rect.left) / Math.max(1,rect.width)) * 2 - 1;
-    ndc.y = -((e.clientY-rect.top) / Math.max(1,rect.height)) * 2 + 1;
-    ray.setFromCamera(ndc, camera);
-    if (ray.ray.intersectPlane(spawnPlane, cursorWorld)) {
-      cursorActive = true;
-      spawnAcc.copy(cursorWorld);
+    const rect = canvas.getBoundingClientRect();
+    if (e.clientX < rect.left || e.clientX > rect.right || e.clientY < rect.top || e.clientY > rect.bottom) {
+      stopDrawing();
+      return;
     }
+    ndc.x = ((e.clientX - rect.left) / Math.max(1, rect.width)) * 2 - 1;
+    ndc.y = -((e.clientY - rect.top) / Math.max(1, rect.height)) * 2 + 1;
+    ray.setFromCamera(ndc, camera);
+    cursorActive = ray.ray.intersectPlane(spawnPlane, cursorWorld) !== null;
+    if (cursorActive) spawnAcc.copy(cursorWorld);
   }
-  (opts.pointerSurface??canvas).addEventListener("pointermove", onPointer as EventListener);
+  pointerSurface.addEventListener("pointermove", onPointer as EventListener);
+  pointerSurface.addEventListener("pointerleave", stopDrawing);
+  pointerSurface.addEventListener("pointercancel", stopDrawing);
 
   // ---- particle update ----
   let spawnIndex = 0;
@@ -371,7 +377,6 @@ async function createWebGL(
   function frame(now: number) {
     raf = 0;
     if (disposed || !visible || !inView) return;
-    canvas.dataset.orbitYaw=controls.getAzimuthalAngle().toFixed(4);
     canvas.dataset.animationStopped=String(reduced);
     if (now - last < 1000 / (opts.maxFps??30)) {
       raf = requestAnimationFrame(frame);
@@ -386,8 +391,7 @@ async function createWebGL(
     controls.update();
     nebulaMat.uniforms.uTime.value = time;
     pMat.uniforms.uTime.value = time;
-    if (reduced) composer.render();
-    else composer.render();
+    render();
 
     drawnFrames++;canvas.dataset.drawnFrames=String(drawnFrames);
     opts.onActivity?.(!reduced&&visible&&inView&&!document.hidden&&!disposed);
@@ -406,6 +410,12 @@ async function createWebGL(
     if (!reduced) raf = requestAnimationFrame(frame);
   }
   let raf = requestAnimationFrame(frame);
+
+  function render() {
+    canvas.dataset.orbitYaw = controls.getAzimuthalAngle().toFixed(4);
+    canvas.dataset.orbitPitch = controls.getPolarAngle().toFixed(4);
+    composer.render();
+  }
 
   function update(dt: number, t: number) {
     // spawn from cursor
@@ -556,7 +566,7 @@ async function createWebGL(
   window.addEventListener("resize", resize);
   const ro = new ResizeObserver(() => {
     resize();
-    if (reduced) composer.render();
+    if (reduced) render();
   });
   ro.observe(canvas);
   const io = new IntersectionObserver(
@@ -568,7 +578,7 @@ async function createWebGL(
   );
   io.observe(canvas);
   controls.addEventListener("change", () => {
-    if (reduced && !disposed && visible && inView) composer.render();
+    if (reduced && !disposed && visible && inView) render();
   });
 
   function onVisibility() {
@@ -587,13 +597,14 @@ async function createWebGL(
   const onRM = (e: MediaQueryListEvent) => {
     reduced = requestedReduced || e.matches;
     controls.autoRotate = !reduced;
+    controls.enableDamping = !reduced;
   };
   mq.addEventListener?.("change", onRM);
 
   return {
     image() {
       if (disposed) throw new Error("描画は終了しています。");
-      composer.render();
+      render();
       return canvas.toDataURL("image/png");
     },
     view(action) {
@@ -619,7 +630,7 @@ async function createWebGL(
           ),
         );
       controls.update();
-      composer.render();
+      render();
     },
     setQuality(q: Quality) {
       if (q === "auto") return;
@@ -643,6 +654,7 @@ async function createWebGL(
       canvas.dataset.animationStopped=String(reduced);
       opts.onActivity?.(!reduced&&visible&&inView&&!document.hidden&&!disposed);
       controls.autoRotate = !reduced;
+      controls.enableDamping = !reduced;
       if (!disposed && visible && inView && !raf) {
         last = performance.now() - 34;
         raf = requestAnimationFrame(frame);
@@ -670,7 +682,9 @@ async function createWebGL(
       });
       document.removeEventListener("visibilitychange", onVisibility);
       mq.removeEventListener?.("change", onRM);
-      (opts.pointerSurface??canvas).removeEventListener("pointermove", onPointer as EventListener);
+      pointerSurface.removeEventListener("pointermove", onPointer as EventListener);
+      pointerSurface.removeEventListener("pointerleave", stopDrawing);
+      pointerSurface.removeEventListener("pointercancel", stopDrawing);
       controls.dispose();
       for (const pass of composer.passes) pass.dispose();
       composer.dispose();

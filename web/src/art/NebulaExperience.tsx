@@ -1,12 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { createSpaceScene, type SpaceHandle } from "./nebula/scene";
 
-const viewKeys: Record<string, "left" | "right" | "in" | "out"> = {
+const viewKeys: Record<string, Parameters<NonNullable<SpaceHandle["view"]>>[0]> = {
   ArrowLeft: "left",
   ArrowRight: "right",
+  ArrowUp: "up",
+  ArrowDown: "down",
   "+": "in",
   "=": "in",
   "-": "out",
+  Home: "reset",
 };
 
 export default function NebulaExperience({ paused, background = false, immersive = false, panorama = false }: { paused: boolean; background?: boolean; immersive?:boolean; panorama?:boolean }) {
@@ -111,6 +114,12 @@ export default function NebulaExperience({ paused, background = false, immersive
             onClick={() => engine.current?.view?.("right")}
           >
             →
+          </button>
+          <button aria-label="星雲の視点を上へ" onClick={() => engine.current?.view?.("up")}>
+            ↑
+          </button>
+          <button aria-label="星雲の視点を下へ" onClick={() => engine.current?.view?.("down")}>
+            ↓
           </button>
           <button
             aria-label="星雲を拡大"

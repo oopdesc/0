@@ -23,6 +23,18 @@
   outline: 3px solid var(--cp-accent, #7a9ee2);
   outline-offset: 2px;
 }
+.concept-map-inline {
+  position: static;
+  box-sizing: border-box;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  overflow: visible;
+  color: inherit;
+  background: transparent;
+}
 .concept-map-fullscreen {
   position: fixed;
   inset: 0;
@@ -80,8 +92,29 @@ html:has(.concept-map-fullscreen:modal) {
   margin-top: 14px;
 }
 .concept-map-compare .graph__viewport {
+  max-height: min(65dvh, 620px);
   overflow: auto;
-  overscroll-behavior-inline: contain;
+  overscroll-behavior: contain;
+}
+.concept-map-compare .graph__zoom,
+.concept-map-compare .graph__zoom label {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.concept-map-compare .graph__zoom {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--line);
+}
+.concept-map-compare .graph__zoom :is(select, button) {
+  min-height: 44px;
+}
+.concept-map-compare .graph__zoom button {
+  padding: 6px 10px;
+  border: 1px solid var(--line-2);
+  border-radius: 8px;
+  background: var(--panel);
 }
 @media (max-width: 1100px) {
   .arena-orrery.concept-map-compare .galaxy-view__grid {
@@ -112,12 +145,10 @@ html:has(.concept-map-fullscreen:modal) {
     width: 100%;
     min-width: 0;
   }
-  .concept-map-compare .graph__svg {
-    min-width: 680px;
-  }
   .pathway-tools input[type=search],
   .pathway-tools select,
-  .pathway-chart-tools select {
+  .pathway-chart-tools select,
+  .concept-map-compare .graph__zoom select {
     font-size: 16px;
   }
   .pathway-chart-tools button,

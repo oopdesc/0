@@ -1,7 +1,15 @@
 import * as THREE from "three";
+
+// Fade both poles so the same unobstructed view works from either side of the orbit.
+export const polarFadeGlsl = `
+  float polarFade(vec3 direction) {
+    return smoothstep(0.87, 0.996, abs(direction.y));
+  }
+`;
+
 /** Procedural sky, viewed from inside: no images, downloads, accounts or remote services. */
-export function farStars(panorama = false) {
-  const count = panorama ? 6500 : 1700,
+export function farStars(panorama = false, home = false) {
+  const count = panorama ? 6500 : home ? 1700 : 1150,
     p = new Float32Array(count * 3),
     sizes = new Float32Array(count),
     colors = new Float32Array(count * 3);
@@ -38,10 +46,24 @@ export function farStars(panorama = false) {
     transparent: true,
     depthWrite: false,
     blending: THREE.AdditiveBlending,
-    vertexShader:
-      "attribute float aSize;attribute vec3 aTint;varying vec3 tint;void main(){tint=aTint;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);gl_PointSize=aSize;}",
-    fragmentShader:
-      "varying vec3 tint;void main(){vec2 p=(gl_PointCoord-.5)*2.;float r=dot(p,p);if(r>1.)discard;gl_FragColor=vec4(tint,exp(-r*3.)*.64);}",
+    vertexShader: `
+      attribute float aSize; attribute vec3 aTint;
+      varying vec3 tint; varying float visibility;
+      ${polarFadeGlsl}
+      void main(){
+        tint = aTint;
+        visibility = 1.0 - polarFade(normalize(position));
+        gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
+        gl_PointSize = aSize;
+      }`,
+    fragmentShader: `
+      varying vec3 tint; varying float visibility;
+      void main(){
+        vec2 p = (gl_PointCoord - 0.5) * 2.0;
+        float r = dot(p, p);
+        if (r > 1.0 || visibility < 0.001) discard;
+        gl_FragColor = vec4(tint, exp(-r * 3.0) * 0.64 * visibility);
+      }`,
   });
   return new THREE.Points(geometry, material);
 }

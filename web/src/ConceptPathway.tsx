@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import ConceptMapViewport from "./ConceptMapViewport";
+import ConceptMapViewport, { MAP_ZOOM_LEVELS } from "./ConceptMapViewport";
 import {
   FAMILY_NAMES,
   PATHWAY_CONCEPTS,
@@ -11,14 +11,13 @@ import {
 import { loadConcepts, loadManifest } from "./learning-v2/loader";
 import type { Concept, Lang, Manifest } from "./learning-v2/types";
 
-const ZOOM_LEVELS = [0.5, 0.65, 0.8, 1, 1.25];
-
 export default function ConceptPathway({ routeSearch }: { routeSearch: string }) {
   const { lang, conceptId } = readPathwayLocation(routeSearch);
   const [search, setSearch] = useState("");
   const [family, setFamily] = useState("all");
   const [focus, setFocus] = useState(false);
-  const [zoom, setZoom] = useState(1);
+  const [zoomMode, setZoomMode] = useState<number | "fit">(1);
+  const [chartWidth, setChartWidth] = useState(0);
   const [pack, setPack] = useState<{ manifest: Manifest; concepts: Concept[] } | null>(null);
   const [error, setError] = useState(false);
   const chart = useRef<HTMLDivElement>(null);
@@ -42,7 +41,19 @@ export default function ConceptPathway({ routeSearch }: { routeSearch: string })
     return nodes.filter(node => ids.has(node.id));
   }, [nodes, ancestors, children, focus, search, family]);
   const layout = useMemo(() => layoutPathway(visible, lang), [visible, lang]);
+  const fitZoom = chartWidth > 0 ? Math.min(1, chartWidth / layout.width) : 1;
+  const zoom = zoomMode === "fit" ? fitZoom : zoomMode;
   const linked = pack ? linkedPackQuestions(current, pack.concepts, pack.manifest) : [];
+
+  useLayoutEffect(() => {
+    const view = chart.current;
+    if (!view) return;
+    const measure = () => setChartWidth(view.clientWidth);
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(view);
+    return () => observer.disconnect();
+  }, []);
 
   useEffect(() => {
     const controller = new AbortController();
@@ -103,7 +114,8 @@ export default function ConceptPathway({ routeSearch }: { routeSearch: string })
     centerNext.current = id;
     updateLocation(next, id);
   }
-  function changeZoom(next: number) {
+  function changeZoom(mode: number | "fit") {
+    const next = mode === "fit" ? fitZoom : mode;
     const view = chart.current;
     if (view) {
       const centerX = view.clientWidth / 2;
@@ -114,7 +126,7 @@ export default function ConceptPathway({ routeSearch }: { routeSearch: string })
         top: (view.scrollTop + centerY) * scale - centerY,
       };
     }
-    setZoom(next);
+    setZoomMode(mode);
   }
 
   return (
@@ -160,11 +172,22 @@ export default function ConceptPathway({ routeSearch }: { routeSearch: string })
               </label>
               <label>
                 図の大きさ
-                <select aria-label="概念図の表示倍率" value={zoom} onChange={event => changeZoom(Number(event.target.value))}>
-                  {ZOOM_LEVELS.map(level => <option key={level} value={level}>{level * 100}%</option>)}
+                <select aria-label="概念図の表示倍率" value={zoomMode} onChange={event => changeZoom(event.target.value === "fit" ? "fit" : Number(event.target.value))}>
+                  <option value="fit">自動（画面幅）</option>
+                  {MAP_ZOOM_LEVELS.map(level => <option key={level} value={level}>{level * 100}%</option>)}
                 </select>
               </label>
-              <button type="button" onClick={() => centerOn(current.id)} disabled={!layout.positions.has(current.id)}>
+              <button type="button" onClick={() => changeZoom("fit")} disabled={visible.length === 0}>
+                幅に合わせる
+              </button>
+              <button type="button" onClick={() => {
+                if (zoomMode === "fit") {
+                  centerNext.current = current.id;
+                  changeZoom(1);
+                } else {
+                  centerOn(current.id);
+                }
+              }} disabled={!layout.positions.has(current.id)}>
                 選んだ概念へ
               </button>
             </div>
