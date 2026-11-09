@@ -42,3 +42,7 @@ NASAの画像・メディア利用指針：https://www.nasa.gov/nasa-brand-cente
 「光と塵のあいだ」は `web/src/art/nursery/` のコードから描く作品です。生成した三次元の雲に光の吸収と重なりを加え、別の星の層と合成しています。実在の星雲の観測データや写真を使っていません。物理的に検証された天体シミュレーションではありません。
 
 `nursery-poster.webp` はこの描画を実際に実行して保存した静止画です。描画が利用できない端末では、同じ作品のこの画像を表示します。コードと自作画像には、このリポジトリのMIT Licenseを適用します。
+
+## 公開書籍の表紙
+
+`web/public/covers/universe-*.webp` は、oopdesc『宇宙をどこまで知れるのか』の日本語・英語・繁體中文版の表紙（© 2026 oopdesc）を横240pxへ縮小し、WebPに変換したものです。[原著と利用条件（CC BY-SA 4.0）](https://github.com/oopdesc/all-beings-flourishing/blob/main/books/universe-2026/NOTICE.md)

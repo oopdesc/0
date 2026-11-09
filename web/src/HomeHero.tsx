@@ -48,13 +48,7 @@ export default function HomeHero({ paused, onStartMotion, suspended }: { paused:
           <a href="/learn?section=today">今日の学習 →</a>
           <a href="/learn?section=concepts">概念図 →</a>
           <a href="/learn?section=exams">試験 {stats.exams}本 →</a>
-          <a
-            href="https://github.com/oopdesc/all-beings-flourishing"
-            target="_blank"
-            rel="noreferrer"
-          >
-            著作を読む ↗
-          </a>
+          <a href="/books">著作を読む →</a>
         </div>
         <div className="home-topics">
           <span>Java</span>

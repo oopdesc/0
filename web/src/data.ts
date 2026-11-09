@@ -54,7 +54,7 @@ export const resources: Resource[] = [
     subtitle: "科学・数学・哲学の本を、更新を重ねながらGitHubで無料公開しています。",
     category: "リンク",
     tag: "無料で読む",
-    href: "https://github.com/oopdesc/all-beings-flourishing",
+    href: "/books",
     accent: "mint",
   },
   {

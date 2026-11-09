@@ -34,6 +34,7 @@ const paths = new Set([
   "/",
   "/learn",
   "/art",
+  "/books",
   "/lab",
   "/code",
   "/aichat",

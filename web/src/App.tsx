@@ -24,6 +24,7 @@ const Secondary = lazy(() => import("./Secondary"));
 const routes = new Set([
   "/",
   "/art",
+  "/books",
   "/lab",
   "/learn",
   "/code",
@@ -94,7 +95,7 @@ export default function App() {
     document.title =
       path === "/"
         ? "0 — Java・Rustを動かして学ぶ"
-        : `${path === "/learn" ? "学ぶ" : path === "/art" ? "宇宙アート" : path === "/lab" ? "コード実験室" : path === "/code" ? "コードを読む" : "0"} — 0`;
+        : `${path === "/learn" ? "学ぶ" : path === "/art" ? "宇宙アート" : path === "/books" ? "公開書籍" : path === "/lab" ? "コード実験室" : path === "/code" ? "コードを読む" : "0"} — 0`;
   }, [path]);
   function navigate(href: string) {
     history.pushState({}, "", href);
@@ -389,13 +390,7 @@ export default function App() {
             >
               GitHub ↗
             </a>
-            <a
-              href="https://github.com/oopdesc/all-beings-flourishing"
-              target="_blank"
-              rel="noreferrer"
-            >
-              作成者の著作 ↗
-            </a>
+            <a href="/books">作成者の著作</a>
             <a href="/contact">このサイトについて</a>
             <a href="/privacy">プライバシー</a>
             <a href="/accessibility">アクセシビリティ</a>

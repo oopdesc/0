@@ -1,4 +1,5 @@
 import { ThemeButton } from "./DisplayPreferences";
+import Bookshelf from "./Bookshelf";
 import { useRef, useState } from "react";
 import type { SavedState } from "./state";
 import { LESSON_IDS } from "./lesson-ids";
@@ -412,6 +413,8 @@ export default function Secondary({
     <Code />
   ) : path === "/settings" ? (
     <Settings state={state} update={update} />
+  ) : path === "/books" ? (
+    <Bookshelf />
   ) : (
     <Info path={path} />
   );
