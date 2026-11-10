@@ -2,7 +2,10 @@ import { currentDraft, type Progress, type ProgressOutcome } from "./progress";
 import { itemKey, type StudyFilter, type StudyIndex, type StudyItem } from "./studyPlanner";
 
 const DAY = 86_400_000;
-export const applicationExamples = { java: "java:q0001", rust: "rust:q30172" } as const;
+export const applicationExamples = {
+  java: "/learn?section=drill&lang=java&q=java%3Aq0001&recall=1",
+  rust: "/learn?section=drill&lang=rust&q=rust%3Aq30172&recall=1",
+} as const;
 
 export function applicationHistory(index: StudyIndex, state: Progress) {
   const counts = new Map<ProgressOutcome, number>();

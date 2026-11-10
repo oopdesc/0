@@ -298,8 +298,8 @@ export default function TodayView({ search, navigate }: { search: string; naviga
               <p>自力で正答してから24時間以上たったテーマを、回答やヒントの記録がない別の問題で確かめます。</p>
               {applications.ready.length ? <p role="status">取り組める問題が {applications.ready.length} 問あります。</p> :
                 applications.next ? <p role="status">次の候補は {new Date(applications.next).toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" })} 以降に開けます。</p> :
-                <p>まずは <a href={"/learn?section=drill&lang=java&q=" + encodeURIComponent(applicationExamples.java)}>Javaの出力</a> や
-                  <a href={"/learn?section=drill&lang=rust&q=" + encodeURIComponent(applicationExamples.rust)}>Rustの借用</a> から始められます。</p>}
+                <p>出力を直接入力する練習を、<a href={applicationExamples.java}>Javaの一問</a>または
+                  <a href={applicationExamples.rust}>Rustの一問</a>から試せます。</p>}
               {applicationNotice && <p role="status">{applicationNotice}</p>}
               {applicationResults && applicationResults.size > 0 && <details>
                 <summary>応用チェックの履歴</summary>

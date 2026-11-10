@@ -78,6 +78,7 @@ export default function PackLearning({ search, view = 'all', navigate }: { searc
   const lang: Lang = params.get('lang') === 'rust' || params.get('track') === 'Rust' ? 'rust' : 'java';
   const hash = useHash();
   const requested = params.get('q') || legacyFromHash(hash);
+  const recall = params.get('recall') === '1';
   const [loadedManifest, setManifest] = useState<Manifest | null>(null);
   const manifest = loadedManifest?.language === lang ? loadedManifest : null;
   const [manifestError, setManifestError] = useState('');
@@ -300,7 +301,7 @@ export default function PackLearning({ search, view = 'all', navigate }: { searc
             <ol className="zlv-problem-list">{visible.map((q) => <li key={q.id}><a href={href(view, lang, q.id)} aria-current={q.id === current?.id ? 'step' : undefined}><span>{String(q.order).padStart(2, '0')}</span><span>{q.title}<small>{q.writingRequired ? 'コードを書く' : '予測する'}</small></span><span aria-hidden="true">›</span></a></li>)}</ol>
             <div className="zlv-sidebar-foot">⌁ <span>前提に戻るのも、立派な一歩。</span></div>
           </aside>
-          {current && (!focused || current.id === requested) ? <QuestionPanel key={`${current.id}@${current.contentVersion}`} q={current} packVersion={manifest.contentVersion} lang={lang} view={view} concepts={concepts} progress={progress} update={update} prev={index > 0 ? allIds[index - 1] : null} next={index >= 0 && index < allIds.length - 1 ? allIds[index + 1] : null} round={focused && round ? round : undefined} advance={advance} /> : otherView && resolved ? (
+          {current && (!focused || current.id === requested) ? <QuestionPanel key={`${current.id}@${current.contentVersion}:${recall}`} q={current} packVersion={manifest.contentVersion} lang={lang} view={view} concepts={concepts} progress={progress} update={update} prev={index > 0 ? allIds[index - 1] : null} next={index >= 0 && index < allIds.length - 1 ? allIds[index + 1] : null} round={focused && round ? round : undefined} recall={recall} advance={advance} /> : otherView && resolved ? (
             <div className="zlv-empty"><h3>この問題は結果を予測する練習です</h3><a href={href('all', lang, resolved)}>問題を開く →</a></div>
           ) : !unresolved && !questionError && !questions ? (
             <p role="status">問題を読み込んでいます…</p>
@@ -315,14 +316,14 @@ export default function PackLearning({ search, view = 'all', navigate }: { searc
 }
 
 type Update = (fn: (s: Progress) => Progress) => void;
-export function QuestionPanel({ q, packVersion, lang, view, concepts, progress, update, prev, next, round, advance }: { q: Question; packVersion: string; lang: Lang; view: View; concepts: Concept[]; progress: Progress; update: Update; prev: string | null; next: string | null; round?: StudyRound; advance?: (attempted: boolean) => void }) {
+export function QuestionPanel({ q, packVersion, lang, view, concepts, progress, update, prev, next, round, recall, advance }: { q: Question; packVersion: string; lang: Lang; view: View; concepts: Concept[]; progress: Progress; update: Update; prev: string | null; next: string | null; round?: StudyRound; recall?: boolean; advance?: (attempted: boolean) => void }) {
   const key = recordKey(q.id, q.contentVersion, q.writingRequired ? 'code' : 'prediction');
   const [prediction, setPrediction] = useState(() => predictionInput(q, currentDraft(progress, key)?.content));
   const [restored] = useState(() => predictionContent(q, prediction) !== "");
   const { selected, text, order, typed } = prediction;
   const [recallFirst] = useState(() => {
     const dueAt = progress.records[key]?.dueAt;
-    return round?.purpose === 'application' || (!!round && dueAt != null && dueAt <= Date.now());
+    return recall || round?.purpose === 'application' || (!!round && dueAt != null && dueAt <= Date.now());
   });
   const [choicesOpen, setChoicesOpen] = useState(selected.length > 0 || !recallFirst);
   const [uncertain, setUncertain] = useState(false);
