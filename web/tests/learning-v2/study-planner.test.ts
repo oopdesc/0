@@ -5,6 +5,7 @@ import {
   itemKey,
   planStudy,
   studySummary,
+  studyTopics,
   validateStudyIndex,
 } from "../../src/learning-v2/studyPlanner";
 import type {
@@ -194,4 +195,30 @@ test("an older Rust review stays ahead of newer Java work, and a skipped slot is
     ["rust:q0001", "java:q0001"]);
   assert.deepEqual(planStudy(index, state, { ...filter, limit: 2 }, now, new Set(["rust:q0001"])).map(p => p.item.id),
     ["java:q0001", "java:q0002"]);
+});
+
+test("the next review is the earliest future due date for a current attempted item", () => {
+  let state = recordPrediction(emptyProgress(), itemKey(items[0]), true, now - 2 * DAY);
+  state = recordPrediction(state, itemKey(items[1]), true, now - 500);
+  state = recordCodeCheck(state, itemKey(items[2]), "passed", now);
+  state = recordPrediction(state, "rust:q0002@old#prediction", true, now - DAY + 20);
+  assert.equal(studySummary(index, state, now).due, 1);
+  const next = now - 500 + DAY;
+  assert.equal(studySummary(index, state, now).nextReviewAt, next);
+  assert.equal(studySummary(index, state, next).due, 2);
+  assert.equal(studySummary(index, state, next).nextReviewAt, now + DAY);
+  assert.equal(studySummary(index, state, now + DAY).nextReviewAt, null);
+});
+
+
+test("a correct guess is visible in its theme until an independent result replaces it", () => {
+  const item = { ...items[1], concepts: ["rust:c-borrow"] };
+  const key = itemKey(item);
+  const themed = { ...index, items: [item] };
+  const state = recordPrediction(emptyProgress(), key, true, now - 2 * DAY, false, true);
+  const [topic] = studyTopics(themed, state, "rust");
+  assert.equal(topic.tentative, 1);
+  assert.equal(topic.wrong, 0);
+  assert.deepEqual(studyTopics(themed, state, "java"), []);
+  assert.deepEqual(studyTopics(themed, recordPrediction(state, key, true, now), "rust"), []);
 });

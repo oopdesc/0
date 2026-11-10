@@ -23,7 +23,7 @@ export type StudyRound = {
   ids: string[];
   outcomes: ("attempted" | "skipped")[];
   filter: StudyFilter;
-  purpose?: "application";
+  purpose?: "application" | "follow-up";
   results?: (ProgressOutcome | null)[];
 };
 
@@ -65,7 +65,7 @@ export function parseStudyRound(raw: string | null): StudyRound | null {
       new Set(ids).size !== ids.length ||
       !Array.isArray(outcomes) || outcomes.length > ids.length ||
       !outcomes.every(x => x === "attempted" || x === "skipped") ||
-      (purpose !== undefined && purpose !== "application") ||
+      (purpose !== undefined && purpose !== "application" && purpose !== "follow-up") ||
       (results !== undefined && (!Array.isArray(results) || results.length !== outcomes.length ||
         results.some((result, i) => result !== null && (outcomes[i] !== "attempted" ||
           typeof result !== "string" || !Object.hasOwn(evidenceLabels, result))))) ||

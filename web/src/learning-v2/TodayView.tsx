@@ -2,7 +2,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   loadStudyIndex,
   delayedReviewSummary,
-  itemKey,
   planStudy,
   studyHref,
   studySummary,
@@ -17,9 +16,12 @@ import {
   saveProgress,
 } from "./progress";
 import { confirmStudyRoundReplacement, readStudyFilter, readStudyRound, roundHref, roundResultLabel, startStudyRound } from "./studyRound";
+import { completedStudy, followUpLimit } from "./studySession";
 import { applicationExamples, applicationHistory, planApplications } from "./applicationPractice";
 import "./today.css";
 import "./study-round.css";
+const shortSessionSize = 3;
+const reviewDate = new Intl.DateTimeFormat("ja-JP", { month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" });
 const levels = { beginner: "初級", intermediate: "中級", advanced: "上級" };
 const reasons = {
   due: "復習の時期",
@@ -102,34 +104,41 @@ export default function TodayView({ search, navigate }: { search: string; naviga
         : [],
     [index, saved.state, language, level, kind, limit, includeNew, now, skipped, activeConcept],
   );
-  const summary = index ? studySummary(index, saved.state, now) : null;
+  const shortSession = shown.slice(0, shortSessionSize);
+  const dueOnly = shown.filter(({ reason }) => reason === "due").slice(0, 5);
+  const summary = useMemo(() => index ? studySummary(index, saved.state, now) : null, [index, saved.state, now]);
   const delayed = useMemo(() => index ? delayedReviewSummary(index, saved.state) : null, [index, saved.state]);
   const topics = useMemo(() => index ? studyTopics(index, saved.state, language).slice(0, 5) : [], [index, saved.state, language]);
   const applications = useMemo(() => index ? planApplications(index, saved.state, language, applicationKind, now) : null,
     [index, saved.state, language, applicationKind, now]);
   const applicationResults = useMemo(() => index ? applicationHistory(index, saved.state) : null, [index, saved.state]);
+  const nextUpdateAt = Math.min(applications?.next ?? Infinity, summary?.nextReviewAt ?? Infinity);
   useEffect(() => {
-    if (applications?.next === undefined) return;
-    const delay = Math.min(2_147_483_647, Math.max(10, applications.next - Date.now()));
+    if (!Number.isFinite(nextUpdateAt)) return;
+    const delay = Math.min(2_147_483_647, Math.max(10, nextUpdateAt - Date.now()));
     const timer = window.setTimeout(() => setNow(Date.now()), delay);
     return () => window.clearTimeout(timer);
-  }, [applications?.next, now]);
-  const reviewAfterRound = round && !activeRound && index
-    ? round.ids.flatMap((id, i) => {
-        const item = index.items.find(q => q.id === id);
-        if (!item) return [];
-        const outcome = round.results ? round.results[i] : saved.state.records[itemKey(item)]?.lastOutcome;
-        const label = round.outcomes[i] === "skipped" ? "飛ばした" :
-          round.purpose === "application" || outcome === "wrong" || outcome === "code-failed" || outcome === "tentative" || outcome === "assisted"
-            ? roundResultLabel(outcome) : null;
-        return label ? [{ item, label }] : [];
-      })
-    : [];
-  function beginRound() {
+  }, [nextUpdateAt, now]);
+
+  const completed = round && index && completedStudy(round, index.items);
+  function beginRound(questions = shown) {
     if (!confirmStudyRoundReplacement()) return;
-    const started = startStudyRound(shown.map(p => p.item.id), { language, level, kind, limit, includeNew, concept: activeConcept });
+    const started = startStudyRound(questions.map(p => p.item.id),
+      { language, level, kind, limit, includeNew, concept: activeConcept });
     if (started) navigate(roundHref(started));
     else setRoundNotice("このブラウザではセットを保存できません。一覧から一問ずつ開けます。");
+  }
+  function beginFollowUp() {
+    if (!round || !completed) return;
+    const latest = readStudyRound();
+    if (latest?.token !== round.token || latest.outcomes.length !== latest.ids.length) {
+      setRoundNotice("別の画面で学習セットが切り替わりました。現在の結果を確認してください。");
+      return;
+    }
+    // A retry uses the original questions, so it is never another first-attempt application check.
+    const started = startStudyRound(completed.followUpIds, round.filter, "follow-up");
+    if (started) navigate(roundHref(started));
+    else setRoundNotice("復習セットを保存できませんでした。結果の一覧から一問ずつ開けます。");
   }
   function beginApplications() {
     if (!index || !confirmStudyRoundReplacement()) return;
@@ -219,16 +228,44 @@ export default function TodayView({ search, navigate }: { search: string; naviga
       {round && (
         <section className="study-round" aria-label={activeRound ? "中断した学習" : "前回の学習結果"}>
           <div>
-            <strong>{round.purpose === "application" ? activeRound ? "応用チェックの続き" : "応用チェックの結果" : activeRound ? "続きから学ぶ" : "このセットは終了しました"}</strong>
+            <strong>{round.purpose === "application" ? activeRound ? "応用チェックの続き" : "応用チェックの結果" :
+              round.purpose === "follow-up" ? activeRound ? "解き直しの続き" : "解き直しの結果" :
+              activeRound ? "続きから学ぶ" : "このセットは終了しました"}</strong>
             <p>取り組んだ問題 {round.outcomes.filter(x => x === "attempted").length}問 · 飛ばした問題 {round.outcomes.filter(x => x === "skipped").length}問 · 全{round.ids.length}問</p>
+            {completed && <p>{completed.counts.map(([label, count]) => `${label} ${count}問`).join(" · ")}</p>}
+            {completed && round.purpose === "follow-up" && <p>日を空けた復習で、答えを思い出せるか確かめましょう。</p>}
           </div>
           {activeRound && <a className="study-round-action" href={roundHref(activeRound)}>第{round.outcomes.length + 1}問から再開 →</a>}
-          {reviewAfterRound.length > 0 && <details className="study-round-review" open={round.purpose === "application" || undefined}>
-            <summary>{round.purpose === "application" ? "問題ごとの結果" : "飛ばした問題・見直したい問題"}（{reviewAfterRound.length}問）</summary>
-            <ul>{reviewAfterRound.map(({item, label}) => <li key={item.id}><a href={studyHref(item)}>{item.title}</a> · {label}</li>)}</ul>
+          {completed && completed.followUpIds.length > 0 && (
+            <button type="button" className="study-round-action" onClick={beginFollowUp}>
+              見直し{completed.followUpIds.length}問を解き直す →
+            </button>
+          )}
+          {completed && completed.rows.length > 0 && <details className="study-round-review" open={round.purpose ? true : undefined}>
+            <summary>問題ごとの結果（{completed.rows.length}問）</summary>
+            {completed.followUpIds.length > 0 && <p>誤答や実装の差分、迷った正答、補助あり正答、飛ばした問題の順に、元の問題を最大{followUpLimit}問選びます。</p>}
+            <ul>{completed.rows.map(({ item, label }) => <li key={item.id}><a href={studyHref(item)}>{item.title}</a> · {label}</li>)}</ul>
           </details>}
         </section>
       )}
+      {!activeRound && shortSession.length > 0 && (
+        <section className="study-round" aria-label="短い学習セット">
+          <div>
+            <strong>まず{shortSession.length}問</strong>
+            <p>今の条件から、復習や見直しを優先して選んだ問題を一問ずつ進めます。</p>
+            <p>{shortSession.map(({ reason }) => reasons[reason]).join(" → ")}</p>
+          </div>
+          <button type="button" className="study-round-action" onClick={() => beginRound(shortSession)}>
+            {shortSession.length}問だけ始める →
+          </button>
+          {dueOnly.length > 0 && (dueOnly.length !== shortSession.length || shortSession.some(({ reason }) => reason !== "due")) && (
+            <button type="button" onClick={() => beginRound(dueOnly)}>
+              期限が来た復習{dueOnly.length}問だけ →
+            </button>
+          )}
+        </section>
+      )}
+      {roundNotice && <p className="study-notice" role="status">{roundNotice}</p>}
       {saved.error && (
         <p role="status" className="study-notice">
           {saved.error}
@@ -262,7 +299,8 @@ export default function TodayView({ search, navigate }: { search: string; naviga
                 {summary.due}
                 <small>問</small>
               </strong>
-              <p>日を空けて、もう一度</p>
+              <p>{summary.due > 0 ? "今取り組める復習があります。" :
+                summary.nextReviewAt !== null ? `次は ${reviewDate.format(summary.nextReviewAt)} から` : "回答すると、次の目安がここに出ます。"}</p>
             </article>
             <article>
               <span>見直したい問題</span>
@@ -297,7 +335,7 @@ export default function TodayView({ search, navigate }: { search: string; naviga
               <h3 id="application-title">応用チェック</h3>
               <p>自力で正答してから24時間以上たったテーマを、回答やヒントの記録がない別の問題で確かめます。</p>
               {applications.ready.length ? <p role="status">今回のセットは {applications.ready.length} 問です。</p> :
-                applications.next ? <p role="status">次の候補は {new Date(applications.next).toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" })} 以降に開けます。</p> :
+                applications.next ? <p role="status">次の候補は {reviewDate.format(applications.next)} 以降に開けます。</p> :
                 <p>出力を直接入力する練習を、<a href={applicationExamples.java}>Javaの一問</a>または
                   <a href={applicationExamples.rust}>Rustの一問</a>から試せます。</p>}
               {applicationNotice && <p role="status">{applicationNotice}</p>}
@@ -415,11 +453,11 @@ export default function TodayView({ search, navigate }: { search: string; naviga
                         setIncludeNew(true);
                         setSkipped(new Set());
                       }}>{topic.name}</button>
-                      <span>{topic.language === "java" ? "Java" : "Rust"} · 誤答・実装の差分 {topic.wrong}問 · 補助あり正答 {topic.assisted}問</span>
+                      <span>{topic.language === "java" ? "Java" : "Rust"} · 誤答・実装の差分 {topic.wrong}問 · 迷った正答 {topic.tentative}問 · 補助あり正答 {topic.assisted}問</span>
                     </li>
                   ))}
                 </ul>
-              ) : <p>最後の回答に誤答やヒントを使った正答があると、対応するテーマを表示します。</p>}
+              ) : <p>誤答、迷った正答、ヒントを使った正答から、見直すテーマを表示します。</p>}
               {activeConcept && <p>
                 選択中：<strong>{index?.concepts[activeConcept].name}</strong>{" "}
                 <button type="button" onClick={() => { setConcept(undefined); setSkipped(new Set()); }}>テーマの絞り込みを解除</button>
@@ -429,10 +467,9 @@ export default function TodayView({ search, navigate }: { search: string; naviga
               復習時期が来た問題に自力で正答すると、次の間隔が1・3・7・14・30日の順に延びます。前提の確認は自由です。
             </p>
             {shown.length > 0 && <div className="study-round-start">
-              <button type="button" className="study-round-action" onClick={beginRound}>この{shown.length}問を始める →</button>
+              <button type="button" className="study-round-action" onClick={() => beginRound()}>この{shown.length}問を始める →</button>
               <span>{activeRound ? "新しいセットを始めると、前の続きは置き換わります。学習記録は残ります。" : "一問ずつ進めます。途中で閉じても、このブラウザから再開できます。"}</span>
             </div>}
-            {roundNotice && <p className="study-notice" role="status">{roundNotice}</p>}
             <ol className="study-list">
               {shown.map((p, i) => (
                 <li key={p.item.id}>

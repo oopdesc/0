@@ -257,7 +257,7 @@ export default function PackLearning({ search, view = 'all', navigate }: { searc
     {params.has('study') && (
       <section className="study-round" aria-label="今回の学習セット">
         <div>
-          <strong>{focused && round ? `${round.purpose === 'application' ? '応用チェック · ' : ''}第${roundIndex + 1}問 / 全${round.ids.length}問` : '学習セットの続き'}</strong>
+          <strong>{focused && round ? `${round.purpose === 'application' ? '応用チェック · ' : round.purpose === 'follow-up' ? '解き直し · ' : ''}第${roundIndex + 1}問 / 全${round.ids.length}問` : '学習セットの続き'}</strong>
           <p>{focused ? round?.purpose === 'application' ? '前に学んだ規則を、別のコードで使ってみます。' : '一問ずつ、自分の速さで。' : 'この問題とは別に、現在の続きの位置を保存しています。'}</p>
         </div>
         {round && !focused && roundIndex < round.ids.length && <a className="study-round-action" href={roundHref(round)}>現在の問題へ →</a>}

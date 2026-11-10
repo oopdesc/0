@@ -240,6 +240,7 @@ export function studySummary(
 ) {
   let seen = 0,
     due = 0,
+    nextReviewAt: number | null = null,
     retry = 0,
     independent = 0,
     codePassed = 0,
@@ -251,7 +252,10 @@ export function studySummary(
     const r = state.records[itemKey(q)];
     if (!r) continue;
     if (attempted(r)) seen++;
-    if (attempted(r) && r.dueAt !== null && r.dueAt <= now) due++;
+    if (attempted(r) && r.dueAt !== null) {
+      if (r.dueAt <= now) due++;
+      else if (nextReviewAt === null || r.dueAt < nextReviewAt) nextReviewAt = r.dueAt;
+    }
     if (needsRetry(r)) retry++;
     if (r.blindCorrect > 0) independent++;
     if ((r.codePasses ?? 0) > 0) codePassed++;
@@ -263,6 +267,7 @@ export function studySummary(
     total: index.items.length,
     seen,
     due,
+    nextReviewAt,
     retry,
     independent,
     codePassed,
@@ -273,26 +278,28 @@ export function studySummary(
   };
 }
 export function studyTopics(index: StudyIndex, state: Progress, language: StudyFilter["language"]) {
-  const topics = new Map<string, { id: string; name: string; language: Lang; wrong: number; assisted: number; lastAt: number }>();
+  const topics = new Map<string, { id: string; name: string; language: Lang; wrong: number; tentative: number; assisted: number; lastAt: number }>();
   for (const question of index.items) {
     if (language !== "all" && question.language !== language) continue;
     const record = state.records[itemKey(question)];
     if (!record || record.lastAttemptAt === null) continue;
     const wrong = needsRetry(record);
     const assisted = record.lastOutcome === "assisted";
-    if (!wrong && !assisted) continue;
+    const tentative = record.lastOutcome === "tentative";
+    if (!wrong && !tentative && !assisted) continue;
     for (const id of new Set(question.concepts)) {
       const meta = index.concepts[id];
       if (!meta) continue;
-      const topic = topics.get(id) ?? { id, ...meta, wrong: 0, assisted: 0, lastAt: 0 };
+      const topic = topics.get(id) ?? { id, ...meta, wrong: 0, tentative: 0, assisted: 0, lastAt: 0 };
       if (wrong) topic.wrong++;
+      if (tentative) topic.tentative++;
       if (assisted) topic.assisted++;
       topic.lastAt = Math.max(topic.lastAt, record.lastAttemptAt);
       topics.set(id, topic);
     }
   }
   return [...topics.values()].sort((a, b) =>
-    b.wrong - a.wrong || b.assisted - a.assisted || b.lastAt - a.lastAt || a.id.localeCompare(b.id));
+    b.wrong - a.wrong || b.tentative - a.tentative || b.assisted - a.assisted || b.lastAt - a.lastAt || a.id.localeCompare(b.id));
 }
 export function delayedReviewSummary(index: StudyIndex, state: Progress) {
   const summary = {
