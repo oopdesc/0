@@ -267,6 +267,9 @@
   font-size: 19px;
   margin: 0 0 10px;
 }
+.study-application {
+  margin-block: 16px 24px;
+}
 .study-records p {
   max-width: 700px;
   font-size: 12px;
