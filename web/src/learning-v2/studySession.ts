@@ -1,6 +1,20 @@
 import type { ProgressOutcome } from "./progress";
-import { roundResultLabel, type StudyRound } from "./studyRound";
+import { readStudyFilter, roundResultLabel, type StudyRound } from "./studyRound";
 import type { StudyIndex } from "./studyPlanner";
+
+export const studyPreferencesKey = "0.learning-v2.today-preferences.v1";
+
+export function dailyStudyFilter(search: string, storage: Pick<Storage, "getItem"> | null) {
+  const params = new URLSearchParams(search);
+  if (["lang", "level", "kind", "limit", "new", "concept"].some(key => params.has(key))) {
+    return readStudyFilter(params);
+  }
+  try {
+    const saved = storage?.getItem(studyPreferencesKey);
+    if (saved && saved.length <= 512) return readStudyFilter(new URLSearchParams(saved));
+  } catch { /* This browser may disallow storage. */ }
+  return readStudyFilter(params);
+}
 
 const reviewPriority: Partial<Record<ProgressOutcome | "skipped", number>> = {
   wrong: 0,

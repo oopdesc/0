@@ -15,8 +15,8 @@ import {
   loadProgress,
   saveProgress,
 } from "./progress";
-import { confirmStudyRoundReplacement, readStudyFilter, readStudyRound, roundHref, roundResultLabel, startStudyRound } from "./studyRound";
-import { completedStudy, followUpLimit } from "./studySession";
+import { confirmStudyRoundReplacement, readStudyFilter, readStudyRound, roundHref, roundResultLabel, startStudyRound, todayHref } from "./studyRound";
+import { completedStudy, dailyStudyFilter, followUpLimit, studyPreferencesKey } from "./studySession";
 import { applicationExamples, applicationHistory, planApplications } from "./applicationPractice";
 import "./today.css";
 import "./study-round.css";
@@ -54,13 +54,14 @@ export default function TodayView({ search, navigate }: { search: string; naviga
     [now, setNow] = useState(Date.now),
     [notice, setNotice] = useState(""),
     [skipped, setSkipped] = useState<Set<string>>(new Set());
-  const [defaults] = useState(() => readStudyFilter(new URLSearchParams(search)));
+  const [defaults] = useState(() => dailyStudyFilter(search, readStorage()));
   const [language, setLanguage] = useState(defaults.language);
   const [level, setLevel] = useState(defaults.level);
   const [kind, setKind] = useState(defaults.kind);
   const [limit, setLimit] = useState(defaults.limit);
   const [includeNew, setIncludeNew] = useState(defaults.includeNew);
   const [concept, setConcept] = useState(defaults.concept);
+  const [conditionsNotice, setConditionsNotice] = useState("");
   const [applicationKind, setApplicationKind] = useState<"prediction" | "code">("prediction");
   const [applicationNotice, setApplicationNotice] = useState("");
   const activeConcept = concept && index?.concepts[concept] ? concept : undefined;
@@ -152,6 +153,30 @@ export default function TodayView({ search, navigate }: { search: string; naviga
       { language, level, kind, limit, includeNew, concept: activeConcept }, "application");
     if (started) navigate(roundHref(started));
     else setApplicationNotice("学習セットを保存できませんでした。");
+  }
+  function saveStudyPreferences() {
+    try {
+      localStorage.setItem(studyPreferencesKey, todayHref({ language, level, kind, limit, includeNew, concept: activeConcept }).split("?")[1]);
+      setConditionsNotice("次に「今日の学習」を開くと、この条件から始まります。");
+    } catch {
+      setConditionsNotice("このブラウザでは条件を保存できません。");
+    }
+  }
+  function resetStudyPreferences() {
+    const standard = readStudyFilter(new URLSearchParams());
+    setLanguage(standard.language);
+    setLevel(standard.level);
+    setKind(standard.kind);
+    setLimit(standard.limit);
+    setIncludeNew(standard.includeNew);
+    setConcept(undefined);
+    setSkipped(new Set());
+    try {
+      localStorage.removeItem(studyPreferencesKey);
+      setConditionsNotice("保存した条件を解除し、標準に戻しました。");
+    } catch {
+      setConditionsNotice("画面の条件を標準に戻しました。保存した条件は解除できませんでした。");
+    }
   }
   async function importFile(input?: File) {
     if (!input) return;
@@ -367,7 +392,7 @@ export default function TodayView({ search, navigate }: { search: string; naviga
               </div>
               <p>この一覧以外の問題も、いつでも開けます。</p>
             </div>
-            <div className="study-filters">
+            <div className="study-filters" onChange={() => setConditionsNotice("")}>
               <label>
                 言語
                 <select
@@ -439,6 +464,11 @@ export default function TodayView({ search, navigate }: { search: string; naviga
                 未学習も含める
               </label>
             </div>
+            <div className="study-round-start">
+              <button type="button" onClick={saveStudyPreferences}>この条件を次回も使う</button>
+              <button type="button" onClick={resetStudyPreferences}>条件を標準に戻す</button>
+              {conditionsNotice && <span role="status">{conditionsNotice}</span>}
+            </div>
             <details className="study-topics" open={activeConcept ? true : undefined}>
               <summary>最後の回答から、テーマを選んで復習</summary>
               {topics.length ? (
@@ -446,6 +476,7 @@ export default function TodayView({ search, navigate }: { search: string; naviga
                   {topics.map(topic => (
                     <li key={topic.id}>
                       <button type="button" aria-pressed={activeConcept === topic.id} onClick={() => {
+                        setConditionsNotice("");
                         setConcept(topic.id);
                         setLanguage(topic.language);
                         setLevel("all");

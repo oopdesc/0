@@ -3,6 +3,7 @@ import "./bookshelf.css";
 const repository = "https://github.com/oopdesc/all-beings-flourishing";
 const universe = repository + "/tree/main/books/universe-2026";
 const happiness = repository + "/tree/main/books/all-beings-2026";
+const editionsAnchor = "#" + encodeURIComponent("各言語の版");
 const editions = [
   {
     language: "ja",
@@ -38,6 +39,7 @@ export default function Bookshelf() {
       <section className="book-work" aria-labelledby="book-universe">
         <h2 id="book-universe">宇宙をどこまで知れるのか</h2>
         <p>科学と数学で本質をたどる。全文を3言語で公開しています。</p>
+        <a className="book-distribution" href={universe + editionsAnchor}>宇宙の本の版と配信先（GitHub） ↗</a>
         <ul className="book-editions" aria-label="宇宙の本の言語版">
           {editions.map(({ language, label, title, subtitle, read }) => (
             <li className="book-edition" key={language} lang={language}>
@@ -52,13 +54,13 @@ export default function Bookshelf() {
           ))}
         </ul>
         <p className="book-credits">
-          <a href={universe}>宇宙の本の版と書誌情報 ↗</a>
-          {" · "}<a href={repository + "/blob/main/books/universe-2026/NOTICE.md"}>原著と利用条件 ↗</a>
+          <a href={repository + "/blob/main/books/universe-2026/NOTICE.md"}>原著と利用条件 ↗</a>
         </p>
       </section>
       <section className="book-work" aria-labelledby="book-happiness">
         <h2 id="book-happiness">すべての存在の幸福を考える</h2>
         <p>避けられる苦しみを減らし、協力や生き方の選択を広げるにはどうすればよいかを考えます。</p>
+        <a className="book-distribution" href={happiness + editionsAnchor}>幸福の本の版と配信先（GitHub） ↗</a>
         <div className="book-editions">
           <article className="book-edition">
             <img src="/covers/happiness-ja.webp" width="240" height="384" alt="" loading="lazy" decoding="async" />
@@ -69,7 +71,6 @@ export default function Bookshelf() {
             </div>
           </article>
         </div>
-        <p className="book-credits"><a href={happiness}>幸福の本の版と書誌情報 ↗</a></p>
       </section>
       <p className="book-credits">
         表紙 © 2026 oopdesc。表示用に縮小しています。

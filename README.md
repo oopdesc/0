@@ -6,6 +6,8 @@ Java・Rustを動かして、結果を自分の言葉で説明するための学
 
 制作・運営：**oopdesc**
 
+[著作一覧（GitHubの無料本文・Kindle版）](https://github.com/oopdesc/all-beings-flourishing#books)
+
 ## 使い方
 
 1. 「学習」でJavaかRustの問題を選び、答えを予想します。

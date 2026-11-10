@@ -13,6 +13,19 @@
 .book-work > p:not(.book-credits) {
   color: var(--muted);
 }
+.book-distribution {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  margin-bottom: 16px;
+  padding: 6px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--panel);
+  color: var(--text);
+  font-weight: 650;
+  text-underline-offset: 0.22em;
+}
 .book-editions {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));

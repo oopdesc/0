@@ -1,7 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { completedStudy } from "../../src/learning-v2/studySession";
-import { parseStudyRound, type StudyRound } from "../../src/learning-v2/studyRound";
+import { completedStudy, dailyStudyFilter, studyPreferencesKey } from "../../src/learning-v2/studySession";
+import { parseStudyRound, todayHref, type StudyRound } from "../../src/learning-v2/studyRound";
 import type { StudyItem } from "../../src/learning-v2/studyPlanner";
 
 const items: StudyItem[] = Array.from({ length: 9 }, (_, i) => ({
@@ -37,4 +37,18 @@ test("older sets without evidence snapshots do not infer old results from later 
   const result = completedStudy({ ...round, results: undefined }, items)!;
   assert.equal(new Map(result.counts).get("結果の記録なし"), 7);
   assert.deepEqual(result.followUpIds, [items[1].id, items[7].id]);
+});
+
+
+test("saved study filters apply to an ordinary visit while explicit links and round returns keep their filters", () => {
+  const storage = {
+    getItem: (key: string) => key === studyPreferencesKey ? "section=today&lang=rust&level=advanced&new=0" : null,
+  };
+  assert.deepEqual(dailyStudyFilter("?section=today", storage), {
+    language: "rust", level: "advanced", kind: "all", limit: 10, includeNew: false,
+  });
+  assert.equal(dailyStudyFilter("?section=today&lang=java", storage).language, "java");
+  assert.equal(dailyStudyFilter("?section=today&lang=java", storage).includeNew, true);
+  const standard = { ...round.filter, language: "all" as const };
+  assert.deepEqual(dailyStudyFilter(todayHref(standard).split("?")[1], storage), standard);
 });

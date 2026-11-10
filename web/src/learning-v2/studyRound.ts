@@ -49,6 +49,7 @@ export function todayHref(filter: StudyFilter) {
   if (filter.limit !== 10) params.set("limit", String(filter.limit));
   if (!filter.includeNew) params.set("new", "0");
   if (filter.concept && topicId.test(filter.concept)) params.set("concept", filter.concept);
+  if (params.size === 1) params.set("lang", "all");
   return "/learn?" + params.toString();
 }
 
