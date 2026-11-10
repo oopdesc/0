@@ -4,12 +4,12 @@ export function LicensesPage() {
       <h1>ライセンス</h1>
 
       <section>
-        <h2>このサイト</h2>
-        <p>MIT License. 教材データ・実行エンジン・宇宙ページのコードを含みます。</p>
+        <h2>補充問題集の元の配布条件</h2>
+        <p>以下は補充問題集のモジュールに付属するMITライセンスです。<a href="/rights">現行サイトの利用条件</a>もご覧ください。</p>
         <pre className="license">
 {`MIT License
 
-Copyright (c) 2026 0 learning space
+Copyright (c) 2026 0 learning space contributors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal

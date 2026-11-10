@@ -1,6 +1,6 @@
 # Third-party notices
 
-The project license covers the software authored for this version. It does not replace third-party licenses or media conditions.
+The rights notice in LICENSE covers the project's original work. Third-party licenses, the license files in the academy and orbit modules, and media conditions continue to apply where applicable.
 
 - Three.js 0.186.1 (including OrbitControls): MIT License, three.js authors. License text is included in web/public/licenses/three.txt. Source: https://github.com/mrdoob/three.js
 - React / React DOM: MIT License, Meta Platforms, Inc. and affiliates. License text is included in web/public/licenses/react.txt.

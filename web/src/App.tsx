@@ -33,6 +33,7 @@ const routes = new Set([
   "/excelvba",
   "/contact",
   "/privacy",
+  "/rights",
   "/accessibility",
   "/settings",
   "/game",
@@ -103,7 +104,7 @@ export default function App() {
     document.title =
       path === "/"
         ? "0 — Java・Rustを動かして学ぶ"
-        : `${path === "/learn" ? "学ぶ" : path === "/art" ? "宇宙アート" : path === "/books" ? "公開書籍" : path === "/lab" ? "コード実験室" : path === "/code" ? "コードを読む" : "0"} — 0`;
+        : `${path === "/learn" ? "学ぶ" : path === "/art" ? "宇宙アート" : path === "/books" ? "公開書籍" : path === "/rights" ? "著作権と利用条件" : path === "/lab" ? "コード実験室" : path === "/code" ? "コードを読む" : "0"} — 0`;
   }, [path]);
   function navigate(href: string) {
     href = movedNebula(href) ?? href;
@@ -411,15 +412,12 @@ export default function App() {
           <span>宇宙 / Java / Rust</span>
           <a
             className="footer-status license-badge"
-            href="https://github.com/oopdesc/0/blob/main/LICENSE"
-            target="_blank"
-            rel="noreferrer"
-            aria-label="ソースコードのMITライセンスを読む"
+            href="/rights"
           >
             <span className="license-mark" aria-hidden="true">
               &lt;/&gt;
             </span>
-            ソースコード：MIT License ↗
+            著作権と利用条件
           </a>
         </div>
       </footer></div>

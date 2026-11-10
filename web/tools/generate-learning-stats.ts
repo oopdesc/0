@@ -30,6 +30,8 @@ const stats = {
   exams: packs.reduce((n, p) => n + p.counts.exams, 0),
   java: packs[0].counts.normal,
   rust: packs[1].counts.normal,
+  javaWriting: packs[0].counts.writing,
+  rustWriting: packs[1].counts.writing,
   unique: inventory.summary,
 };
 writeFileSync(

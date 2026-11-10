@@ -5,6 +5,7 @@ import {
   planStudy,
   studyHref,
   studySummary,
+  studyTopics,
 } from "./studyPlanner";
 import type { StudyIndex, StudyFilter } from "./studyPlanner";
 import {
@@ -55,6 +56,8 @@ export default function TodayView({ search, navigate }: { search: string; naviga
   const [kind, setKind] = useState(defaults.kind);
   const [limit, setLimit] = useState(defaults.limit);
   const [includeNew, setIncludeNew] = useState(defaults.includeNew);
+  const [concept, setConcept] = useState(defaults.concept);
+  const activeConcept = concept && index?.concepts[concept] ? concept : undefined;
   const [roundNotice, setRoundNotice] = useState("");
   const round = readStudyRound();
   const activeRound = round && round.outcomes.length < round.ids.length ? round : null;
@@ -88,14 +91,15 @@ export default function TodayView({ search, navigate }: { search: string; naviga
         ? planStudy(
             index,
             saved.state,
-            { language, level, kind, limit, includeNew },
+            { language, level, kind, limit, includeNew, concept: activeConcept },
             now,
             skipped,
           )
         : [],
-    [index, saved.state, language, level, kind, limit, includeNew, now, skipped],
+    [index, saved.state, language, level, kind, limit, includeNew, now, skipped, activeConcept],
   );
   const summary = index ? studySummary(index, saved.state, now) : null;
+  const topics = useMemo(() => index ? studyTopics(index, saved.state, language).slice(0, 5) : [], [index, saved.state, language]);
   const reviewAfterRound = round && !activeRound && index
     ? round.ids.flatMap((id, i) => {
         const item = index.items.find(q => q.id === id);
@@ -106,7 +110,7 @@ export default function TodayView({ search, navigate }: { search: string; naviga
       })
     : [];
   function beginRound() {
-    const started = startStudyRound(shown.map(p => p.item.id), { language, level, kind, limit, includeNew });
+    const started = startStudyRound(shown.map(p => p.item.id), { language, level, kind, limit, includeNew, concept: activeConcept });
     if (started) navigate(roundHref(started));
     else setRoundNotice("このブラウザではセットを保存できません。一覧から一問ずつ開けます。");
   }
@@ -263,7 +267,9 @@ export default function TodayView({ search, navigate }: { search: string; naviga
                 <select
                   value={language}
                   onChange={(e) => {
-                    setLanguage(e.target.value as StudyFilter["language"]);
+                    const next = e.target.value as StudyFilter["language"];
+                    setLanguage(next);
+                    if (next !== "all" && concept && !concept.startsWith(next + ":")) setConcept(undefined);
                     setSkipped(new Set());
                   }}
                 >
@@ -327,6 +333,30 @@ export default function TodayView({ search, navigate }: { search: string; naviga
                 未学習も含める
               </label>
             </div>
+            <details className="study-topics" open={activeConcept ? true : undefined}>
+              <summary>最後の回答から、テーマを選んで復習</summary>
+              {topics.length ? (
+                <ul aria-label="復習するテーマ">
+                  {topics.map(topic => (
+                    <li key={topic.id}>
+                      <button type="button" aria-pressed={activeConcept === topic.id} onClick={() => {
+                        setConcept(topic.id);
+                        setLanguage(topic.language);
+                        setLevel("all");
+                        setKind("all");
+                        setIncludeNew(true);
+                        setSkipped(new Set());
+                      }}>{topic.name}</button>
+                      <span>{topic.language === "java" ? "Java" : "Rust"} · 誤答・実装の差分 {topic.wrong}問 · 補助あり正答 {topic.assisted}問</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : <p>最後の回答に誤答やヒントを使った正答があると、対応するテーマを表示します。</p>}
+              {activeConcept && <p>
+                選択中：<strong>{index?.concepts[activeConcept].name}</strong>{" "}
+                <button type="button" onClick={() => { setConcept(undefined); setSkipped(new Set()); }}>テーマの絞り込みを解除</button>
+              </p>}
+            </details>
             <p className="study-method">
               復習時期が来た問題に自力で正答すると、次の間隔が1・3・7・14・30日の順に延びます。前提の確認は自由です。
             </p>
@@ -438,6 +468,7 @@ export default function TodayView({ search, navigate }: { search: string; naviga
           <section className="study-records">
             <div>
               <h3>学習記録を手元に残す</h3>
+              <p><a href="/learn?section=backup">模試や学習セットもまとめてバックアップ →</a></p>
               <p>
                 この端末での記録です。別の端末へ移るときは、JSONを書き出して取り込めます。下書きも含むため、自分で保管してください。
               </p>

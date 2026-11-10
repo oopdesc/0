@@ -7,6 +7,7 @@ import LearningOverview from "./LearningOverview";
 const Journey = lazy(() => import("./learning-v2/Journey"));
 const QuestionCatalog = lazy(() => import("./learning-v2/QuestionCatalog"));
 const TodayView = lazy(() => import("./learning-v2/TodayView"));
+const LearningBackup = lazy(() => import("./learning-v2/LearningBackupView"));
 const PackLearning = lazy(() => import("./learning-v2/PackLearning"));
 const FlowView = lazy(() => import("./learning-v2/FlowView"));
 const ProjectView = lazy(() => import("./learning-v2/ProjectView"));
@@ -163,7 +164,7 @@ export default function LearningHub({
   const requested = rawRequested === "verified" || rawRequested === "practice" ? "writing" : rawRequested;
   const section = requested === "drill" && legacyHash.startsWith("#/") && !legacyHash.startsWith("#/p/")
     ? "archive"
-    : ["orbit", "source", "archive", "supplemental", "legacy-verified", "legacy-practice", "legacy-flow"].includes(requested) ||
+    : ["orbit", "source", "archive", "supplemental", "legacy-verified", "legacy-practice", "legacy-flow", "backup"].includes(requested) ||
       sections.some(([id]) => id === requested) ? requested : "overview";
   const [mode, setMode] = useState(
     params.get("mode") === "code" || path === "/lab" ? "code" : "basics",
@@ -203,6 +204,8 @@ export default function LearningHub({
         <LearningOverview />
       ) : section === "today" ? (
         <Suspense fallback={<p className="hub-content">今日の学習を読み込んでいます…</p>}><TodayView key={search} search={search} navigate={navigate}/></Suspense>
+      ) : section === "backup" ? (
+        <Suspense fallback={<p className="hub-content">学習バックアップを読み込んでいます…</p>}><LearningBackup /></Suspense>
       ) : section === "catalog" ? (
         <Suspense fallback={<p className="hub-content">問題一覧を読み込んでいます…</p>}><QuestionCatalog search={search}/></Suspense>
       ) : section === "concepts" ? (

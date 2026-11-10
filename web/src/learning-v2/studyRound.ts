@@ -1,7 +1,8 @@
 import type { StudyFilter } from "./studyPlanner";
 
-const KEY = "0.learning-v2.round.v1";
+export const STUDY_ROUND_KEY = "0.learning-v2.round.v1";
 const questionId = /^(?:java|rust):q[0-9]{4,8}$/;
+const topicId = /^(?:java|rust):[A-Za-z0-9._:-]{1,110}$/;
 export type StudyRound = {
   token: string;
   startedAt: number;
@@ -13,12 +14,14 @@ export type StudyRound = {
 export function readStudyFilter(params: URLSearchParams): StudyFilter {
   const language = params.get("lang"), level = params.get("level"), kind = params.get("kind");
   const limit = Number(params.get("limit"));
+  const concept = params.get("concept");
   return {
     language: language === "java" || language === "rust" ? language : "all",
     level: level === "beginner" || level === "intermediate" || level === "advanced" ? level : "all",
     kind: kind === "code" || kind === "prediction" ? kind : "all",
     limit: limit === 5 || limit === 20 ? limit : 10,
     includeNew: params.get("new") !== "0",
+    ...(concept && topicId.test(concept) ? { concept } : {}),
   };
 }
 
@@ -29,32 +32,43 @@ export function todayHref(filter: StudyFilter) {
   if (filter.kind !== "all") params.set("kind", filter.kind);
   if (filter.limit !== 10) params.set("limit", String(filter.limit));
   if (!filter.includeNew) params.set("new", "0");
+  if (filter.concept && topicId.test(filter.concept)) params.set("concept", filter.concept);
   return "/learn?" + params.toString();
 }
 
+export function parseStudyRound(raw: string | null): StudyRound | null {
+  if (raw === null) return null;
+  if (raw.length > 4096) throw Error("学習セットが大きすぎます。");
+  const value = JSON.parse(raw) as StudyRound | null;
+  if (!value || typeof value !== "object") throw Error("学習セットの形式が不正です。");
+  const { token, startedAt, ids, outcomes, filter } = value;
+  if (typeof token !== "string" || !/^[a-z0-9-]{8,45}$/.test(token) ||
+      !Number.isSafeInteger(startedAt) || startedAt <= 0 ||
+      !Array.isArray(ids) || ids.length < 1 || ids.length > 20 ||
+      !ids.every(id => typeof id === "string" && questionId.test(id)) ||
+      new Set(ids).size !== ids.length ||
+      !Array.isArray(outcomes) || outcomes.length > ids.length ||
+      !outcomes.every(x => x === "attempted" || x === "skipped") ||
+      !filter || !["all", "java", "rust"].includes(filter.language) ||
+      !["all", "beginner", "intermediate", "advanced"].includes(filter.level) ||
+      !["all", "code", "prediction"].includes(filter.kind) ||
+      (filter.concept !== undefined && (typeof filter.concept !== "string" || !topicId.test(filter.concept))) ||
+      ![5, 10, 20].includes(filter.limit) || typeof filter.includeNew !== "boolean")
+    throw Error("学習セットの内容が不正です。");
+  return {
+    token, startedAt, ids, outcomes,
+    filter: { language: filter.language, level: filter.level, kind: filter.kind, limit: filter.limit, includeNew: filter.includeNew,
+      ...(filter.concept ? { concept: filter.concept } : {}) },
+  };
+}
+
 export function readStudyRound(): StudyRound | null {
-  try {
-    const raw = localStorage.getItem(KEY);
-    if (!raw || raw.length > 4096) return null;
-    const value: StudyRound = JSON.parse(raw);
-    const {token, startedAt, ids, outcomes, filter} = value;
-    if (typeof token !== "string" || !/^[a-z0-9-]{8,45}$/.test(token) ||
-        !Number.isSafeInteger(startedAt) || startedAt <= 0 ||
-        !Array.isArray(ids) || ids.length < 1 || ids.length > 20 ||
-        !ids.every(id => typeof id === "string" && questionId.test(id)) ||
-        new Set(ids).size !== ids.length ||
-        !Array.isArray(outcomes) || outcomes.length > ids.length ||
-        !outcomes.every(x => x === "attempted" || x === "skipped") ||
-        !filter || !["all", "java", "rust"].includes(filter.language) ||
-        !["all", "beginner", "intermediate", "advanced"].includes(filter.level) ||
-        !["all", "code", "prediction"].includes(filter.kind) ||
-        ![5, 10, 20].includes(filter.limit) || typeof filter.includeNew !== "boolean") return null;
-    return value;
-  } catch { return null; }
+  try { return parseStudyRound(localStorage.getItem(STUDY_ROUND_KEY)); }
+  catch { return null; }
 }
 
 export function saveStudyRound(round: StudyRound) {
-  try { localStorage.setItem(KEY, JSON.stringify(round)); return true; }
+  try { localStorage.setItem(STUDY_ROUND_KEY, JSON.stringify(round)); return true; }
   catch { return false; }
 }
 

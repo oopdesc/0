@@ -2,11 +2,12 @@ import { questionCompleted } from "./journey-state";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { compareOutput } from './comparison';
 import { PredictionReview } from './PredictionReview';
+import { predictionInput, predictionContent, predictionOutputLimit } from './predictionDraft';
 import { loadAliases, loadChunk, loadConcepts, loadExams, loadManifest } from './loader';
 import { localGradeToken, runLocalGrade } from './localGrade';
 import type { LocalGradeResult } from './localGrade';
 import { buildExerciseArchive, canArchiveExercise } from './exerciseArchive';
-import { canRecordRecall, emptyProgress, exportProgress, importProgress, loadProgress, markExposure, mergeProgress, recordKey, recordPrediction, recordRecall, recordCodeCheck, recordManualCodeCheck, saveDraft, saveLast, saveProgress } from './progress';
+import { canRecordRecall, currentDraft, emptyProgress, exportProgress, importProgress, loadProgress, markExposure, mergeProgress, recordKey, recordPrediction, recordRecall, recordCodeCheck, recordManualCodeCheck, saveDraft, saveLast, saveProgress } from './progress';
 import type { Progress } from './progress';
 import type { Concept, Exam, Lang, Manifest, Question } from './types';
 import { readStudyRound, roundHref, saveStudyRound, todayHref } from './studyRound';
@@ -76,12 +77,11 @@ export default function PackLearning({ search, view = 'all', navigate }: { searc
   const lang: Lang = params.get('lang') === 'rust' || params.get('track') === 'Rust' ? 'rust' : 'java';
   const hash = useHash();
   const requested = params.get('q') || legacyFromHash(hash);
-  const [manifest, setManifest] = useState<Manifest | null>(null);
+  const [loadedManifest, setManifest] = useState<Manifest | null>(null);
+  const manifest = loadedManifest?.language === lang ? loadedManifest : null;
   const [manifestError, setManifestError] = useState('');
-  const [questions, setQuestions] = useState<Question[] | null>(null);
-  const [questionError, setQuestionError] = useState('');
-  const [resolved, setResolved] = useState<string | null>(null);
-  const [unresolved, setUnresolved] = useState<string | null>(null);
+  const [chunk, setChunk] = useState<{ manifest: Manifest; path: string; items: Question[] | null; error?: string } | null>(null);
+  const [lookup, setLookup] = useState<{ manifest: Manifest; requested: string; source: string | null; id: string | null; error?: string } | null>(null);
   const [concepts, setConcepts] = useState<Concept[]>([]);
   const [exams, setExams] = useState<Exam[] | null>(null), [examError, setExamError] = useState('');
   const [reload, setReload] = useState(0);
@@ -155,7 +155,7 @@ export default function PackLearning({ search, view = 'all', navigate }: { searc
   }
 
   useEffect(() => {
-    const controller = new AbortController(); setManifest(null); setManifestError(''); setQuestions(null); setConcepts([]); setExams(null); setExamError('');
+    const controller = new AbortController(); setManifest(null); setManifestError(''); setConcepts([]); setExams(null); setExamError('');
     loadManifest(lang, controller.signal).then(m => { setManifest(m); }).catch(e => { if (!controller.signal.aborted) setManifestError(message(e)); });
     return () => controller.abort();
   }, [lang, reload]);
@@ -166,38 +166,54 @@ export default function PackLearning({ search, view = 'all', navigate }: { searc
     if (view === 'exams') { setExamError(''); setExams(null); loadExams(manifest, controller.signal).then(setExams).catch(e => { if (!controller.signal.aborted) setExamError(message(e)); }); }
     return () => controller.abort();
   }, [manifest, view]);
+  const aliasSource = params.get('source');
+  const direct = requested && manifest?.chunks.some(unit => unit.ids.includes(requested)) ? requested : null;
+  const alias = lookup?.manifest === manifest && lookup.requested === requested && lookup.source === aliasSource ? lookup : null;
+  const resolved = direct ?? alias?.id ?? null;
+  const unresolved = requested && alias && !alias.id && !alias.error ? requested : null;
+  const resolving = !!(manifest && requested && !direct && !alias);
   useEffect(() => {
-    setResolved(null); setUnresolved(null);
-    if (!manifest || !requested) return;
-    if (manifest.chunks.some(c => c.ids.includes(requested))) { setResolved(requested); return; }
+    if (!manifest || !requested || direct || view === 'exams' || view === 'diagnostics') return;
     const controller = new AbortController();
     loadAliases(manifest, controller.signal).then(aliases => {
-      const source = params.get('source');
-      const matches = aliases.filter(a => a.id === requested && (!source || a.source === source));
-      if (matches.length === 1) setResolved(matches[0].targetId); else setUnresolved(requested);
-    }).catch(() => { if (!controller.signal.aborted) setUnresolved(requested); });
+      if (controller.signal.aborted) return;
+      const matches = aliases.filter(a => a.id === requested && (!aliasSource || a.source === aliasSource));
+      setLookup({ manifest, requested, source: aliasSource, id: matches.length === 1 ? matches[0].targetId : null });
+    }).catch(e => {
+      if (!controller.signal.aborted)
+        setLookup({ manifest, requested, source: aliasSource, id: null, error: message(e) });
+    });
     return () => controller.abort();
-  }, [manifest, requested, params]);
+  }, [manifest, requested, direct, aliasSource, view]);
   const selectedUnit = useMemo(() => {
     if (!manifest) return 0;
     const byId = resolved ? manifest.chunks.findIndex(c => c.ids.includes(resolved)) : -1;
     if (byId >= 0) return byId;
     const index = Number(params.get('unit') ?? 0);
     const selected = Number.isInteger(index) && index >= 0 && index < manifest.chunks.length ? index : 0;
-    if (view === 'writing' && manifest.chunks[selected].writingIds?.length === 0) {
+    if (view === 'writing' && manifest.chunks[selected]?.writingIds?.length === 0) {
       const firstWriting = manifest.chunks.findIndex(c => (c.writingIds?.length ?? 1) > 0);
       return Math.max(0, firstWriting);
     }
     return selected;
   }, [manifest, resolved, params, view]);
+  const questionPath = resolving || view === 'exams' || view === 'diagnostics' ? undefined : manifest?.chunks[selectedUnit]?.path;
   useEffect(() => {
-    if (!manifest || view === 'exams' || view === 'diagnostics' || !manifest.chunks[selectedUnit]) return;
-    const controller = new AbortController(); setQuestions(null); setQuestionError('');
-    loadChunk(manifest, manifest.chunks[selectedUnit].path, controller.signal).then(setQuestions).catch(e => { if (!controller.signal.aborted) setQuestionError(message(e)); });
+    if (!manifest || !questionPath) return;
+    const controller = new AbortController();
+    loadChunk(manifest, questionPath, controller.signal).then(items => {
+      if (!controller.signal.aborted) setChunk({ manifest, path: questionPath, items });
+    }).catch(e => {
+      if (!controller.signal.aborted) setChunk({ manifest, path: questionPath, items: null, error: message(e) });
+    });
     return () => controller.abort();
-  }, [manifest, selectedUnit, view]);
+  }, [manifest, questionPath]);
+  const selectedChunk = chunk?.manifest === manifest && chunk.path === questionPath ? chunk : null;
+  const questions = selectedChunk?.items ?? null;
+  const questionError = alias?.error || selectedChunk?.error;
   const visible = questions?.filter(q => view !== 'writing' || q.writingRequired) ?? [];
-  const current = visible.find(q => q.id === resolved) ?? visible[0] ?? null;
+  const current = requested ? visible.find(q => q.id === resolved) ?? null : visible[0] ?? null;
+  const otherView = view === 'writing' && !!questions?.some(q => q.id === resolved && !q.writingRequired);
   useEffect(() => { if (storage && current && view !== 'exams' && view !== 'diagnostics') saveLast(storage, lang, current.id); }, [storage, lang, current, view]);
   const unitNames = manifest ? unitList(manifest) : [];
   const navigationUnits = unitNames.map((u,index) => ({...u,index})).filter(u => view !== 'writing' || manifest?.chunks[u.index].writingIds?.length !== 0);
@@ -253,7 +269,7 @@ export default function PackLearning({ search, view = 'all', navigate }: { searc
     {manifestError && lang === 'rust' && <Suspense fallback={<p>従来教材を読み込んでいます…</p>}><LegacyProblems initialLanguage="rust" /></Suspense>}
     {manifest && <>
       <p className="zlv-build-note">問題はどこからでも選べます。解説を見た後の正答と、自分で思い出せた正答は分けて記録します。</p>
-      {unresolved && <div className="zlv-notice">以前の問題「{unresolved}」は見直し中です。学習記録は残しています。一覧から新しい問題を選んでください。</div>}
+      {unresolved && <div className="zlv-notice">指定された問題「{unresolved}」は見つかりません。一覧から問題を選べます。</div>}
       {requested && resolved && requested !== resolved && <p className="zlv-notice">旧ID「{requested}」は {resolved} に対応します。旧記録はそのまま残し、新しい記述の完了には数えません。</p>}
       {view === 'diagnostics' ? <Suspense fallback={<p>途中確認を読み込んでいます…</p>}><DiagnosticView manifest={manifest} progress={progress} update={update} /></Suspense> : view === 'exams' ? <>
         {examError && <div className="zlv-placeholder" role="alert"><p>{examError}</p><button type="button" onClick={() => setReload(x => x + 1)}>読み直す</button></div>}
@@ -273,7 +289,11 @@ export default function PackLearning({ search, view = 'all', navigate }: { searc
             <ol className="zlv-problem-list">{visible.map((q) => <li key={q.id}><a href={href(view, lang, q.id)} aria-current={q.id === current?.id ? 'step' : undefined}><span>{String(q.order).padStart(2, '0')}</span><span>{q.title}<small>{q.writingRequired ? 'コードを書く' : '予測する'}</small></span><span aria-hidden="true">›</span></a></li>)}</ol>
             <div className="zlv-sidebar-foot">⌁ <span>前提に戻るのも、立派な一歩。</span></div>
           </aside>
-          {current && (!focused || current.id === requested) ? <QuestionPanel key={`${current.id}@${current.contentVersion}`} q={current} packVersion={manifest.contentVersion} lang={lang} view={view} concepts={concepts} progress={progress} update={update} prev={index > 0 ? allIds[index - 1] : null} next={index >= 0 && index < allIds.length - 1 ? allIds[index + 1] : null} round={focused && round ? round : undefined} advance={advance} /> : focused ? !unresolved && !questionError && <p role="status">問題を読み込んでいます…</p> : <div className="zlv-empty"><h3>問題を選んでください</h3><p>単元を選ぶと、その中の問題が表示されます。</p></div>}
+          {current && (!focused || current.id === requested) ? <QuestionPanel key={`${current.id}@${current.contentVersion}`} q={current} packVersion={manifest.contentVersion} lang={lang} view={view} concepts={concepts} progress={progress} update={update} prev={index > 0 ? allIds[index - 1] : null} next={index >= 0 && index < allIds.length - 1 ? allIds[index + 1] : null} round={focused && round ? round : undefined} advance={advance} /> : otherView && resolved ? (
+            <div className="zlv-empty"><h3>この問題は結果を予測する練習です</h3><a href={href('all', lang, resolved)}>問題を開く →</a></div>
+          ) : !unresolved && !questionError && !questions ? (
+            <p role="status">問題を読み込んでいます…</p>
+          ) : !focused && <div className="zlv-empty"><h3>問題を選んでください</h3><p>単元を選ぶと、その中の問題が表示されます。</p></div>}
         </div>
         <ConceptMap concepts={concepts} lang={lang} />
       </>}
@@ -286,9 +306,14 @@ export default function PackLearning({ search, view = 'all', navigate }: { searc
 type Update = (fn: (s: Progress) => Progress) => void;
 export function QuestionPanel({ q, packVersion, lang, view, concepts, progress, update, prev, next, round, advance }: { q: Question; packVersion: string; lang: Lang; view: View; concepts: Concept[]; progress: Progress; update: Update; prev: string | null; next: string | null; round?: StudyRound; advance?: (attempted: boolean) => void }) {
   const key = recordKey(q.id, q.contentVersion, q.writingRequired ? 'code' : 'prediction');
-  const [selected, setSelected] = useState<string[]>([]);
-  const [text, setText] = useState('');
-  const [order, setOrder] = useState(() => [...q.answer.orderItems].reverse().map(x => x.id));
+  const [prediction, setPrediction] = useState(() => predictionInput(q, currentDraft(progress, key)?.content));
+  const [restored] = useState(() => predictionContent(q, prediction) !== "");
+  const { selected, text, order } = prediction;
+  function editPrediction(next: typeof prediction) {
+    setPrediction(next);
+    const content = predictionContent(q, next);
+    update(state => saveDraft(state, key, content));
+  }
   const [draft, setDraft] = useState(() => progress.drafts[key]?.content ?? q.starter ?? q.setup.files.find(f => f.editable)?.content ?? '');
   const draftRef = useRef(draft); draftRef.current = draft;
   const questionRef = useRef(q); questionRef.current = q;
@@ -367,7 +392,13 @@ export function QuestionPanel({ q, packVersion, lang, view, concepts, progress, 
     });
     if (ok) questionCompleted(q.id, outcome);
   };
-  const move = (i: number, d: number) => { const j = i + d; if (j < 0 || j >= order.length) return; setOrder(old => { const a = [...old]; [a[i], a[j]] = [a[j], a[i]]; return a; }); };
+  function move(index: number, distance: number) {
+    const target = index + distance;
+    if (target < 0 || target >= order.length) return;
+    const reordered = [...order];
+    [reordered[index], reordered[target]] = [reordered[target], reordered[index]];
+    editPrediction({ ...prediction, order: reordered });
+  }
   return <article className="zlv-card" aria-labelledby="zlv-question-title">
     <p className="zlv-question-links">{!round && <><a href="/learn?section=today">今日の学習へ →</a>　</>}<a href="/learn?section=concepts">概念図を開く →</a></p>
     <div className="zlv-card-top"><span>問題 {String(q.order).padStart(2, '0')} <i> / </i> {lang.toUpperCase()}</span><span className="zlv-tag">{q.writingRequired ? 'コード記述' : '結果を予測する'}</span></div>
@@ -378,14 +409,15 @@ export function QuestionPanel({ q, packVersion, lang, view, concepts, progress, 
     {q.writingRequired ? <><label className="zlv-sr" htmlFor="zlv-editor">編集するコード</label><textarea id="zlv-editor" className="zlv-editor" spellCheck={false} value={draft} onChange={e => { const value = e.target.value; draftRef.current = value; invalidateLocal(); setDraft(value); update(s => saveDraft(s, key, value)); setFeedback('編集したコードはまだ実行していません。'); }} /><div className="zlv-code-actions"><button type="button" onClick={() => download(q.setup.files.find(f => f.editable)?.path.split('/').pop() || 'Main.java', draft, 'text/plain')}>編集したファイルを保存 ↓</button>{canArchiveExercise(q)&&<button type="button" disabled={archiveBusy} onClick={()=>void exportExercise()}>{archiveBusy?'保存の準備中…':'課題と固定テストを保存 ↓'}</button>}<span>下書きはこのブラウザに保存</span></div></> : <pre className="zlv-code" tabIndex={0}><code>{q.setup.files.map(f => f.content).join('\n')}</code></pre>}
     <details className="zlv-disclosure"><summary>実行の前提・この枠について</summary><p>{q.setup.note}</p><p>入口: <code>{q.setup.entryPoint}</code> / 追加依存: {q.setup.dependencies.length ? q.setup.dependencies.join(', ') : 'なし'}</p></details>
     {q.writingRequired ? <div className="zlv-write-note"><strong>{localResult ? 'このコードのローカル結果' : 'ここでは未実行・未判定'}</strong><p>公開版はコードをコンパイルしません。下書きや解説を使い、手元のJava／Rustコンパイラで確かめられます。固定コードの結果を編集内容の合格には使いません。</p>{localToken && (q.runnerProfile?.startsWith('java17-') || q.runnerProfile === 'rust2021-fixed-v1') && <div className="zlv-local-grade"><p>自分で起動したローカル版です。自分のコードだけを実行してください。OSによる完全な隔離はありません。</p><button type="button" disabled={grading} onClick={() => void testLocal()}>{grading ? '固定テストを実行中…' : 'このコードを手元でテストする'}</button>{localError && <p role="alert">{localError} 未判定のままです。</p>}{localResult && <section className="zlv-local-result" aria-label="ローカル採点結果" role="status"><p><strong>{({passed:'固定テストに合格',failed:'固定テストで差分あり','compile-error':'コンパイルエラー','runtime-error':'実行時エラー',timeout:'時間または出力の上限',unsupported:'コンパイラまたは課題が未対応','not-run':'未実行'})[localResult.status]}</strong> · 実行したケース {localResult.cases.length}件</p>{localResult.status==='runtime-error'&&<p>AssertionErrorやassertion failedは、固定テストの条件を満たさなかった場合にも出ます。下の「コンパイラなどの情報」で、最初の失敗を確かめてください。</p>}<p>この編集内容と固定テストを照合した一時結果です。有限のテストは仕様全体の証明ではなく、結果は画面を閉じると消えます。編集すると結果を無効にします。</p>{localResult.toolchain && <p>{localResult.toolchain.rustc || localResult.toolchain.javac} / {localResult.toolchain.target} / {localResult.toolchain.java?.split('\n')[0]}</p>}{localResult.cases.length > 0 && <details><summary>ケースごとの実測と期待値</summary><ol>{localResult.cases.map(c => <li key={c.id}><strong>{c.id}: {c.status}</strong><p>実測</p><pre>{c.actual.stdout.join('\n')}</pre><p>期待値</p><pre>{c.expectedComparison.expected.join('\n')}</pre></li>)}</ol></details>}{localResult.diagnostics.length > 0 && <details><summary>コンパイラなどの情報</summary><pre>{localResult.diagnostics.join('\n')}</pre></details>}</section>}</div>}{(q.runnerProfile?.startsWith('java17-') || q.runnerProfile === 'rust2021-fixed-v1') && <details><summary>手元でこの問題を採点する</summary><p>ソース一式を用意し、編集したファイルを <code>{lang === 'rust' ? 'main.rs' : 'Main.java'}</code> として保存。リポジトリのディレクトリで次を実行します。</p><pre><code>{`node contributions/shared-node/cli.mjs ${q.id} ${lang === 'rust' ? 'main.rs' : 'Main.java'}`}</code></pre><p>自分のコードだけを実行してください。これは公開サンドボックスではなく、OSによる完全な隔離もありません。</p></details>}<p>{String(q.extensions?.localGradingDisabledReason || "")}</p></div> : <section className="zlv-answer" aria-label="予測"><div className="zlv-answer-head"><div><span>自分の予測</span><h4>まず、自分で考えてみる。</h4></div><b>01</b></div>
-      {(q.answer.mode === 'choice' || q.answer.mode === 'multichoice') && <fieldset className="zlv-options"><legend>{q.answer.mode === 'choice' ? '一つ選んでください' : '当てはまるものをすべて選んでください'}</legend>{q.answer.options.map((o, i) => <label key={o.id} className={selected.includes(o.id) ? 'selected' : ''}><input type={q.answer.mode === 'choice' ? 'radio' : 'checkbox'} name={`answer-${q.id}`} checked={selected.includes(o.id)} disabled={result !== null} onChange={() => setSelected(old => q.answer.mode === 'choice' ? [o.id] : old.includes(o.id) ? old.filter(x => x !== o.id) : [...old, o.id])} /><span className="zlv-option-num">{String.fromCharCode(65 + i)}</span><span>{o.text}</span><span className="zlv-check" aria-hidden="true">✓</span></label>)}</fieldset>}
-      {(q.answer.mode === 'output' || q.answer.mode === 'trace') && <label className="zlv-output-label">出力を1行ずつ入力<textarea value={text} disabled={result !== null} onChange={e => setText(e.target.value)} rows={4} /><small>行・空白・大文字小文字・Unicodeを区別します。最後の改行だけは省略できます。</small></label>}
+      {(q.answer.mode === 'choice' || q.answer.mode === 'multichoice') && <fieldset className="zlv-options"><legend>{q.answer.mode === 'choice' ? '一つ選んでください' : '当てはまるものをすべて選んでください'}</legend>{q.answer.options.map((o, i) => <label key={o.id} className={selected.includes(o.id) ? 'selected' : ''}><input type={q.answer.mode === 'choice' ? 'radio' : 'checkbox'} name={`answer-${q.id}`} checked={selected.includes(o.id)} disabled={result !== null} onChange={() => editPrediction({ ...prediction, selected: q.answer.mode === 'choice' ? [o.id] : selected.includes(o.id) ? selected.filter(id => id !== o.id) : [...selected, o.id] })} /><span className="zlv-option-num">{String.fromCharCode(65 + i)}</span><span>{o.text}</span><span className="zlv-check" aria-hidden="true">✓</span></label>)}</fieldset>}
+      {(q.answer.mode === 'output' || q.answer.mode === 'trace') && <label className="zlv-output-label">出力を1行ずつ入力<textarea value={text} disabled={result !== null} onChange={e => editPrediction({ ...prediction, text: e.target.value })} rows={4} maxLength={predictionOutputLimit} /><small>行・空白・大文字小文字・Unicodeを区別します。最後の改行だけは省略できます。</small></label>}
       {q.answer.mode === 'order' && <ol className="zlv-order">{order.map((id, i) => <li key={id}><code>{q.answer.orderItems.find(x => x.id === id)?.text ?? id}</code><button disabled={result !== null || i === 0} onClick={() => move(i, -1)} aria-label={`${i + 1}行目を上へ`}>↑</button><button disabled={result !== null || i === order.length - 1} onClick={() => move(i, 1)} aria-label={`${i + 1}行目を下へ`}>↓</button></li>)}</ol>}
+      <p className="zlv-build-note">{restored && result === null && '前回の途中回答を復元しました。'}確定前の回答はこのブラウザに保存します。</p>
       <button className="zlv-primary" type="button" disabled={!before || result !== null} onClick={submit}>予測を確定する <span>→</span></button>
     </section>}
     <div className="zlv-hints"><div><span>ヒント</span><strong>少しだけ、手がかり。</strong></div>{q.hints.slice(0, hints).map(h => <p key={h.id}>{h.text}</p>)}{hints < q.hints.length && <button type="button" onClick={() => { update(s => markExposure(s, key, 'hint')); setHints(x => x + 1); }}>ヒント {hints + 1} を見る <span>＋</span></button>}</div>
     {feedback && <p className={`zlv-feedback ${result === true ? 'good' : ''}`} role="status">{feedback}</p>}
-    {result !== null && <button type="button" className="zlv-reveal" onClick={() => { setSelected([]); setText(''); setOrder(q.answer.orderItems.map(x => x.id).reverse()); setResult(null); setSolution(false); setHints(0); submitted.current = false; setFeedback('解答を隠しました。同じ問題への再挑戦は、初回の予測とは分けて記録します。'); }}>解答を隠してもう一度</button>}
+    {result !== null && <button type="button" className="zlv-reveal" onClick={() => { setPrediction(predictionInput(q)); setResult(null); setSolution(false); setHints(0); submitted.current = false; setFeedback('解答を隠しました。同じ問題への再挑戦は、初回の予測とは分けて記録します。'); }}>解答を隠してもう一度</button>}
     {!solution && <button className="zlv-reveal" type="button" onClick={showSolution}>解答・考え方を見る <span>↗</span></button>}
     {solution && <section className="zlv-solution"><span>解答の考え方</span><h4>答えと、たどり方。</h4>
       {result === false && <PredictionReview question={q} selected={selected} output={text} />}

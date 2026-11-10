@@ -110,4 +110,4 @@ Java、Rust、保存データの検証、復習日の更新、JVM/TeaVMの一致
 
 ## 利用条件
 
-この版のソフトウェアはMIT Licenseです。依存ライブラリ・画像・動画にはそれぞれの利用条件が適用されます。[THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md) も確認してください。
+現行サイトの独自部分は、oopdescが権利を有する範囲で権利を留保しています。閲覧と個人の学習に必要な配布演習の保存・実行・編集は許可しています。[現行の利用条件](LICENSE)、[従来のMIT条件](LICENSE-MIT-LEGACY)、[第三者の利用条件](THIRD_PARTY_NOTICES.md)を参照してください。

@@ -99,6 +99,14 @@ test('merging live and stale state retains later other-language records and draf
 });
 
 import {recordCodeCheck,recordManualCodeCheck} from '../../src/learning-v2/progress';
+test('grading clears the answer draft and an older import cannot restore it', () => {
+ const prior=saveDraft(emptyProgress(),k,'["b"]',now-100);
+ const graded=recordPrediction(prior,k,false,now);
+ assert.equal(mergeProgress(graded,prior).drafts[k]?.content,undefined);
+ const newer=saveDraft(graded,k,'["a"]',now+100);
+ assert.equal(mergeProgress(graded,newer).drafts[k]?.content,'["a"]');
+});
+
 test('a later blind retrieval is not permanently labelled assisted after an earlier solution',()=>{
  const yesterday=now-2*86400000;let s=recordPrediction(emptyProgress(),k,true,yesterday);
  s=recordPrediction(s,k,true,yesterday+1000);assert.equal(s.records[k].assistedCorrect,1);

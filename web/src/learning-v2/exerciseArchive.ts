@@ -130,8 +130,8 @@ export function exerciseFiles(
       "■ 参照",
       ...q.solution.references.map((r) => r.title + "\n" + r.url),
       "",
-      "サイトのソースコードとこの教材の利用条件: MIT License",
-      "https://github.com/oopdesc/0/blob/main/LICENSE",
+      "この教材は個人の学習に保存・編集・実行できます。著作権と利用条件は以下をご覧ください。",
+      "https://0-3gaz.vercel.app/rights",
       "",
     ].join("\n"),
   };

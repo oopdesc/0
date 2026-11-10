@@ -39,11 +39,23 @@ test('exam fingerprint changes when question or answer changes but not evidence 
  const evidence=structuredClone(questions);evidence[0].evidence.specReviewed=true;assert.equal(await fingerprintExam(exam,evidence),base);
 });
 
-import {importExamState} from '../../src/learning-v2/examState';
+import {importExamState, matchingExamAttempts} from '../../src/learning-v2/examState';
 import {planExamPractice, reviewExam} from '../../src/learning-v2/examReview';
 import type {ExamReviewRow} from '../../src/learning-v2/examReview';
 import type {StudyItem} from '../../src/learning-v2/studyPlanner';
 import type {Manifest} from '../../src/learning-v2/types';
+test('an older backup does not take over the active attempt or its saved position',()=>{
+ const fingerprint='a'.repeat(64);
+ const older=startExam(emptyExamState(),exam,'fixture-1',now-30_000,'older',fingerprint);
+ const recent=startExam(emptyExamState(),exam,'fixture-1',now,'recent',fingerprint);
+ const withCursor=updateExam(recent,'recent',a=>({...a,currentQuestionId:choice.id}));
+ const merged=importExamState(JSON.stringify(older),withCursor);
+ assert.ok(merged.ok);
+ const matches=matchingExamAttempts(merged.state,exam.id,'fixture-1',fingerprint);
+ assert.deepEqual(matches.map(a=>a.attemptId),['recent','older']);
+ assert.equal(matches[0].currentQuestionId,choice.id);
+});
+
 test('submitted exams expose exact mistakes and unanswered work without grading implementation',()=>{
  let s=startExam(emptyExamState(),exam,'fixture-1',now,'review-1','a'.repeat(64));const m={language:exam.language,chunks:[]} as unknown as Manifest;
  assert.deepEqual(reviewExam(s.attempts[0],exam,questions,m),[]);

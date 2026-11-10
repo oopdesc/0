@@ -125,11 +125,34 @@ function Code() {
       <section className="panel">
         <h2>軽さも、仕様にする。</h2>
         <p>
-          公開成果物は30MiB以下、JavaScriptのgzip合計は512KiB以下をビルドで検査。Vercel
+          公開成果物は30MiB以下、JavaScriptはgzip圧縮後で初回128KiB以下・全体1MiB以下をビルドで検査。Vercel
           Functions・外部DB・有料AI
           APIは使いません。月次の転送枠はアクセス数にも依存するため、VercelのUsageで別に確認します。
         </p>
       </section>
+    </main>
+  );
+}
+
+function Rights() {
+  return (
+    <main className="page-shell info-page">
+      <span className="eyebrow">0 / oopdesc</span>
+      <h1>著作権と利用条件</h1>
+      <p>© {new Date().getFullYear()} oopdesc. All rights reserved.</p>
+      <h2>閲覧と学習</h2>
+      <p>公開ページは無料で閲覧できます。配布している演習は、ご自身の学習のために保存・実行・編集できます。自分で作成した内容に関する権利はご自身にあります。</p>
+      <h2>転載・再配布・販売</h2>
+      <p>現行サイトのコード・教材・画像のうち、oopdescが権利を持つ独自部分の転載、再配布、販売、他サービスへの組み込みには、事前の許諾が必要です。引用など法令で認められる利用には、その条件が適用されます。</p>
+      <h2>以前の版・外部素材・書籍</h2>
+      <p>従来のMITライセンスを付けて配布した版には、当時の条件が引き続き適用されます。外部ライブラリ・観測資料・書籍には、それぞれの利用条件があります。</p>
+      <ul className="readable-list">
+        <li><a href="https://github.com/oopdesc/0/blob/main/LICENSE">現行サイトの利用条件</a></li>
+        <li><a href="https://github.com/oopdesc/0/blob/460b8279fac4c069fcfcb0cb81522839f972e211/LICENSE">以前の版のMITライセンス</a></li>
+        <li><a href="https://github.com/oopdesc/0/blob/main/THIRD_PARTY_NOTICES.md">外部ライブラリの利用条件</a></li>
+        <li><a href="https://github.com/oopdesc/0/blob/main/MEDIA_CREDITS.md">画像・観測資料の出典と利用条件</a></li>
+        <li><a href="/books">公開書籍の利用条件を見る</a></li>
+      </ul>
     </main>
   );
 }
@@ -182,6 +205,7 @@ function Info({ path }: { path: string }) {
           <p>
             お気に入りの作品ID、学習済みの教材ID、復習日・自己確認回数、動きの設定を、このブラウザのlocalStorageへ保存します。表示テーマも別の保存項目に記録します。別の端末へ自動同期はしません。設定画面から記録ファイルで移したり、個別にリセットしたりできます。
           </p>
+          <p>学習中の回答・コードの下書き・模試・学習セットの位置もブラウザに保存します。これらは学習バックアップのファイルに含まれます。</p>
           <h2>配信と外部リンク</h2>
           <p>
             ファイルはVercelから配信され、ホスティング側が通常のアクセス情報を扱う場合があります。外部リンクを開いた先では各サービスの方針が適用されます。
@@ -217,9 +241,10 @@ function Info({ path }: { path: string }) {
       ) : (
         <>
           <p>
-            <strong>oopdesc</strong> が制作・運営する、誰でも使えるオープンソースの学習サイトです。JavaとRustの結果を予想し、動かし、自分で説明し、日を空けて復習する教材を用意しています。
+            <strong>oopdesc</strong> が制作・運営する、誰でも使える無料の学習サイトです。JavaとRustの結果を予想し、動かし、自分で説明し、日を空けて復習する教材を用意しています。
           </p>
           <div className="contact-links">
+            <a className="secondary" href="/rights">著作権と利用条件 →</a>
             <a
               className="primary"
               href="https://github.com/oopdesc/0"
@@ -238,7 +263,7 @@ function Info({ path }: { path: string }) {
             </a>
           </div>
           <p className="caption">
-            学習の記録や演習への入力は、外部サーバーへ送信しません。ソフトウェアの利用条件と画像の出典は公開ソースのLICENSE・MEDIA_CREDITSを確認できます。
+            学習の記録や演習への入力は、外部サーバーへ送信しません。ソフトウェアと教材の利用条件、画像の出典は「著作権と利用条件」で確認できます。
           </p>
         </>
       )}
@@ -309,6 +334,7 @@ function Settings({ state, update }: Props) {
       </section>
       <section className="panel">
         <h2>記録を別の端末へ移す</h2>
+        <p><a className="text-link" href="/learn?section=backup">練習・模試・レベルアップの記録をまとめて移す →</a></p>
         <p>
           JSONファイルに書き出し、別の端末でこの設定画面から取り込めます。ファイルはサーバーへ送信しません。取り込みは既存の完了マークとお気に入りへ追加し、復習は新しい日付の記録を採用します。
         </p>
@@ -415,6 +441,8 @@ export default function Secondary({
     <Settings state={state} update={update} />
   ) : path === "/books" ? (
     <Bookshelf />
+  ) : path === "/rights" ? (
+    <Rights />
   ) : (
     <Info path={path} />
   );

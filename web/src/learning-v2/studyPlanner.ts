@@ -1,6 +1,6 @@
 import type { Lang, Level } from "./types";
 import type { Progress, ProgressRecord } from "./progress";
-import { recordKey } from "./progress";
+import { currentDraft, recordKey } from "./progress";
 export type StudyItem = {
   id: string;
   language: Lang;
@@ -24,6 +24,7 @@ export type StudyFilter = {
   kind: "all" | "prediction" | "code";
   limit: number;
   includeNew: boolean;
+  concept?: string;
 };
 export type PlannedItem = {
   item: StudyItem;
@@ -246,6 +247,28 @@ export function studySummary(
     retained: Object.keys(state.records).filter((k) => !keys.has(k)).length,
   };
 }
+export function studyTopics(index: StudyIndex, state: Progress, language: StudyFilter["language"]) {
+  const topics = new Map<string, { id: string; name: string; language: Lang; wrong: number; assisted: number; lastAt: number }>();
+  for (const question of index.items) {
+    if (language !== "all" && question.language !== language) continue;
+    const record = state.records[itemKey(question)];
+    if (!record || record.lastAttemptAt === null) continue;
+    const wrong = needsRetry(record);
+    const assisted = record.lastOutcome === "assisted";
+    if (!wrong && !assisted) continue;
+    for (const id of new Set(question.concepts)) {
+      const meta = index.concepts[id];
+      if (!meta) continue;
+      const topic = topics.get(id) ?? { id, ...meta, wrong: 0, assisted: 0, lastAt: 0 };
+      if (wrong) topic.wrong++;
+      if (assisted) topic.assisted++;
+      topic.lastAt = Math.max(topic.lastAt, record.lastAttemptAt);
+      topics.set(id, topic);
+    }
+  }
+  return [...topics.values()].sort((a, b) =>
+    b.wrong - a.wrong || b.assisted - a.assisted || b.lastAt - a.lastAt || a.id.localeCompare(b.id));
+}
 export function planStudy(
   index: StudyIndex,
   state: Progress,
@@ -268,6 +291,7 @@ export function planStudy(
   for (const q of index.items) {
     if (
       excluded?.has(q.id) ||
+      (filter.concept && !q.concepts.includes(filter.concept)) ||
       (filter.language !== "all" && q.language !== filter.language) ||
       (filter.level !== "all" && q.level !== filter.level) ||
       (filter.kind === "code" && !q.writing) ||
@@ -285,7 +309,7 @@ export function planStudy(
     } else if (r && needsRetry(r)) {
       reason = "retry";
       priority = 1;
-    } else if (!attempted(r) && state.drafts[key]?.content.trim()) {
+    } else if ((currentDraft(state, key)?.updatedAt ?? -1) > (r?.lastAttemptAt ?? -1)) {
       reason = "draft";
       priority = 2;
     } else if (!attempted(r) && filter.includeNew) {

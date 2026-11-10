@@ -39,6 +39,7 @@ const paths = new Set([
   "/excelvba",
   "/contact",
   "/privacy",
+  "/rights",
   "/accessibility",
   "/settings",
   "/game",

@@ -405,3 +405,18 @@
     scroll-behavior: auto !important;
   }
 }
+
+.study-topics {
+  margin-top: 1rem;
+  padding: .85rem 1rem;
+  border: 1px solid var(--st-line);
+  border-radius: .75rem;
+  background: var(--st-soft);
+  font-size: .9rem;
+}
+.study-topics summary { cursor: pointer; font-weight: 700; }
+.study-topics ul { list-style: none; padding: 0; margin: .6rem 0 0; }
+.study-topics li { display: flex; flex-wrap: wrap; gap: .4rem .75rem; align-items: center; margin-top: .4rem; }
+.study-topics li span { color: var(--st-muted); }
+.study-topics button { min-height: 40px; text-align: start; }
+.study-topics button[aria-pressed="true"] { border-color: currentColor; color: var(--st-blue); }

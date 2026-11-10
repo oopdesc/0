@@ -38,6 +38,10 @@
       "destination": "/index.html"
     },
     {
+      "source": "/rights",
+      "destination": "/index.html"
+    },
+    {
       "source": "/accessibility",
       "destination": "/index.html"
     },

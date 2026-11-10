@@ -7,7 +7,7 @@ const safeId = (s: unknown): s is string => typeof s === 'string' && s.length > 
 const safeOption = safeId;
 const version = (s: unknown): s is string => typeof s === 'string' && /^[A-Za-z0-9._-]{1,64}$/.test(s);
 const ts = (n: unknown) => typeof n === 'number' && Number.isSafeInteger(n) && n >= 0 && n <= Date.now() + 86_400_000;
-export type ExamAttempt = { attemptId: string; examId: string; packVersion: string; examFingerprint: string | null; startedAt: number; deadlineAt: number; submittedAt: number | null; selections: Record<string, string[]>; drafts: Record<string, string>; marked: string[]; revealed: string[] };
+export type ExamAttempt = { attemptId: string; examId: string; packVersion: string; examFingerprint: string | null; startedAt: number; deadlineAt: number; submittedAt: number | null; selections: Record<string, string[]>; drafts: Record<string, string>; marked: string[]; revealed: string[]; currentQuestionId?: string };
 export type ExamState = { schema: 'zero-exam-state/1'; attempts: ExamAttempt[] };
 export const emptyExamState = (): ExamState => ({ schema:'zero-exam-state/1', attempts:[] });
 
@@ -27,6 +27,8 @@ export function parseExamState(raw: string): ExamState {
   for (const item of input.attempts) {
     if (!object(item) || typeof item.attemptId !== 'string' || !/^[A-Za-z0-9._-]{1,100}$/.test(item.attemptId) || seen.has(item.attemptId) || !safeId(item.examId) || !version(item.packVersion) || !(item.examFingerprint === undefined || item.examFingerprint === null || (typeof item.examFingerprint === 'string' && /^[a-f0-9]{64}$/.test(item.examFingerprint))) || !ts(item.startedAt) || !ts(item.deadlineAt) || (item.deadlineAt as number) < (item.startedAt as number) || (item.deadlineAt as number) - (item.startedAt as number) > 480*60_000 || !(item.submittedAt === null || (ts(item.submittedAt) && (item.submittedAt as number) >= (item.startedAt as number))) || !object(item.selections) || !object(item.drafts) || !Array.isArray(item.marked) || !Array.isArray(item.revealed)) throw new Error('試験の受験記録が不正です。');
     const lists = [item.marked,item.revealed];
+    if (item.currentQuestionId !== undefined && !safeId(item.currentQuestionId))
+      throw Error('再開する問題の参照が不正です。');
     if (lists.some(list => list.length > 200 || new Set(list).size !== list.length || list.some(x => !safeId(x)))) throw new Error('見直し情報が不正です。');
     const selections: Record<string,string[]> = Object.create(null); const drafts: Record<string,string> = Object.create(null);
     if (Object.keys(item.selections).length > 200 || Object.keys(item.drafts).length > 200) throw new Error('試験回答が多すぎます。');
@@ -39,7 +41,8 @@ export function parseExamState(raw: string): ExamState {
       drafts[id] = value;
     }
     seen.add(item.attemptId);
-    attempts.push({attemptId:item.attemptId,examId:item.examId,packVersion:item.packVersion,examFingerprint:typeof item.examFingerprint==='string'?item.examFingerprint:null,startedAt:item.startedAt as number,deadlineAt:item.deadlineAt as number,submittedAt:item.submittedAt as number|null,selections,drafts,marked:item.marked as string[],revealed:item.revealed as string[]});
+    attempts.push({attemptId:item.attemptId,examId:item.examId,packVersion:item.packVersion,examFingerprint:typeof item.examFingerprint==='string'?item.examFingerprint:null,startedAt:item.startedAt as number,deadlineAt:item.deadlineAt as number,submittedAt:item.submittedAt as number|null,selections,drafts,marked:item.marked as string[],revealed:item.revealed as string[],
+      ...(typeof item.currentQuestionId === 'string' ? { currentQuestionId: item.currentQuestionId } : {})});
   }
   return {schema:'zero-exam-state/1',attempts};
 }
@@ -58,6 +61,13 @@ export function startExam(state: ExamState, exam: Exam, packVersion: string, now
 export function updateExam(state: ExamState, attemptId: string, change: (a:ExamAttempt)=>ExamAttempt): ExamState {
   const at=state.attempts.findIndex(a=>a.attemptId===attemptId);if(at<0 || state.attempts[at].submittedAt !== null)return state;
   const attempts=[...state.attempts];attempts[at]=change(attempts[at]);return {...state,attempts};
+}
+export function matchingExamAttempts(state: ExamState, examId: string, packVersion: string, fingerprint: string) {
+  return state.attempts
+    .filter(attempt => attempt.examId === examId && attempt.packVersion === packVersion &&
+      attempt.examFingerprint === fingerprint)
+    .reverse()
+    .sort((a, b) => b.startedAt - a.startedAt);
 }
 export async function fingerprintExam(exam: Exam, questions: Question[]): Promise<string> {
   if (!globalThis.crypto?.subtle) throw new Error('この環境では試験内容の照合に必要なSHA-256を使えません。');

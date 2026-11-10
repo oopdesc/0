@@ -9,6 +9,7 @@ export const completionFlags = {
 } as const;
 export const JOURNEY_KEY = "0.journey.progress.v1",
   JOURNEY_EVENT = "zero-question-completed";
+const journeySizeLimit = 1_000_000;
 export type JourneyProgress = {
   schema: "zero-journey-progress/1";
   records: Record<string, { at: number; evidence: number }>;
@@ -93,7 +94,7 @@ export function completeJourney(
 export function readJourney(storage: Pick<Storage, "getItem">) {
   try {
     const raw = storage.getItem(JOURNEY_KEY);
-    if (raw && raw.length > 1000000) throw Error("記録が大きすぎます。");
+    if (raw && raw.length > journeySizeLimit) throw Error("記録が大きすぎます。");
     return {
       state: raw ? validateJourney(JSON.parse(raw)) : emptyJourney(),
       writable: true,
@@ -108,6 +109,11 @@ export function readJourney(storage: Pick<Storage, "getItem">) {
     };
   }
 }
+export function serializeJourney(state: JourneyProgress) {
+  const raw = JSON.stringify(state);
+  if (raw.length > journeySizeLimit) throw Error("レベル記録が保存上限を超えています。");
+  return raw;
+}
 export function saveJourney(
   storage: Pick<Storage, "getItem" | "setItem">,
   state: JourneyProgress,
@@ -115,7 +121,7 @@ export function saveJourney(
   const old = readJourney(storage);
   if (!old.writable) throw Error(old.error);
   const next = mergeJourney(old.state, state);
-  storage.setItem(JOURNEY_KEY, JSON.stringify(next));
+  storage.setItem(JOURNEY_KEY, serializeJourney(next));
   return next;
 }
 export function validateJourneyOrder(data: unknown, items: CatalogItem[]) {

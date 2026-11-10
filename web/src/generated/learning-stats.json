@@ -10,6 +10,8 @@
   "exams": 12,
   "java": 892,
   "rust": 395,
+  "javaWriting": 285,
+  "rustWriting": 80,
   "unique": {
     "method": "origin-and-content-v1",
     "total": 2098,

@@ -68,10 +68,20 @@ export function saveProgress(storage: Pick<Storage, 'setItem'>, state: Progress)
   } catch (e) { return { ok: false, error: `保存できません。既存の保存は削除しません。${e instanceof Error ? e.message : ''}` }; }
 }
 export function exportProgress(state: Progress): string { return JSON.stringify(state, null, 2); }
+export function currentDraft(state: Progress, key: string): Draft | undefined {
+  const draft = state.drafts[key];
+  if (!draft?.content) return undefined;
+  if (key.endsWith('#prediction') && (state.records[key]?.lastAttemptAt ?? -1) >= draft.updatedAt)
+    return undefined;
+  return draft;
+}
 export function mergeProgress(current: Progress, incoming: Progress): Progress {
   const next: Progress = { schema: current.schema, records: { ...current.records }, drafts: { ...current.drafts }, legacy: { ...current.legacy } };
   for (const [key, value] of Object.entries(incoming.records)) if (!next.records[key] || value.updatedAt > next.records[key].updatedAt) next.records[key] = value;
   for (const [key, value] of Object.entries(incoming.drafts)) if (!next.drafts[key] || value.updatedAt > next.drafts[key].updatedAt) next.drafts[key] = value;
+  for (const [key, draft] of Object.entries(next.drafts))
+    if (key.endsWith('#prediction') && (next.records[key]?.lastAttemptAt ?? -1) >= draft.updatedAt)
+      delete next.drafts[key];
   for (const [key, value] of Object.entries(incoming.legacy)) {
     const old = next.legacy[key];
     if (!old || value.lastAt > old.lastAt) next.legacy[key] = value;
@@ -131,7 +141,9 @@ export function recordPrediction(state: Progress, key: string, ok: boolean, now 
   const reviewStep = advance ? Math.min(old.reviewStep + 1, INTERVALS.length - 1) : keepDate ? old.reviewStep : 0;
   const next: ProgressRecord = { ...old, updatedAt: now, lastAttemptAt: now, solutionAt: now, lastOutcome:ok?(assisted?'assisted':'correct'):'wrong',
     blindCorrect: old.blindCorrect + Number(ok && !assisted), assistedCorrect: old.assistedCorrect + Number(ok && assisted), wrong: old.wrong + Number(!ok), reviewStep, dueAt: keepDate ? old.dueAt : now + INTERVALS[reviewStep] * DAY };
-  return { ...state, records: { ...state.records, [key]: next } };
+  const drafts = { ...state.drafts };
+  if (drafts[key] && drafts[key].updatedAt <= now) delete drafts[key];
+  return { ...state, records: { ...state.records, [key]: next }, drafts };
 }
 export function canRecordRecall(record: ProgressRecord, now = Date.now()): boolean {
   return record.lastAttemptAt !== null && record.lastAttemptAt < now &&
