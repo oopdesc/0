@@ -2,12 +2,13 @@ import { questionCompleted } from "./journey-state";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { compareOutput } from './comparison';
 import { PredictionReview } from './PredictionReview';
-import { predictionInput, predictionContent, predictionOutputLimit } from './predictionDraft';
+import { ReasoningPractice } from './ReasoningPractice';
+import { predictionInput, predictionContent, predictionOutputLimit, recallOutput } from './predictionDraft';
 import { loadAliases, loadChunk, loadConcepts, loadExams, loadManifest } from './loader';
 import { localGradeToken, runLocalGrade } from './localGrade';
 import type { LocalGradeResult } from './localGrade';
 import { buildExerciseArchive, canArchiveExercise } from './exerciseArchive';
-import { canRecordRecall, currentDraft, emptyProgress, exportProgress, importProgress, loadProgress, markExposure, mergeProgress, recordKey, recordPrediction, recordRecall, recordCodeCheck, recordManualCodeCheck, saveDraft, saveLast, saveProgress } from './progress';
+import { canRecordRecall, currentDraft, emptyProgress, exportProgress, importProgress, loadProgress, markExposure, mergeProgress, recordApplication, recordKey, recordPrediction, recordRecall, recordCodeCheck, recordManualCodeCheck, saveDraft, saveLast, saveProgress } from './progress';
 import type { Progress } from './progress';
 import type { Concept, Exam, Lang, Manifest, Question } from './types';
 import { readStudyRound, roundHref, saveStudyRound, todayHref } from './studyRound';
@@ -232,7 +233,17 @@ export default function PackLearning({ search, view = 'all', navigate }: { searc
       setRoundNotice('別の画面でセットが進みました。今日の学習から、続きへ戻れます。');
       return;
     }
-    const next: StudyRound = { ...latest, outcomes: [...latest.outcomes, attempted ? 'attempted' : 'skipped'] };
+    const result = attempted && current ? progressRef.current.records[
+      recordKey(current.id, current.contentVersion, current.writingRequired ? 'code' : 'prediction')
+    ] : undefined;
+    const evidence = latest.purpose === 'application' && result?.application && result.application.at >= latest.startedAt
+      ? result.application.outcome
+      : result && result.lastAttemptAt !== null && result.lastAttemptAt >= latest.startedAt ? result.lastOutcome ?? null : null;
+    const next: StudyRound = {
+      ...latest,
+      outcomes: [...latest.outcomes, attempted ? 'attempted' : 'skipped'],
+      results: [...(latest.results ?? latest.outcomes.map(() => null)), evidence],
+    };
     if (!saveStudyRound(next)) {
       setRoundNotice('続きの位置を保存できませんでした。もう一度試してください。');
       return;
@@ -245,8 +256,8 @@ export default function PackLearning({ search, view = 'all', navigate }: { searc
     {params.has('study') && (
       <section className="study-round" aria-label="今回の学習セット">
         <div>
-          <strong>{focused && round ? `第${roundIndex + 1}問 / 全${round.ids.length}問` : '学習セットの続き'}</strong>
-          <p>{focused ? '一問ずつ、自分の速さで。' : 'この問題とは別に、現在の続きの位置を保存しています。'}</p>
+          <strong>{focused && round ? `${round.purpose === 'application' ? '応用チェック · ' : ''}第${roundIndex + 1}問 / 全${round.ids.length}問` : '学習セットの続き'}</strong>
+          <p>{focused ? round?.purpose === 'application' ? '前に学んだ規則を、別のコードで使ってみます。' : '一問ずつ、自分の速さで。' : 'この問題とは別に、現在の続きの位置を保存しています。'}</p>
         </div>
         {round && !focused && roundIndex < round.ids.length && <a className="study-round-action" href={roundHref(round)}>現在の問題へ →</a>}
         <a href={round ? todayHref(round.filter) : '/learn?section=today'}>{focused ? '中断して一覧へ' : '今日の学習へ'}</a>
@@ -308,7 +319,24 @@ export function QuestionPanel({ q, packVersion, lang, view, concepts, progress, 
   const key = recordKey(q.id, q.contentVersion, q.writingRequired ? 'code' : 'prediction');
   const [prediction, setPrediction] = useState(() => predictionInput(q, currentDraft(progress, key)?.content));
   const [restored] = useState(() => predictionContent(q, prediction) !== "");
-  const { selected, text, order } = prediction;
+  const { selected, text, order, typed } = prediction;
+  const [recallFirst] = useState(() => {
+    const dueAt = progress.records[key]?.dueAt;
+    return round?.purpose === 'application' || (!!round && dueAt != null && dueAt <= Date.now());
+  });
+  const [choicesOpen, setChoicesOpen] = useState(selected.length > 0 || !recallFirst);
+  const [uncertain, setUncertain] = useState(false);
+  const firstOption = useRef<HTMLInputElement>(null);
+  const outputInput = useRef<HTMLTextAreaElement>(null);
+  const choiceMode = q.answer.mode === 'choice' || q.answer.mode === 'multichoice';
+  const exactOutput = useMemo(() => recallOutput(q), [q]);
+  function assess(change: (state: Progress) => Progress) {
+    update(state => {
+      const assessed = change(state);
+      return assessed !== state && round?.purpose === 'application'
+        ? recordApplication(assessed, key, round.startedAt) : assessed;
+    });
+  }
   function editPrediction(next: typeof prediction) {
     setPrediction(next);
     const content = predictionContent(q, next);
@@ -346,7 +374,7 @@ export function QuestionPanel({ q, packVersion, lang, view, concepts, progress, 
       if (localSequence.current === sequence && draftRef.current === code && questionRef.current === question) {
         setLocalResult(result);
         if(result.status==='passed' && result.cases.length>0) questionCompleted(q.id,'code-passed');
-        if(result.status!=='passed'||result.cases.length>0)update(s=>recordCodeCheck(s,key,result.status));
+        if(result.status!=='passed'||result.cases.length>0)assess(s=>recordCodeCheck(s,key,result.status));
         setFeedback('この編集内容に対する固定テストの結果を表示しました。編集すると未実行に戻ります。');
       }
     } catch (e) {
@@ -376,18 +404,20 @@ export function QuestionPanel({ q, packVersion, lang, view, concepts, progress, 
     setFeedback(recorded ? '後日の自己確認として記録しました。コードの実行合格とは別です。' : '復習の時期が来たら、ヒントや解答を開く前に記録できます。');
   }
   const conceptName = (id: string) => concepts.find(c => c.id === id)?.name ?? id;
-  const before = isValidAnswer(q, selected, text, order);
+  const before = typed ? text.length > 0 : isValidAnswer(q, selected, text, order);
   const showSolution = () => { update(s => markExposure(s, key, 'solution')); setSolution(true); };
   const submit = () => {
     if (!before || submitted.current) return;
-    const ok = isCorrect(q, selected, text, order);
+    const ok = typed && exactOutput ? compareOutput(text, exactOutput) : isCorrect(q, selected, text, order);
     if (ok === null) { setFeedback('この回答形式の判定条件はまだ利用できません。未判定として扱います。'); return; }
     submitted.current = true; setResult(ok); setSolution(true);
     setFeedback(ok ? '予測が合っています。理由と境界も確かめましょう。' : '予測と答えが違いました。どの規則を使うか一緒に見直しましょう。');
     let outcome: 'assisted' | 'correct' = 'assisted';
-    update(s => {
-      const next = recordPrediction(s, key, ok, Date.now(), solution || hints > 0);
-      if (next.records[key]?.lastOutcome === 'correct') outcome = 'correct';
+    assess(s => {
+      const next = recordPrediction(s, key, ok, Date.now(), solution || hints > 0, uncertain);
+      const recorded = next.records[key]?.lastOutcome;
+      if (recorded === 'correct' || recorded === 'tentative') outcome = 'correct';
+      if (recorded === 'tentative') setFeedback('予測は合っています。迷いがあったので、間隔を延ばさず次の復習で確かめます。');
       return next;
     });
     if (ok) questionCompleted(q.id, outcome);
@@ -402,29 +432,46 @@ export function QuestionPanel({ q, packVersion, lang, view, concepts, progress, 
   return <article className="zlv-card" aria-labelledby="zlv-question-title">
     <p className="zlv-question-links">{!round && <><a href="/learn?section=today">今日の学習へ →</a>　</>}<a href="/learn?section=concepts">概念図を開く →</a></p>
     <div className="zlv-card-top"><span>問題 {String(q.order).padStart(2, '0')} <i> / </i> {lang.toUpperCase()}</span><span className="zlv-tag">{q.writingRequired ? 'コード記述' : '結果を予測する'}</span></div>
-    <div className="zlv-card-title"><div><p>ひとつ、考えてみよう。</p><h3 id="zlv-question-title" ref={heading} tabIndex={inRound ? -1 : undefined}>{q.title}</h3></div><span aria-hidden="true">✳</span></div>
+    <div className="zlv-card-title"><div><p>ひとつ、考えてみよう。</p><h3 id="zlv-question-title" ref={heading} tabIndex={inRound ? -1 : undefined}>{recallFirst && !solution ? q.writingRequired ? '条件を満たすコードを書く' : '結果と理由を考える' : q.title}</h3></div><span aria-hidden="true">✳</span></div>
     <p className="zlv-prompt">{q.prompt}</p>
     <div className="zlv-prereq"><span>この問題の前提</span>{q.prerequisiteConceptIds.length ? q.prerequisiteConceptIds.map(id => <a href="#zlv-concepts" key={id}>{conceptName(id)}</a>) : <em>ここから始められます</em>}</div>
     <div className="zlv-code-head"><span><i /> {q.setup.files[0]?.path ?? 'code'} <small> / {q.setup.languageVersion}</small></span><span>{q.writingRequired ? '編集できます' : '読むコード'}</span></div>
     {q.writingRequired ? <><label className="zlv-sr" htmlFor="zlv-editor">編集するコード</label><textarea id="zlv-editor" className="zlv-editor" spellCheck={false} value={draft} onChange={e => { const value = e.target.value; draftRef.current = value; invalidateLocal(); setDraft(value); update(s => saveDraft(s, key, value)); setFeedback('編集したコードはまだ実行していません。'); }} /><div className="zlv-code-actions"><button type="button" onClick={() => download(q.setup.files.find(f => f.editable)?.path.split('/').pop() || 'Main.java', draft, 'text/plain')}>編集したファイルを保存 ↓</button>{canArchiveExercise(q)&&<button type="button" disabled={archiveBusy} onClick={()=>void exportExercise()}>{archiveBusy?'保存の準備中…':'課題と固定テストを保存 ↓'}</button>}<span>下書きはこのブラウザに保存</span></div></> : <pre className="zlv-code" tabIndex={0}><code>{q.setup.files.map(f => f.content).join('\n')}</code></pre>}
     <details className="zlv-disclosure"><summary>実行の前提・この枠について</summary><p>{q.setup.note}</p><p>入口: <code>{q.setup.entryPoint}</code> / 追加依存: {q.setup.dependencies.length ? q.setup.dependencies.join(', ') : 'なし'}</p></details>
     {q.writingRequired ? <div className="zlv-write-note"><strong>{localResult ? 'このコードのローカル結果' : 'ここでは未実行・未判定'}</strong><p>公開版はコードをコンパイルしません。下書きや解説を使い、手元のJava／Rustコンパイラで確かめられます。固定コードの結果を編集内容の合格には使いません。</p>{localToken && (q.runnerProfile?.startsWith('java17-') || q.runnerProfile === 'rust2021-fixed-v1') && <div className="zlv-local-grade"><p>自分で起動したローカル版です。自分のコードだけを実行してください。OSによる完全な隔離はありません。</p><button type="button" disabled={grading} onClick={() => void testLocal()}>{grading ? '固定テストを実行中…' : 'このコードを手元でテストする'}</button>{localError && <p role="alert">{localError} 未判定のままです。</p>}{localResult && <section className="zlv-local-result" aria-label="ローカル採点結果" role="status"><p><strong>{({passed:'固定テストに合格',failed:'固定テストで差分あり','compile-error':'コンパイルエラー','runtime-error':'実行時エラー',timeout:'時間または出力の上限',unsupported:'コンパイラまたは課題が未対応','not-run':'未実行'})[localResult.status]}</strong> · 実行したケース {localResult.cases.length}件</p>{localResult.status==='runtime-error'&&<p>AssertionErrorやassertion failedは、固定テストの条件を満たさなかった場合にも出ます。下の「コンパイラなどの情報」で、最初の失敗を確かめてください。</p>}<p>この編集内容と固定テストを照合した一時結果です。有限のテストは仕様全体の証明ではなく、結果は画面を閉じると消えます。編集すると結果を無効にします。</p>{localResult.toolchain && <p>{localResult.toolchain.rustc || localResult.toolchain.javac} / {localResult.toolchain.target} / {localResult.toolchain.java?.split('\n')[0]}</p>}{localResult.cases.length > 0 && <details><summary>ケースごとの実測と期待値</summary><ol>{localResult.cases.map(c => <li key={c.id}><strong>{c.id}: {c.status}</strong><p>実測</p><pre>{c.actual.stdout.join('\n')}</pre><p>期待値</p><pre>{c.expectedComparison.expected.join('\n')}</pre></li>)}</ol></details>}{localResult.diagnostics.length > 0 && <details><summary>コンパイラなどの情報</summary><pre>{localResult.diagnostics.join('\n')}</pre></details>}</section>}</div>}{(q.runnerProfile?.startsWith('java17-') || q.runnerProfile === 'rust2021-fixed-v1') && <details><summary>手元でこの問題を採点する</summary><p>ソース一式を用意し、編集したファイルを <code>{lang === 'rust' ? 'main.rs' : 'Main.java'}</code> として保存。リポジトリのディレクトリで次を実行します。</p><pre><code>{`node contributions/shared-node/cli.mjs ${q.id} ${lang === 'rust' ? 'main.rs' : 'Main.java'}`}</code></pre><p>自分のコードだけを実行してください。これは公開サンドボックスではなく、OSによる完全な隔離もありません。</p></details>}<p>{String(q.extensions?.localGradingDisabledReason || "")}</p></div> : <section className="zlv-answer" aria-label="予測"><div className="zlv-answer-head"><div><span>自分の予測</span><h4>まず、自分で考えてみる。</h4></div><b>01</b></div>
-      {(q.answer.mode === 'choice' || q.answer.mode === 'multichoice') && <fieldset className="zlv-options"><legend>{q.answer.mode === 'choice' ? '一つ選んでください' : '当てはまるものをすべて選んでください'}</legend>{q.answer.options.map((o, i) => <label key={o.id} className={selected.includes(o.id) ? 'selected' : ''}><input type={q.answer.mode === 'choice' ? 'radio' : 'checkbox'} name={`answer-${q.id}`} checked={selected.includes(o.id)} disabled={result !== null} onChange={() => editPrediction({ ...prediction, selected: q.answer.mode === 'choice' ? [o.id] : selected.includes(o.id) ? selected.filter(id => id !== o.id) : [...selected, o.id] })} /><span className="zlv-option-num">{String.fromCharCode(65 + i)}</span><span>{o.text}</span><span className="zlv-check" aria-hidden="true">✓</span></label>)}</fieldset>}
-      {(q.answer.mode === 'output' || q.answer.mode === 'trace') && <label className="zlv-output-label">出力を1行ずつ入力<textarea value={text} disabled={result !== null} onChange={e => editPrediction({ ...prediction, text: e.target.value })} rows={4} maxLength={predictionOutputLimit} /><small>行・空白・大文字小文字・Unicodeを区別します。最後の改行だけは省略できます。</small></label>}
+      {choiceMode && !choicesOpen && !typed && <div className="zlv-write-note">
+        <p>まず、選択肢を見ずに結果と理由を考えてみましょう。</p>
+        <div className="zlv-recall-actions">
+          {exactOutput && <button type="button" onClick={() => {
+            editPrediction({ ...prediction, typed: true });
+            requestAnimationFrame(() => outputInput.current?.focus());
+          }}>出力を入力して確かめる</button>}
+          <button type="button" onClick={() => { setChoicesOpen(true); requestAnimationFrame(() => firstOption.current?.focus()); }}>選択肢を表示する</button>
+        </div>
+      </div>}
+      {choiceMode && choicesOpen && !typed && <fieldset className="zlv-options"><legend>{q.answer.mode === 'choice' ? '一つ選んでください' : '当てはまるものをすべて選んでください'}</legend>{q.answer.options.map((o, i) => <label key={o.id} className={selected.includes(o.id) ? 'selected' : ''}><input ref={i === 0 ? firstOption : undefined} type={q.answer.mode === 'choice' ? 'radio' : 'checkbox'} name={`answer-${q.id}`} checked={selected.includes(o.id)} disabled={result !== null} onChange={() => editPrediction({ ...prediction, selected: q.answer.mode === 'choice' ? [o.id] : selected.includes(o.id) ? selected.filter(id => id !== o.id) : [...selected, o.id] })} /><span className="zlv-option-num">{String.fromCharCode(65 + i)}</span><span>{o.text}</span><span className="zlv-check" aria-hidden="true">✓</span></label>)}</fieldset>}
+      {(typed || q.answer.mode === 'output' || q.answer.mode === 'trace') && <label className="zlv-output-label">出力を1行ずつ入力<textarea ref={outputInput} value={text} disabled={result !== null} onChange={e => editPrediction({ ...prediction, text: e.target.value })} rows={4} maxLength={predictionOutputLimit} autoCapitalize="off" autoCorrect="off" spellCheck={false} /><small>行・空白・大文字小文字・Unicodeを区別します。最後の改行だけは省略できます。</small></label>}
+      {typed && result === null && <button type="button" onClick={() => {
+        if (text && !window.confirm('入力した出力を消して、選択肢で答えますか？')) return;
+        editPrediction({ ...prediction, typed: false, text: '' });
+        setChoicesOpen(true);
+        requestAnimationFrame(() => firstOption.current?.focus());
+      }}>選択肢に切り替える</button>}
       {q.answer.mode === 'order' && <ol className="zlv-order">{order.map((id, i) => <li key={id}><code>{q.answer.orderItems.find(x => x.id === id)?.text ?? id}</code><button disabled={result !== null || i === 0} onClick={() => move(i, -1)} aria-label={`${i + 1}行目を上へ`}>↑</button><button disabled={result !== null || i === order.length - 1} onClick={() => move(i, 1)} aria-label={`${i + 1}行目を下へ`}>↓</button></li>)}</ol>}
       <p className="zlv-build-note">{restored && result === null && '前回の途中回答を復元しました。'}確定前の回答はこのブラウザに保存します。</p>
+      {before && result === null && <p><label><input type="checkbox" checked={uncertain} onChange={e => setUncertain(e.target.checked)} /> この回答は迷った</label></p>}
       <button className="zlv-primary" type="button" disabled={!before || result !== null} onClick={submit}>予測を確定する <span>→</span></button>
     </section>}
     <div className="zlv-hints"><div><span>ヒント</span><strong>少しだけ、手がかり。</strong></div>{q.hints.slice(0, hints).map(h => <p key={h.id}>{h.text}</p>)}{hints < q.hints.length && <button type="button" onClick={() => { update(s => markExposure(s, key, 'hint')); setHints(x => x + 1); }}>ヒント {hints + 1} を見る <span>＋</span></button>}</div>
     {feedback && <p className={`zlv-feedback ${result === true ? 'good' : ''}`} role="status">{feedback}</p>}
-    {result !== null && <button type="button" className="zlv-reveal" onClick={() => { setPrediction(predictionInput(q)); setResult(null); setSolution(false); setHints(0); submitted.current = false; setFeedback('解答を隠しました。同じ問題への再挑戦は、初回の予測とは分けて記録します。'); }}>解答を隠してもう一度</button>}
+    {result !== null && <button type="button" className="zlv-reveal" onClick={() => { setPrediction(predictionInput(q)); setUncertain(false); setResult(null); setSolution(false); setHints(0); submitted.current = false; setFeedback('解答を隠しました。同じ問題への再挑戦は、初回の予測とは分けて記録します。'); }}>解答を隠してもう一度</button>}
     {!solution && <button className="zlv-reveal" type="button" onClick={showSolution}>解答・考え方を見る <span>↗</span></button>}
     {solution && <section className="zlv-solution"><span>解答の考え方</span><h4>答えと、たどり方。</h4>
-      {result === false && <PredictionReview question={q} selected={selected} output={text} />}
+      {result === false && <PredictionReview question={q} selected={selected} output={text} expectedOutput={typed ? exactOutput ?? undefined : undefined} />}
       {q.answer.mode === 'order' && <ol>{q.answer.correctOrderIds.map(id => <li key={id}><code>{q.answer.orderItems.find(item => item.id === id)?.text ?? id}</code></li>)}</ol>}
-      {(q.answer.mode === 'choice' || q.answer.mode === 'multichoice') && <p className="zlv-correct">答え：{q.answer.correctOptionIds.map(id => q.answer.options.find(x => x.id === id)?.text ?? id).join('、')}</p>}
-      {(q.answer.mode === 'output' || q.answer.mode === 'trace') && <pre>{q.answer.expectedOutput.join('\n')}</pre>}
-      <p>{q.solution.explanation}</p><ol>{q.solution.reasoningSteps.map((step, i) => <li key={i}>{step}</li>)}</ol>
+      {choiceMode && !typed && <p className="zlv-correct">答え：{q.answer.correctOptionIds.map(id => q.answer.options.find(x => x.id === id)?.text ?? id).join('、')}</p>}
+      {(typed || q.answer.mode === 'output' || q.answer.mode === 'trace') && <pre>{(typed ? exactOutput ?? [] : q.answer.expectedOutput).join('\n')}</pre>}
+      <ReasoningPractice explanation={q.solution.explanation} steps={q.solution.reasoningSteps} writing={q.writingRequired} />
       {q.solution.wrongReasons.length > 0 && <details><summary>ほかの選択肢を見直す</summary><ul>{q.solution.wrongReasons.map(reason => <li key={reason.optionId}><strong>{q.answer.options.find(o => o.id === reason.optionId)?.text ?? reason.optionId}</strong> — {reason.reason}</li>)}</ul></details>}
       {q.writingRequired && q.solution.files.map(f => <div key={f.path}><p><strong>模範コード · {f.path}</strong></p><pre><code>{f.content}</code></pre></div>)}
       <details><summary>境界と別解</summary><ul>{q.solution.boundaries.map((x, i) => <li key={`b${i}`}>{x}</li>)}{q.solution.alternativeCriteria.map((x, i) => <li key={`a${i}`}>{x}</li>)}</ul></details>
@@ -432,7 +479,7 @@ export function QuestionPanel({ q, packVersion, lang, view, concepts, progress, 
     </section>}
     {q.writingRequired && q.tests.length > 0 && <details className="zlv-tests"><summary>テストの入力と期待値を見る（実測結果ではありません）</summary>{q.tests.flatMap(t => t.cases.map(c => <div key={`${t.id}-${c.id}`}><code>{c.stdin.trim() || '入力なし'}</code><span>→</span><code>{c.expectedStdout.join(' / ') || '出力なし'}</code></div>))}</details>}
     <details className="zlv-evidence"><summary>この教材の検査情報</summary>{q.evidence.compilerRun ? <p>{q.evidence.compilerRun.version} · {q.evidence.compilerRun.status} · {q.evidence.compilerRun.checkedAt}。検査したのは教材の提示コード／模範コードで、あなたの編集内容ではありません。</p> : <p>この問題のコンパイラ実測は未記録です。</p>}<p>仕様確認の記録: {q.evidence.specReviewed ? '記録あり' : '継続中'}。ブラウザ確認: {q.evidence.browserRun ? '記録あり' : '未記録'}。</p></details>
-    {q.writingRequired && <p className="zlv-write-note"><button type="button" onClick={()=>{update(s=>recordManualCodeCheck(s,key));setFeedback('手元で結果を確認した自己記録を残しました。自動採点の合格とは分け、明日の復習候補にします。');}}>手元で実行して確かめた（自己記録）</button><small>このボタンはコンパイルや採点を行いません。下書きとは別に、復習の目安だけを残します。</small></p>}
+    {q.writingRequired && <p className="zlv-write-note"><button type="button" onClick={()=>{assess(s=>recordManualCodeCheck(s,key));setFeedback('手元で結果を確認した自己記録を残しました。自動採点の合格とは分け、明日の復習候補にします。');}}>手元で実行して確かめた（自己記録）</button><small>このボタンはコンパイルや採点を行いません。下書きとは別に、復習の目安だけを残します。</small></p>}
     {record && <div className="zlv-progress">{q.writingRequired?<p>過去の固定テスト合格 {record.codePasses??0} · 固定テストでの差分/エラー {record.codeFailures??0} · 手元での確認（自己記録）{record.manualCodeChecks??0} · 後日の自己確認 {record.recalls}。過去の記録は、現在の編集内容の合格を表しません。</p>:<p>自力の予測正答 {record.blindCorrect} · 当日再挑戦/ヒント後の正答 {record.assistedCorrect} · 誤答 {record.wrong} · 後日の自己確認 {record.recalls}</p>}{record.dueAt && <p>次の復習目安: {new Date(record.dueAt).toLocaleDateString('ja-JP')}（初期案: 1・3・7・14・30日）</p>}{canRecordRecall(record) && <button type="button" onClick={confirmRecall}>後日、自力で説明できた（自己申告）</button>}</div>}
     {round ? <section className="study-round" aria-label="セットを進める">
       <div>

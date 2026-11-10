@@ -5,13 +5,15 @@ export function PredictionReview({
   question,
   selected,
   output,
+  expectedOutput,
 }: {
   question: Question;
   selected: string[];
   output: string;
+  expectedOutput?: string[];
 }) {
   const { answer } = question;
-  if (answer.mode === "choice" || answer.mode === "multichoice") {
+  if (!expectedOutput && (answer.mode === "choice" || answer.mode === "multichoice")) {
     const incorrect = selected.filter(id => !answer.correctOptionIds.includes(id));
     const missed = answer.correctOptionIds.filter(id => !selected.includes(id));
     const option = (id: string) => answer.options.find(entry => entry.id === id)?.text ?? id;
@@ -28,8 +30,8 @@ export function PredictionReview({
       </div>
     );
   }
-  if ((answer.mode === "output" || answer.mode === "trace") && answer.comparison === "exact-lines") {
-    const difference = firstLineDifference(output, answer.expectedOutput);
+  if (expectedOutput || ((answer.mode === "output" || answer.mode === "trace") && answer.comparison === "exact-lines")) {
+    const difference = firstLineDifference(output, expectedOutput ?? answer.expectedOutput);
     if (!difference) return null;
     const lineText = (value: string | undefined) => value === undefined ? "（行なし）" : JSON.stringify(value);
     return (

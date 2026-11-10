@@ -17,6 +17,7 @@ export type StudyIndex = {
   schema: "zero-study-index/1";
   items: StudyItem[];
   concepts: Record<string, { name: string; language: Lang }>;
+  applications?: [from: string, to: string][];
 };
 export type StudyFilter = {
   language: "all" | Lang;
@@ -45,10 +46,12 @@ export function encodeStudyIndex(index: StudyIndex) {
   ]);
   const positions = new Map(concepts.map((c, i) => [c[0], i]));
   const versions = [...new Set(index.items.map((x) => x.version))];
+  const questions = new Map(index.items.map((q, i) => [q.id, i]));
   return {
     schema: "zero-study-index/2",
     versions,
     concepts,
+    ...(index.applications?.length ? { applications: index.applications.map(([from, to]) => [questions.get(from), questions.get(to)]) } : {}),
     items: index.items.map((q) => [
       q.id,
       q.title,
@@ -127,10 +130,17 @@ export function validateStudyIndex(value: unknown): StudyIndex {
         prerequisites: q[8].map((n: number) => conceptIds[n]),
       });
     }
+    const applications = value.applications;
+    if (applications !== undefined && (!Array.isArray(applications) || applications.length > 3000 ||
+        applications.some(pair => !Array.isArray(pair) || pair.length !== 2 ||
+          pair.some(i => !Number.isInteger(i) || i < 0 || i >= items.length))))
+      throw Error("応用問題の索引が不正です。");
+    const ids = items.map(item => (item as { id: string }).id);
     return validateStudyIndex({
       schema: "zero-study-index/1",
       items,
       concepts,
+      ...(applications ? { applications: (applications as [number, number][]).map(([from, to]) => [ids[from], ids[to]]) } : {}),
     });
   }
 
@@ -143,7 +153,7 @@ export function validateStudyIndex(value: unknown): StudyIndex {
     Object.keys(value.concepts).length > 4000
   )
     throw Error("学習の索引を読み取れません。");
-  const ids = new Set<string>();
+  const items = new Map<string, StudyItem>();
   for (const [id, c] of Object.entries(value.concepts))
     if (
       !conceptId(id) ||
@@ -160,7 +170,7 @@ export function validateStudyIndex(value: unknown): StudyIndex {
       !object(x) ||
       typeof x.id !== "string" ||
       !/^(java|rust):q[0-9]{4,}$/.test(x.id) ||
-      ids.has(x.id) ||
+      items.has(x.id) ||
       !["java", "rust"].includes(String(x.language)) ||
       !x.id.startsWith(x.language + ":") ||
       typeof x.title !== "string" ||
@@ -187,7 +197,19 @@ export function validateStudyIndex(value: unknown): StudyIndex {
       )
     )
       throw Error("問題の索引が不正です。");
-    ids.add(x.id);
+    items.set(x.id, x as unknown as StudyItem);
+  }
+  if (value.applications !== undefined) {
+    if (!Array.isArray(value.applications) || value.applications.length > 3000) throw Error("応用問題の索引が不正です。");
+    const seen = new Set<string>();
+    for (const pair of value.applications) {
+      if (!Array.isArray(pair) || pair.length !== 2) throw Error("応用問題の組み合わせが不正です。");
+      const [from, to] = pair, source = items.get(from), target = items.get(to);
+      if (!source || !target || source.writing || from === to || source.language !== target.language ||
+          !source.concepts.some(concept => target.concepts.includes(concept)) || seen.has(from + ">" + to))
+        throw Error("応用問題の組み合わせが不正です。");
+      seen.add(from + ">" + to);
+    }
   }
   return value as unknown as StudyIndex;
 }
@@ -222,7 +244,8 @@ export function studySummary(
     independent = 0,
     codePassed = 0,
     assisted = 0,
-    recall = 0;
+    recall = 0,
+    tentative = 0;
   const keys = new Set(index.items.map(itemKey));
   for (const q of index.items) {
     const r = state.records[itemKey(q)];
@@ -234,6 +257,7 @@ export function studySummary(
     if ((r.codePasses ?? 0) > 0) codePassed++;
     if (r.assistedCorrect > 0) assisted++;
     if (r.recalls > 0) recall++;
+    if (r.lastOutcome === "tentative") tentative++;
   }
   return {
     total: index.items.length,
@@ -244,6 +268,7 @@ export function studySummary(
     codePassed,
     assisted,
     recall,
+    tentative,
     retained: Object.keys(state.records).filter((k) => !keys.has(k)).length,
   };
 }
@@ -268,6 +293,17 @@ export function studyTopics(index: StudyIndex, state: Progress, language: StudyF
   }
   return [...topics.values()].sort((a, b) =>
     b.wrong - a.wrong || b.assisted - a.assisted || b.lastAt - a.lastAt || a.id.localeCompare(b.id));
+}
+export function delayedReviewSummary(index: StudyIndex, state: Progress) {
+  const summary = {
+    java: { correct: 0, tentative: 0, wrong: 0 },
+    rust: { correct: 0, tentative: 0, wrong: 0 },
+  };
+  for (const item of index.items) {
+    const entry = state.records[itemKey(item)]?.delayed;
+    if (entry) summary[item.language][entry.outcome]++;
+  }
+  return summary;
 }
 export function planStudy(
   index: StudyIndex,

@@ -4,7 +4,10 @@ export const STORAGE_KEY = '0.learning-v2.state.v1';
 export const LAST_KEY = '0.learning-v2.last.v1';
 const MAX_BYTES = 1_048_576, MAX_RECORDS = 6000, MAX_DRAFTS = 1000;
 const DAY = 86_400_000, INTERVALS = [1, 3, 7, 14, 30];
-export type ProgressRecord = { updatedAt: number; blindCorrect: number; assistedCorrect: number; wrong: number; lastAttemptAt: number | null; hintsAt: number | null; solutionAt: number | null; recalls: number; reviewStep: number; dueAt: number | null; codePasses?:number; codeFailures?:number; manualCodeChecks?:number; lastOutcome?:'correct'|'assisted'|'wrong'|'self-recall'|'code-passed'|'code-failed'|'self-check' };
+export type ProgressOutcome = 'correct'|'assisted'|'tentative'|'wrong'|'self-recall'|'code-passed'|'code-failed'|'self-check';
+type DelayedPrediction = { at: number; outcome: 'correct' | 'tentative' | 'wrong' };
+type ApplicationResult = { at: number; outcome: Exclude<ProgressOutcome, 'self-recall'> };
+export type ProgressRecord = { updatedAt: number; blindCorrect: number; assistedCorrect: number; wrong: number; lastAttemptAt: number | null; hintsAt: number | null; solutionAt: number | null; recalls: number; reviewStep: number; dueAt: number | null; codePasses?:number; codeFailures?:number; manualCodeChecks?:number; lastOutcome?:ProgressOutcome; firstCorrectAt?:number; delayed?:DelayedPrediction; application?:ApplicationResult };
 export type Draft = { content: string; updatedAt: number };
 export type LegacyEntry = { source: 'academy' | 'practice'; id: string; targetId: string | null; lastAt: number };
 export type Progress = { schema: 'zero-learning-progress/1'; records: Record<string, ProgressRecord>; drafts: Record<string, Draft>; legacy: Record<string, LegacyEntry> };
@@ -17,7 +20,12 @@ const object = (x: unknown): x is Record<string, unknown> => !!x && typeof x ===
 const counter = (x: unknown) => Number.isSafeInteger(x) && (x as number) >= 0 && (x as number) <= 1_000_000;
 const timestamp = (x: unknown, futureDays = 1) => typeof x === 'number' && Number.isSafeInteger(x) && x >= 0 && x <= Date.now() + futureDays * DAY;
 const nullableTime = (x: unknown, futureDays = 1) => x === null || timestamp(x, futureDays);
-const outcomes = ['correct','assisted','wrong','self-recall','code-passed','code-failed','self-check'];
+const outcomes = ['correct','assisted','tentative','wrong','self-recall','code-passed','code-failed','self-check'];
+function applicationOutcome(key: string, outcome: unknown): outcome is ApplicationResult['outcome'] {
+  return key.endsWith('#code')
+    ? outcome === 'code-passed' || outcome === 'code-failed' || outcome === 'self-check'
+    : outcome === 'correct' || outcome === 'assisted' || outcome === 'tentative' || outcome === 'wrong';
+}
 const legacyId = (x: unknown): x is string => typeof x === 'string' && x.length > 0 && x.length <= 120 && !/[\u0000-\u001f]/u.test(x) && !['__proto__', 'prototype', 'constructor'].includes(x);
 
 /** Check input size before parse and reject dangerous keys anywhere in the tree. */
@@ -42,6 +50,27 @@ function parseV2(data: unknown): Progress {
   for (const [key, value] of Object.entries(data.records)) {
     if (!validKey(key) || !object(value) || !timestamp(value.updatedAt) || !counter(value.blindCorrect) || !counter(value.assistedCorrect) || !counter(value.wrong) || !counter(value.recalls) || !Number.isInteger(value.reviewStep) || (value.reviewStep as number) < 0 || (value.reviewStep as number) >= INTERVALS.length || !nullableTime(value.lastAttemptAt) || !nullableTime(value.hintsAt) || !nullableTime(value.solutionAt) || !nullableTime(value.dueAt, 366) || !['codePasses','codeFailures','manualCodeChecks'].every(k=>value[k]===undefined||counter(value[k])) || !(value.lastOutcome===undefined||outcomes.includes(String(value.lastOutcome)))) throw new Error(`記録 ${key} が不正です。`);
     result.records[key] = { updatedAt: value.updatedAt as number, blindCorrect: value.blindCorrect as number, assistedCorrect: value.assistedCorrect as number, wrong: value.wrong as number, lastAttemptAt: value.lastAttemptAt as number | null, hintsAt: value.hintsAt as number | null, solutionAt: value.solutionAt as number | null, recalls: value.recalls as number, reviewStep: value.reviewStep as number, dueAt: value.dueAt as number | null, ...(value.codePasses!==undefined?{codePasses:value.codePasses as number}:{}), ...(value.codeFailures!==undefined?{codeFailures:value.codeFailures as number}:{}), ...(value.manualCodeChecks!==undefined?{manualCodeChecks:value.manualCodeChecks as number}:{}), ...(value.lastOutcome!==undefined?{lastOutcome:value.lastOutcome as ProgressRecord['lastOutcome']}:{}) };
+    if (value.firstCorrectAt !== undefined) {
+      if (!key.endsWith('#prediction') || !timestamp(value.firstCorrectAt) || result.records[key].lastAttemptAt === null ||
+          (value.firstCorrectAt as number) > result.records[key].lastAttemptAt! || !result.records[key].blindCorrect)
+        throw Error("初回の自力正答の日時が不正です。");
+      result.records[key].firstCorrectAt = value.firstCorrectAt as number;
+    }
+    if (value.delayed !== undefined) {
+      const entry = value.delayed;
+      if (!key.endsWith('#prediction') || !object(entry) || !timestamp(entry.at) ||
+          result.records[key].lastAttemptAt === null || (entry.at as number) > result.records[key].lastAttemptAt! ||
+          (entry.outcome !== 'correct' && entry.outcome !== 'tentative' && entry.outcome !== 'wrong'))
+        throw Error("日を空けた復習の記録が不正です。");
+      result.records[key].delayed = { at: entry.at as number, outcome: entry.outcome };
+    }
+    if (value.application !== undefined) {
+      const entry = value.application;
+      if (!object(entry) || !timestamp(entry.at) || result.records[key].lastAttemptAt === null ||
+          (entry.at as number) > result.records[key].lastAttemptAt! || !applicationOutcome(key, entry.outcome))
+        throw Error("応用チェックの記録が不正です。");
+      result.records[key].application = { at: entry.at as number, outcome: entry.outcome };
+    }
   }
   for (const [key, value] of Object.entries(data.drafts)) {
     if (!validDraftKey(key) || !object(value) || typeof value.content !== 'string' || new TextEncoder().encode(value.content).byteLength > 65536 || !timestamp(value.updatedAt)) throw new Error(`下書き ${key} が不正です。`);
@@ -77,7 +106,24 @@ export function currentDraft(state: Progress, key: string): Draft | undefined {
 }
 export function mergeProgress(current: Progress, incoming: Progress): Progress {
   const next: Progress = { schema: current.schema, records: { ...current.records }, drafts: { ...current.drafts }, legacy: { ...current.legacy } };
-  for (const [key, value] of Object.entries(incoming.records)) if (!next.records[key] || value.updatedAt > next.records[key].updatedAt) next.records[key] = value;
+  for (const [key, value] of Object.entries(incoming.records)) {
+    const old = next.records[key];
+    if (!old) { next.records[key] = value; continue; }
+    const newest = value.updatedAt > old.updatedAt ? value : old;
+    const first = Math.min(old.firstCorrectAt ?? Infinity, value.firstCorrectAt ?? Infinity);
+    const delayed = (value.delayed?.at ?? -1) > (old.delayed?.at ?? -1) ? value.delayed : old.delayed;
+    const application = (value.application?.at ?? Infinity) < (old.application?.at ?? Infinity) ? value.application : old.application;
+    const lastAttempt = newest.lastAttemptAt ?? -1;
+    const keepFirst = first <= lastAttempt && first < (newest.firstCorrectAt ?? Infinity) && newest.blindCorrect > 0;
+    const keepDelayed = delayed && delayed.at <= lastAttempt && delayed.at > (newest.delayed?.at ?? -1);
+    const keepApplication = application && application.at <= lastAttempt && application.at < (newest.application?.at ?? Infinity);
+    next.records[key] = keepFirst || keepDelayed || keepApplication ? {
+      ...newest,
+      ...(keepFirst ? { firstCorrectAt: first } : {}),
+      ...(keepDelayed ? { delayed } : {}),
+      ...(keepApplication ? { application } : {}),
+    } : newest;
+  }
   for (const [key, value] of Object.entries(incoming.drafts)) if (!next.drafts[key] || value.updatedAt > next.drafts[key].updatedAt) next.drafts[key] = value;
   for (const [key, draft] of Object.entries(next.drafts))
     if (key.endsWith('#prediction') && (next.records[key]?.lastAttemptAt ?? -1) >= draft.updatedAt)
@@ -131,16 +177,30 @@ export function markExposure(state: Progress, key: string, kind: 'hint' | 'solut
 const onSameDay = (at: number | null, now: number) =>
   at !== null && new Date(at).toDateString() === new Date(now).toDateString();
 
-export function recordPrediction(state: Progress, key: string, ok: boolean, now = Date.now(), assistanceVisible = false): Progress {
+export function recordPrediction(state: Progress, key: string, ok: boolean, now = Date.now(), assistanceVisible = false, uncertain = false): Progress {
   if (!validKey(key)) return state;
   const old = state.records[key] ?? blankRecord(now);
   const sameDay = onSameDay(old.lastAttemptAt, now);
   const assisted = assistanceVisible || sameDay || [old.hintsAt, old.solutionAt].some(at => onSameDay(at, now));
-  const keepDate = ok && old.dueAt !== null && old.dueAt > now && (sameDay || !assisted);
-  const advance = ok && !assisted && canRecordRecall(old, now);
+  const tentative = ok && !assisted && uncertain;
+  const independent = ok && !assisted && !tentative;
+  const keepDate = ok && !tentative && old.dueAt !== null && old.dueAt > now && (sameDay || !assisted);
+  const advance = independent && old.lastOutcome !== 'tentative' && canRecordRecall(old, now);
   const reviewStep = advance ? Math.min(old.reviewStep + 1, INTERVALS.length - 1) : keepDate ? old.reviewStep : 0;
-  const next: ProgressRecord = { ...old, updatedAt: now, lastAttemptAt: now, solutionAt: now, lastOutcome:ok?(assisted?'assisted':'correct'):'wrong',
-    blindCorrect: old.blindCorrect + Number(ok && !assisted), assistedCorrect: old.assistedCorrect + Number(ok && assisted), wrong: old.wrong + Number(!ok), reviewStep, dueAt: keepDate ? old.dueAt : now + INTERVALS[reviewStep] * DAY };
+  const firstCorrectAt = old.firstCorrectAt ?? (old.lastOutcome === 'correct' && old.blindCorrect > 0 ? old.lastAttemptAt : null) ?? (independent ? now : undefined);
+  const { delayed: previousDelayed, application, ...previous } = old;
+  const delayed: DelayedPrediction | undefined = !assisted && canRecordRecall(old, now)
+    ? { at: now, outcome: ok ? tentative ? 'tentative' : 'correct' : 'wrong' }
+    : previousDelayed;
+  const next: ProgressRecord = {
+    ...previous, updatedAt: now, lastAttemptAt: now, solutionAt: now,
+    lastOutcome: ok ? assisted ? 'assisted' : tentative ? 'tentative' : 'correct' : 'wrong',
+    blindCorrect: old.blindCorrect + Number(independent), assistedCorrect: old.assistedCorrect + Number(ok && assisted), wrong: old.wrong + Number(!ok),
+    reviewStep, dueAt: keepDate ? old.dueAt : tentative && old.dueAt !== null && old.dueAt > now ? Math.min(old.dueAt, now + DAY) : now + INTERVALS[reviewStep] * DAY,
+    ...(firstCorrectAt !== undefined ? { firstCorrectAt: Math.min(firstCorrectAt, now) } : {}),
+    ...(delayed && delayed.at <= now ? { delayed } : {}),
+    ...(application && application.at <= now ? { application } : {}),
+  };
   const drafts = { ...state.drafts };
   if (drafts[key] && drafts[key].updatedAt <= now) delete drafts[key];
   return { ...state, records: { ...state.records, [key]: next }, drafts };
@@ -158,6 +218,15 @@ export function recordRecall(state: Progress, key: string, now = Date.now()): Pr
 export function saveDraft(state: Progress, key: string, content: string, now = Date.now()): Progress {
   if (!validDraftKey(key) || new TextEncoder().encode(content).byteLength > 65536) return state;
   return { ...state, drafts: { ...state.drafts, [key]: { content, updatedAt: now } } };
+}
+export function recordApplication(state: Progress, key: string, startedAt: number | undefined) {
+  const record = state.records[key];
+  if (startedAt === undefined || !record || record.application ||
+      record.lastAttemptAt === null || record.lastAttemptAt < startedAt ||
+      !applicationOutcome(key, record.lastOutcome)) return state;
+  return { ...state, records: { ...state.records, [key]: { ...record,
+    application: { at: record.lastAttemptAt, outcome: record.lastOutcome },
+  } } };
 }
 export function saveLast(storage: Pick<Storage, 'setItem'>, language: Lang, id: string): void {
   if (!new RegExp(`^${language}:q[0-9]{4,}$`).test(id)) return;

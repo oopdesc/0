@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import {
   loadStudyIndex,
+  delayedReviewSummary,
   itemKey,
   planStudy,
   studyHref,
@@ -15,7 +16,8 @@ import {
   loadProgress,
   saveProgress,
 } from "./progress";
-import { confirmStudyRoundReplacement, readStudyFilter, readStudyRound, roundHref, startStudyRound } from "./studyRound";
+import { confirmStudyRoundReplacement, readStudyFilter, readStudyRound, roundHref, roundResultLabel, startStudyRound } from "./studyRound";
+import { applicationExamples, applicationHistory, planApplications } from "./applicationPractice";
 import "./today.css";
 import "./study-round.css";
 const levels = { beginner: "初級", intermediate: "中級", advanced: "上級" };
@@ -57,6 +59,8 @@ export default function TodayView({ search, navigate }: { search: string; naviga
   const [limit, setLimit] = useState(defaults.limit);
   const [includeNew, setIncludeNew] = useState(defaults.includeNew);
   const [concept, setConcept] = useState(defaults.concept);
+  const [applicationKind, setApplicationKind] = useState<"prediction" | "code">("prediction");
+  const [applicationNotice, setApplicationNotice] = useState("");
   const activeConcept = concept && index?.concepts[concept] ? concept : undefined;
   const [roundNotice, setRoundNotice] = useState("");
   const round = readStudyRound();
@@ -99,13 +103,25 @@ export default function TodayView({ search, navigate }: { search: string; naviga
     [index, saved.state, language, level, kind, limit, includeNew, now, skipped, activeConcept],
   );
   const summary = index ? studySummary(index, saved.state, now) : null;
+  const delayed = useMemo(() => index ? delayedReviewSummary(index, saved.state) : null, [index, saved.state]);
   const topics = useMemo(() => index ? studyTopics(index, saved.state, language).slice(0, 5) : [], [index, saved.state, language]);
+  const applications = useMemo(() => index ? planApplications(index, saved.state, language, applicationKind, now) : null,
+    [index, saved.state, language, applicationKind, now]);
+  const applicationResults = useMemo(() => index ? applicationHistory(index, saved.state) : null, [index, saved.state]);
+  useEffect(() => {
+    if (applications?.next === undefined) return;
+    const delay = Math.min(2_147_483_647, Math.max(10, applications.next - Date.now()));
+    const timer = window.setTimeout(() => setNow(Date.now()), delay);
+    return () => window.clearTimeout(timer);
+  }, [applications?.next, now]);
   const reviewAfterRound = round && !activeRound && index
     ? round.ids.flatMap((id, i) => {
         const item = index.items.find(q => q.id === id);
         if (!item) return [];
-        const outcome = saved.state.records[itemKey(item)]?.lastOutcome;
-        const label = round.outcomes[i] === "skipped" ? "飛ばした" : outcome === "wrong" || outcome === "code-failed" ? "見直し" : null;
+        const outcome = round.results ? round.results[i] : saved.state.records[itemKey(item)]?.lastOutcome;
+        const label = round.outcomes[i] === "skipped" ? "飛ばした" :
+          round.purpose === "application" || outcome === "wrong" || outcome === "code-failed" || outcome === "tentative" || outcome === "assisted"
+            ? roundResultLabel(outcome) : null;
         return label ? [{ item, label }] : [];
       })
     : [];
@@ -114,6 +130,19 @@ export default function TodayView({ search, navigate }: { search: string; naviga
     const started = startStudyRound(shown.map(p => p.item.id), { language, level, kind, limit, includeNew, concept: activeConcept });
     if (started) navigate(roundHref(started));
     else setRoundNotice("このブラウザではセットを保存できません。一覧から一問ずつ開けます。");
+  }
+  function beginApplications() {
+    if (!index || !confirmStudyRoundReplacement()) return;
+    const candidates = planApplications(index, readState().state, language, applicationKind);
+    if (!candidates.ready.length) {
+      setSaved(readState());
+      setApplicationNotice("この端末の記録が更新されました。今の候補を確認してください。");
+      return;
+    }
+    const started = startStudyRound(candidates.ready.map(({ item }) => item.id),
+      { language, level, kind, limit, includeNew, concept: activeConcept }, "application");
+    if (started) navigate(roundHref(started));
+    else setApplicationNotice("学習セットを保存できませんでした。");
   }
   async function importFile(input?: File) {
     if (!input) return;
@@ -190,12 +219,12 @@ export default function TodayView({ search, navigate }: { search: string; naviga
       {round && (
         <section className="study-round" aria-label={activeRound ? "中断した学習" : "前回の学習結果"}>
           <div>
-            <strong>{activeRound ? "続きから学ぶ" : "このセットは終了しました"}</strong>
+            <strong>{round.purpose === "application" ? activeRound ? "応用チェックの続き" : "応用チェックの結果" : activeRound ? "続きから学ぶ" : "このセットは終了しました"}</strong>
             <p>取り組んだ問題 {round.outcomes.filter(x => x === "attempted").length}問 · 飛ばした問題 {round.outcomes.filter(x => x === "skipped").length}問 · 全{round.ids.length}問</p>
           </div>
           {activeRound && <a className="study-round-action" href={roundHref(activeRound)}>第{round.outcomes.length + 1}問から再開 →</a>}
-          {reviewAfterRound.length > 0 && <details className="study-round-review">
-            <summary>飛ばした問題・見直したい問題（{reviewAfterRound.length}問）</summary>
+          {reviewAfterRound.length > 0 && <details className="study-round-review" open={round.purpose === "application" || undefined}>
+            <summary>{round.purpose === "application" ? "問題ごとの結果" : "飛ばした問題・見直したい問題"}（{reviewAfterRound.length}問）</summary>
             <ul>{reviewAfterRound.map(({item, label}) => <li key={item.id}><a href={studyHref(item)}>{item.title}</a> · {label}</li>)}</ul>
           </details>}
         </section>
@@ -252,6 +281,44 @@ export default function TodayView({ search, navigate }: { search: string; naviga
               <p>実装や自己申告とは別集計</p>
             </article>
           </section>
+          {delayed && <details className="study-topics">
+            <summary>日を空けた復習の結果を見る</summary>
+            <p>復習の時期にヒントや解答を見ずに答えた記録を、問題ごとの直近1回で数えます。機能追加後に取り組んだ分から表示します。</p>
+            <ul>
+              {(["java", "rust"] as const).map(lang => {
+                const row = delayed[lang], total = row.correct + row.tentative + row.wrong;
+                return <li key={lang}><strong>{lang === "java" ? "Java" : "Rust"}</strong>
+                  <span>{total ? `正答 ${row.correct + row.tentative} / ${total} 問（迷いのある正答 ${row.tentative} 問）` : "復習の記録はまだありません"}</span></li>;
+              })}
+            </ul>
+          </details>}
+          {applications && <section className="study-records" aria-labelledby="application-title">
+            <div>
+              <h3 id="application-title">応用チェック</h3>
+              <p>自力で正答してから24時間以上たったテーマを、回答やヒントの記録がない別の問題で確かめます。</p>
+              {applications.ready.length ? <p role="status">取り組める問題が {applications.ready.length} 問あります。</p> :
+                applications.next ? <p role="status">次の候補は {new Date(applications.next).toLocaleString("ja-JP", { month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" })} 以降に開けます。</p> :
+                <p>まずは <a href={"/learn?section=drill&lang=java&q=" + encodeURIComponent(applicationExamples.java)}>Javaの出力</a> や
+                  <a href={"/learn?section=drill&lang=rust&q=" + encodeURIComponent(applicationExamples.rust)}>Rustの借用</a> から始められます。</p>}
+              {applicationNotice && <p role="status">{applicationNotice}</p>}
+              {applicationResults && applicationResults.size > 0 && <details>
+                <summary>応用チェックの履歴</summary>
+                <p>各問題の初回結果です。実装の自己確認と固定テストの合格は別々に数えます。</p>
+                <ul>{[...applicationResults].map(([result, count]) => <li key={result}>{roundResultLabel(result)} {count}問</li>)}</ul>
+              </details>}
+            </div>
+            <div>
+              <label>応用の種類 <select value={applicationKind} onChange={event => {
+                setApplicationKind(event.target.value === "code" ? "code" : "prediction");
+                setApplicationNotice("");
+              }}>
+                <option value="prediction">結果を予測する</option>
+                <option value="code">コードを書く</option>
+              </select></label>
+              {applicationKind === "code" && <small>編集したコードは手元の実行環境で確かめられます。</small>}
+              {applications.ready.length > 0 && <button type="button" onClick={beginApplications}>応用チェックを始める →</button>}
+            </div>
+          </section>}
           <section className="study-queue" aria-labelledby="study-queue-title">
             <div className="study-section-head">
               <div>
@@ -476,6 +543,7 @@ export default function TodayView({ search, navigate }: { search: string; naviga
               <p>
                 固定テスト合格の履歴 {summary.codePassed}問 ·
                 ヒント/当日再挑戦の正答履歴 {summary.assisted}問 ·
+                最後の回答が迷いのある正答 {summary.tentative}問 ·
                 後日の自己確認履歴 {summary.recall}
                 問。これらは習得率として合算しません。
               </p>
