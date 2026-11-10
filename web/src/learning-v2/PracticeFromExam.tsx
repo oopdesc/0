@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { planExamPractice, type ExamReviewRow } from "./examReview";
-import { resumeStudyRound, roundHref, startStudyRound } from "./studyRound";
+import { confirmStudyRoundReplacement, resumeStudyRound, roundHref, startStudyRound } from "./studyRound";
 import type { Exam } from "./types";
 
 export function PracticeFromExam({
@@ -40,7 +40,7 @@ export function PracticeFromExam({
   }
 
   function start() {
-    if (!practice?.length) return;
+    if (!practice?.length || !confirmStudyRoundReplacement()) return;
     const round = startStudyRound(practice.map(({ item }) => item.id), {
       language: exam.language,
       level: "all",

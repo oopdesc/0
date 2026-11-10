@@ -15,7 +15,7 @@ import {
   loadProgress,
   saveProgress,
 } from "./progress";
-import { readStudyFilter, readStudyRound, roundHref, startStudyRound } from "./studyRound";
+import { confirmStudyRoundReplacement, readStudyFilter, readStudyRound, roundHref, startStudyRound } from "./studyRound";
 import "./today.css";
 import "./study-round.css";
 const levels = { beginner: "初級", intermediate: "中級", advanced: "上級" };
@@ -110,6 +110,7 @@ export default function TodayView({ search, navigate }: { search: string; naviga
       })
     : [];
   function beginRound() {
+    if (!confirmStudyRoundReplacement()) return;
     const started = startStudyRound(shown.map(p => p.item.id), { language, level, kind, limit, includeNew, concept: activeConcept });
     if (started) navigate(roundHref(started));
     else setRoundNotice("このブラウザではセットを保存できません。一覧から一問ずつ開けます。");

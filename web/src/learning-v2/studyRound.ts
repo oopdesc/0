@@ -94,3 +94,10 @@ export function resumeStudyRound(): string | null {
   const round = readStudyRound();
   return round && round.outcomes.length < round.ids.length ? roundHref(round) : null;
 }
+
+export function confirmStudyRoundReplacement(): boolean {
+  const active = resumeStudyRound();
+  if (!active) return true;
+  return window.confirm("進行中の学習セットを置き換えますか？回答と復習の記録は残ります。") &&
+    resumeStudyRound() === active;
+}
