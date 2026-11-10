@@ -17,6 +17,7 @@ import HomeHero from "./HomeHero";
 import ResourceArtwork from "./ResourceArtwork";
 import learningStats from "./generated/learning-stats.json";
 import { filterResources, parseState, STORAGE_KEY } from "./state";
+import { movedNebula, NEBULA_HOME } from "./art/exhibits";
 
 const SkyLayer = lazy(() => import("./art/SkyLayer"));
 const LearningHub = lazy(() => import("./LearningHub"));
@@ -56,8 +57,15 @@ export default function App() {
   const dialog = useRef<HTMLDialogElement>(null);
   const searchTrigger = useRef<HTMLButtonElement>(null);
   const [command, setCommand] = useState("");
-  const path = url.split("?")[0];
+  const moved = movedNebula(url);
+  const route = moved ?? url;
+  const path = route.split("?")[0];
   const sky = useSkyControl(path,state.motion === "paused",()=>setState(s=>({...s,motion:"auto"})));
+  useEffect(() => {
+    if (!moved) return;
+    history.replaceState(history.state, "", moved);
+    setUrl(moved);
+  }, [moved]);
   useEffect(() => {
     const pop = () => setUrl(location.pathname + location.search);
     addEventListener("popstate", pop);
@@ -98,6 +106,7 @@ export default function App() {
         : `${path === "/learn" ? "学ぶ" : path === "/art" ? "宇宙アート" : path === "/books" ? "公開書籍" : path === "/lab" ? "コード実験室" : path === "/code" ? "コードを読む" : "0"} — 0`;
   }, [path]);
   function navigate(href: string) {
+    href = movedNebula(href) ?? href;
     history.pushState({}, "", href);
     setUrl(location.pathname + location.search);
     setSearchOpen(false);
@@ -234,7 +243,7 @@ export default function App() {
       <div className={"site-paper"+(path==="/"?" site-paper-home":"")}><div id="main" tabIndex={-1}>
         {path === "/" ? (
           <main className="home-page">
-            <HomeHero suspended={!!sky.full} paused={state.motion === "paused"||sky.settings} onStartMotion={() => setState({ ...state, motion: "auto" })} />
+            <HomeHero focusArtwork={route === NEBULA_HOME} suspended={!!sky.full || sky.active === "nebula"} paused={state.motion === "paused"||sky.settings} onStartMotion={() => setState({ ...state, motion: "auto" })} />
             <section
               className="explore-section"
               aria-labelledby="explore-title"

@@ -7,7 +7,6 @@ import UniverseCanvas, { type CameraPosition } from "./UniverseCanvas";
 import type { UniverseHandle, UniverseOptions } from "./art/universe3d";
 import ObservationGuide from "./art/ObservationGuide";
 const OrbitShowcase = lazy(() => import("./art/OrbitShowcase"));
-const NebulaExperience = lazy(() => import("./art/NebulaExperience"));
 const AstraModels = lazy(() => import("./arena/astra/Models"));
 const scenes = [
   {
@@ -89,11 +88,7 @@ export default function ArtStudio({
   const currentExhibit = readExhibit(search);
   const astra = currentExhibit === "solar";
   const observation = currentExhibit === "observation";
-  const guest =
-    currentExhibit === "orbit" ||
-    currentExhibit === "nebula"
-      ? currentExhibit
-      : null;
+  const guest = currentExhibit === "orbit" ? currentExhibit : null;
   function selectExhibit(id: ExhibitId) {
     if (id === currentExhibit) return;
     const query = new URLSearchParams({ exhibit: id });
@@ -331,11 +326,7 @@ export default function ArtStudio({
             <p className="guest-loading">宇宙を描く準備をしています…</p>
           }
         >
-          {guest === "orbit" ? (
-            <OrbitShowcase paused={paused} />
-          ) : (
-            <NebulaExperience paused={paused} />
-          )}
+          <OrbitShowcase paused={paused} />
         </Suspense>
       ) : astra ? (
         <Suspense fallback={<p>太陽系の模型を読み込んでいます…</p>}>

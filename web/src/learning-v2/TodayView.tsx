@@ -82,7 +82,7 @@ export default function TodayView({ search, navigate }: { search: string; naviga
       window.removeEventListener("focus", refresh);
     };
   }, []);
-  const plan = useMemo(
+  const shown = useMemo(
     () =>
       index
         ? planStudy(
@@ -90,9 +90,10 @@ export default function TodayView({ search, navigate }: { search: string; naviga
             saved.state,
             { language, level, kind, limit, includeNew },
             now,
+            skipped,
           )
         : [],
-    [index, saved.state, language, level, kind, limit, includeNew, now],
+    [index, saved.state, language, level, kind, limit, includeNew, now, skipped],
   );
   const summary = index ? studySummary(index, saved.state, now) : null;
   const reviewAfterRound = round && !activeRound && index
@@ -104,7 +105,6 @@ export default function TodayView({ search, navigate }: { search: string; naviga
         return label ? [{ item, label }] : [];
       })
     : [];
-  const shown = plan.filter((x) => !skipped.has(x.item.id));
   function beginRound() {
     const started = startStudyRound(shown.map(p => p.item.id), { language, level, kind, limit, includeNew });
     if (started) navigate(roundHref(started));

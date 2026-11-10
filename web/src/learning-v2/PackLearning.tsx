@@ -1,6 +1,7 @@
 import { questionCompleted } from "./journey-state";
 import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { compareOutput } from './comparison';
+import { PredictionReview } from './PredictionReview';
 import { loadAliases, loadChunk, loadConcepts, loadExams, loadManifest } from './loader';
 import { localGradeToken, runLocalGrade } from './localGrade';
 import type { LocalGradeResult } from './localGrade';
@@ -258,7 +259,7 @@ export default function PackLearning({ search, view = 'all', navigate }: { searc
         {examError && <div className="zlv-placeholder" role="alert"><p>{examError}</p><button type="button" onClick={() => setReload(x => x + 1)}>読み直す</button></div>}
         {!exams && !examError && <p role="status">試験の一覧を読み込んでいます…</p>}
         {exams && !exams.length && <section className="zlv-empty"><span>試験 / 準備中</span><h3>試験はまだ追加されていません。</h3><p>非公式の独自模試を用意する予定です。通常問題とは別に数え、自由に開ける形にします。</p><a href={href('all', lang)}>問題を選ぶ →</a></section>}
-        {exams && exams.length > 0 && <Suspense fallback={<p>試験を読み込んでいます…</p>}><ExamView key={manifest.language+":"+params.get("exam")+":"+params.get("examQuestion")} manifest={manifest} exams={exams} initialExamId={params.get("exam")??undefined} initialQuestionId={params.get("examQuestion")??undefined} /></Suspense>}
+        {exams && exams.length > 0 && <Suspense fallback={<p>試験を読み込んでいます…</p>}><ExamView key={manifest.language+":"+params.get("exam")+":"+params.get("examQuestion")} manifest={manifest} exams={exams} navigate={navigate} initialExamId={params.get("exam")??undefined} initialQuestionId={params.get("examQuestion")??undefined} /></Suspense>}
       </> : <>
         {questionError && <div className="zlv-placeholder" role="alert"><p>{questionError}</p><button onClick={() => setReload(x => x + 1)}>読み直す</button></div>}
         <div className="zlv-layout">
@@ -384,9 +385,11 @@ export function QuestionPanel({ q, packVersion, lang, view, concepts, progress, 
     </section>}
     <div className="zlv-hints"><div><span>ヒント</span><strong>少しだけ、手がかり。</strong></div>{q.hints.slice(0, hints).map(h => <p key={h.id}>{h.text}</p>)}{hints < q.hints.length && <button type="button" onClick={() => { update(s => markExposure(s, key, 'hint')); setHints(x => x + 1); }}>ヒント {hints + 1} を見る <span>＋</span></button>}</div>
     {feedback && <p className={`zlv-feedback ${result === true ? 'good' : ''}`} role="status">{feedback}</p>}
-    {result !== null && <button type="button" className="zlv-reveal" onClick={() => { setSelected([]); setText(''); setResult(null); setSolution(false); setHints(0); submitted.current = false; setFeedback('解答を隠しました。同じ問題への再挑戦は、初回の予測とは分けて記録します。'); }}>解答を隠してもう一度</button>}
+    {result !== null && <button type="button" className="zlv-reveal" onClick={() => { setSelected([]); setText(''); setOrder(q.answer.orderItems.map(x => x.id).reverse()); setResult(null); setSolution(false); setHints(0); submitted.current = false; setFeedback('解答を隠しました。同じ問題への再挑戦は、初回の予測とは分けて記録します。'); }}>解答を隠してもう一度</button>}
     {!solution && <button className="zlv-reveal" type="button" onClick={showSolution}>解答・考え方を見る <span>↗</span></button>}
     {solution && <section className="zlv-solution"><span>解答の考え方</span><h4>答えと、たどり方。</h4>
+      {result === false && <PredictionReview question={q} selected={selected} output={text} />}
+      {q.answer.mode === 'order' && <ol>{q.answer.correctOrderIds.map(id => <li key={id}><code>{q.answer.orderItems.find(item => item.id === id)?.text ?? id}</code></li>)}</ol>}
       {(q.answer.mode === 'choice' || q.answer.mode === 'multichoice') && <p className="zlv-correct">答え：{q.answer.correctOptionIds.map(id => q.answer.options.find(x => x.id === id)?.text ?? id).join('、')}</p>}
       {(q.answer.mode === 'output' || q.answer.mode === 'trace') && <pre>{q.answer.expectedOutput.join('\n')}</pre>}
       <p>{q.solution.explanation}</p><ol>{q.solution.reasoningSteps.map((step, i) => <li key={i}>{step}</li>)}</ol>

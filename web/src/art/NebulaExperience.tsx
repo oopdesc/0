@@ -13,6 +13,7 @@ const viewKeys: Record<string, Parameters<NonNullable<SpaceHandle["view"]>>[0]> 
 };
 
 export default function NebulaExperience({ paused, background = false, immersive = false, panorama = false }: { paused: boolean; background?: boolean; immersive?:boolean; panorama?:boolean }) {
+  const maxFps = background ? 15 : immersive && panorama ? 24 : 30;
   const canvas = useRef<HTMLCanvasElement>(null);
   const engine = useRef<SpaceHandle | null>(null);
   const [stats, setStats] = useState({
@@ -39,8 +40,8 @@ export default function NebulaExperience({ paused, background = false, immersive
         return createSpaceScene(canvas.current!, {
           panorama,
           quality: background ? "battery" : "balanced",
-          maxFps: background ? 15 : immersive ? 24 : 30,
-          maxPixels: background ? 500000 : immersive ? 850000 : undefined,
+          maxFps,
+          maxPixels: background ? 500000 : immersive && panorama ? 850000 : undefined,
           pointerSurface: background ? document : undefined,
           reducedMotion: pause.current || media.matches,
           onStats: (s) => {
@@ -66,7 +67,7 @@ export default function NebulaExperience({ paused, background = false, immersive
       engine.current?.dispose();
       engine.current = null;
     };
-  }, [background,immersive,panorama]);
+  }, [background, immersive, panorama, maxFps]);
   useEffect(
     () =>
       engine.current?.setReducedMotion(paused || stopped || reduced.current),
@@ -138,7 +139,7 @@ export default function NebulaExperience({ paused, background = false, immersive
           </button>
         </div>
         <span>
-          {stats.particles.toLocaleString()}粒子 · 上限30fps · {stats.fps}fps
+          {stats.particles.toLocaleString()}粒子 · 上限{maxFps}fps · {stats.fps}fps
         </span>
       </div>
       <p className="model-disclosure">

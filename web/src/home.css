@@ -655,6 +655,10 @@
   min-width: 0;
   box-shadow: 0 24px 80px #16334312;
   position: relative;
+  scroll-margin-top: 5rem;
+}
+@media (min-width: 1101px) {
+  .home-hero { grid-template-columns: minmax(390px, .82fr) minmax(0, 1.28fr); }
 }
 .home-nebula-frame {
   height: clamp(460px, 41vw, 560px);
@@ -778,7 +782,9 @@
 .home-nebula-views > button:first-child,
 .home-nebula-views > button:nth-child(2),
 .home-nebula-views > button:nth-child(3),
-.home-nebula-views > button:nth-child(4) {
+.home-nebula-views > button:nth-child(4),
+.home-nebula-views > button:nth-child(5),
+.home-nebula-views > button:nth-child(6) {
   min-width: 34px;
 }
 .home-nebula-note {

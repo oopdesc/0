@@ -10,7 +10,7 @@
  *    offscreen / reduced-motion / context-loss / page transition.
  *  - Procedural only: no video, no large textures — shaders + CPU noise.
  */
-import { farStars, polarFadeGlsl } from "./far-stars";
+import { farStars } from "./far-stars";
 import * as THREE from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 import { EffectComposer } from "three/examples/jsm/postprocessing/EffectComposer.js";
@@ -63,7 +63,6 @@ export function createSpaceScene(
     quality: Quality;
     maxFps?: number;
     maxPixels?: number;
-    homeVariant?: boolean;
     panorama?: boolean;
     onActivity?: (active:boolean)=>void;
     pointerSurface?: EventTarget;
@@ -80,7 +79,6 @@ export function createSpaceScene(
     onStats: opts.onStats,
     maxFps: opts.maxFps,
     maxPixels: opts.maxPixels,
-    homeVariant: opts.homeVariant,
     panorama: opts.panorama,
     onActivity: opts.onActivity,
     pointerSurface: opts.pointerSurface,
@@ -119,7 +117,6 @@ async function createWebGL(
     reducedMotion: boolean;
     maxFps?: number;
     maxPixels?: number;
-    homeVariant?: boolean;
     panorama?: boolean;
     onActivity?: (active:boolean)=>void;
     pointerSurface?: EventTarget;
@@ -179,7 +176,6 @@ async function createWebGL(
     vertexShader: `varying vec3 vDir; void main(){ vDir = normalize(position); gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
     fragmentShader: `
       varying vec3 vDir; uniform float uTime;
-      ${polarFadeGlsl}
       // hash + value noise (matches src/space/noise.ts)
       float hash(vec3 p){ p = fract(p*0.3183099 + 0.1); p *= 17.0; return fract(p.x*p.y*p.z*(p.x+p.y+p.z)); }
       float nv(vec3 x){ vec3 i=floor(x), f=fract(x); f=f*f*(3.0-2.0*f);
@@ -188,24 +184,22 @@ async function createWebGL(
       float fbm(vec3 p){ float s=0.0,a=0.5; for(int i=0;i<5;i++){ s+=a*nv(p); p*=2.02; a*=0.5;} return s; }
       void main(){
         vec3 d = normalize(vDir);
-        float fade = polarFade(d);
-        if (fade == 1.0) {
-          gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
-          return;
-        }
-        float n = fbm(d*2.2 + vec3(0.0,0.0,uTime*0.03));
-        float n2 = fbm(d*4.0 - vec3(uTime*0.02));
+        // Offset the noise lattice at the caps so no bright knot sits on the orbit axis.
+        float cap = smoothstep(0.87, 0.996, abs(d.y));
+        vec3 cloudDir = normalize(d + cap * vec3(0.22, 0.0, -0.18));
+        float n = fbm(cloudDir*2.2 + vec3(0.0,0.0,uTime*0.03));
+        float n2 = fbm(cloudDir*4.0 - vec3(uTime*0.02));
         vec3 deep = vec3(0.015,0.02,0.04);
         vec3 warm = vec3(0.85,0.55,0.28);
         vec3 cool = vec3(0.30,0.55,0.75);
         vec3 col = deep;
         col = mix(col, cool*0.5, smoothstep(0.4,0.75,n2)*0.5);
         col = mix(col, warm, smoothstep(0.55,0.85,n)*0.35);
-        gl_FragColor = vec4(col * (1.0 - fade), 1.0);
+        gl_FragColor = vec4(col, 1.0);
       }`,
   });
   scene.add(new THREE.Mesh(new THREE.SphereGeometry(80, 32, 24), nebulaMat));
-  scene.add(farStars(opts.panorama, opts.homeVariant));
+  scene.add(farStars(opts.panorama));
 
   // ---- particle system ----
   let count = COUNTS[quality];
@@ -236,7 +230,7 @@ async function createWebGL(
     uniforms: {
       uTime: { value: 0 },
       uPixelRatio: { value: renderer.getPixelRatio() },
-      uSize: { value: opts.homeVariant ? 16 : 26 },
+      uSize: { value: 26 },
     },
     vertexShader: `
       attribute vec3 aColor; attribute float aLife; attribute float aSeed;
@@ -293,7 +287,7 @@ async function createWebGL(
   composer.addPass(new RenderPass(scene, camera));
   const bloom = new UnrealBloomPass(
     new THREE.Vector2(window.innerWidth, window.innerHeight),
-    opts.homeVariant ? .5 : .9,
+    .9,
     0.6,
     0.2,
   );
@@ -336,16 +330,16 @@ async function createWebGL(
         Math.random() * 2 - 1,
         Math.random() * 2 - 1,
       ).normalize();
-      p.pos.copy(spawnAcc).addScaledVector(dir, opts.homeVariant ? .28 : .05);
-      p.vel.copy(dir).multiplyScalar(FLOW * (0.6 + Math.random() * 0.6) * (opts.homeVariant ? 1.65 : 1));
+      p.pos.copy(spawnAcc).addScaledVector(dir, .05);
+      p.vel.copy(dir).multiplyScalar(FLOW * (0.6 + Math.random() * 0.6));
       p.life = 1;
-      p.maxLife = opts.homeVariant ? 4 + Math.random()*2 : 2.4 + Math.random() * 1.6;
+      p.maxLife = 2.4 + Math.random() * 1.6;
       p.seed = Math.random();
     }
   }
 
   // spatial grid for nearest-neighbour links
-  const linkDistance = opts.homeVariant ? 1.6 : LINK_DIST;
+  const linkDistance = LINK_DIST;
   const cell = linkDistance;
   const grid = new Map<string, number[]>();
   function gridKey(x: number, y: number, z: number) {
@@ -421,7 +415,7 @@ async function createWebGL(
     // spawn from cursor
     if (cursorActive) {
       spawnAcc.lerp(cursorWorld, 0.3);
-      const rate = opts.homeVariant ? 2 : quality === "battery" ? 3 : quality === "ultra" ? 6 : 5;
+      const rate = quality === "battery" ? 3 : quality === "ultra" ? 6 : 5;
       spawnBurst(rate);
     }
     // integrate + flow field

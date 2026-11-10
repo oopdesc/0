@@ -5,7 +5,7 @@ import stats from "./generated/learning-stats.json";
 import { loadLast } from "./learning-v2/progress";
 import { resumeStudyRound } from "./learning-v2/studyRound";
 import "./home.css";
-export default function HomeHero({ paused, onStartMotion, suspended }: { paused: boolean; onStartMotion: () => void; suspended: boolean }) {
+export default function HomeHero({ paused, onStartMotion, suspended, focusArtwork }: { paused: boolean; onStartMotion: () => void; suspended: boolean; focusArtwork: boolean }) {
   const [last] = useState(() => {
     try {
       return loadLast(localStorage);
@@ -63,7 +63,7 @@ export default function HomeHero({ paused, onStartMotion, suspended }: { paused:
           <span aria-hidden="true">→</span>
         </a>
       </div>
-      <HomeNebula suspended={suspended} paused={paused} onStartMotion={onStartMotion} />
+      <HomeNebula focusArtwork={focusArtwork} suspended={suspended} paused={paused} onStartMotion={onStartMotion} />
     </section>
   );
 }

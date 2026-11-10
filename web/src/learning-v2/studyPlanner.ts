@@ -251,6 +251,7 @@ export function planStudy(
   state: Progress,
   filter: StudyFilter,
   now = Date.now(),
+  excluded?: ReadonlySet<string>,
 ): PlannedItem[] {
   const known = new Set<string>();
   for (const q of index.items) {
@@ -266,6 +267,7 @@ export function planStudy(
   }[] = [];
   for (const q of index.items) {
     if (
+      excluded?.has(q.id) ||
       (filter.language !== "all" && q.language !== filter.language) ||
       (filter.level !== "all" && q.level !== filter.level) ||
       (filter.kind === "code" && !q.writing) ||
@@ -317,26 +319,25 @@ export function planStudy(
       a.planned.item.order - b.planned.item.order ||
       a.planned.item.id.localeCompare(b.planned.item.id),
   );
-  // Interleave languages when learning both. A due item always precedes a new one.
-  if (filter.language === "all")
-    for (let start = 0; start < ranked.length;) {
+  // Mix new Java and Rust questions at comparable levels. Keep due work in date order.
+  if (filter.language === "all") {
+    for (let start = ranked.findIndex(entry => entry.priority === 3); start >= 0 && start < ranked.length;) {
+      const first = ranked[start];
       let end = start + 1;
-      while (
-        end < ranked.length &&
-        ranked[end].priority === ranked[start].priority
-      )
-        end++;
-      const group = ranked.slice(start, end),
-        a = group.filter((x) => x.planned.item.language === "java"),
-        b = group.filter((x) => x.planned.item.language === "rust"),
-        mixed: typeof group = [];
-      while (a.length || b.length) {
-        if (a.length) mixed.push(a.shift()!);
-        if (b.length) mixed.push(b.shift()!);
+      while (end < ranked.length && ranked[end].missing === first.missing &&
+        ranked[end].planned.item.level === first.planned.item.level) end++;
+      const group = ranked.slice(start, end);
+      const java = group.filter(x => x.planned.item.language === "java");
+      const rust = group.filter(x => x.planned.item.language === "rust");
+      const firstLane = first.planned.item.language === "java" ? java : rust;
+      const secondLane = firstLane === java ? rust : java;
+      for (let i = 0, position = start; i < Math.max(java.length, rust.length); i++) {
+        if (firstLane[i]) ranked[position++] = firstLane[i];
+        if (secondLane[i]) ranked[position++] = secondLane[i];
       }
-      ranked.splice(start, end - start, ...mixed);
       start = end;
     }
+  }
   return ranked
     .slice(0, Math.min(50, Math.max(1, Math.floor(filter.limit) || 10)))
     .map((x) => x.planned);

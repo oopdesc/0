@@ -66,9 +66,9 @@
     "gitBlob": "6fa1a6b99e8231668b0d37337f212a167d312ce3"
   },
   {
-    "path": "cosmos/nursery-poster.webp",
-    "bytes": 19652,
-    "sha256": "627ef962aef73739ef4a6b6d0f9596b5e33c7f13a44ab434b20dfa6ac4dc849a",
-    "gitBlob": "dfb4a72b8d71e3262539290a183f394b4986d54d"
+    "path": "cosmos/nebula-poster.webp",
+    "bytes": 14046,
+    "sha256": "92646b60448453fe735ec1762a71db9da2358edec78f6e9f6c5fc4367d19332b",
+    "gitBlob": "9d779423a7db1b3c538d4e465ac30d2c99221b42"
   }
 ]

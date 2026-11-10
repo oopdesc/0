@@ -186,3 +186,12 @@ test("compact public metadata roundtrips exactly and rejects bad dictionary refe
   duplicate.concepts.push(duplicate.concepts[0]);
   assert.throws(() => validateStudyIndex(duplicate));
 });
+
+test("an older Rust review stays ahead of newer Java work, and a skipped slot is refilled", () => {
+  let state = recordPrediction(emptyProgress(), itemKey(items[1]), true, now - 5 * DAY);
+  state = recordPrediction(state, itemKey(items[0]), true, now - 2 * DAY);
+  assert.deepEqual(planStudy(index, state, { ...filter, limit: 2 }, now).map(p => p.item.id),
+    ["rust:q0001", "java:q0001"]);
+  assert.deepEqual(planStudy(index, state, { ...filter, limit: 2 }, now, new Set(["rust:q0001"])).map(p => p.item.id),
+    ["java:q0001", "java:q0002"]);
+});

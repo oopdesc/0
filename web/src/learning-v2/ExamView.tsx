@@ -4,6 +4,7 @@ import { emptyExamState, fingerprintExam, gradeExamChoices, importExamState, loa
 import type { ExamAttempt, ExamState } from './examState';
 import type { Exam, Manifest, Question } from './types';
 import {reviewExam,reviewLabels} from './examReview';
+import { PracticeFromExam } from './PracticeFromExam';
 import './learning-v2.css';
 
 const levelNames = { beginner: '初級', intermediate: '中級', advanced: '上級' };
@@ -12,7 +13,7 @@ function download(name: string, content: string) {
   const a=document.createElement('a');a.href=url;a.download=name.split('/').pop() || 'Main.java';a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
 }
 
-export default function ExamView({manifest,exams,initialExamId,initialQuestionId}:{manifest:Manifest;exams:Exam[];initialExamId?:string;initialQuestionId?:string}) {
+export default function ExamView({manifest,exams,initialExamId,initialQuestionId,navigate}:{manifest:Manifest;exams:Exam[];initialExamId?:string;initialQuestionId?:string;navigate?: (href: string) => void}) {
   const [examId,setExamId]=useState(exams.find(e=>e.id===initialExamId)?.id??exams[0]?.id??''), [questions,setQuestions]=useState<Question[]|null>(null), [fingerprint,setFingerprint]=useState(''), [error,setError]=useState(''), [reload,setReload]=useState(0);
   const [current,setCurrent]=useState(0), [now,setNow]=useState(Date.now()), [previewed,setPreviewed]=useState<string[]>([]);
   const [storage]=useState(()=>{try{return window.localStorage;}catch{return null;}});
@@ -82,6 +83,7 @@ export default function ExamView({manifest,exams,initialExamId,initialQuestionId
           {attempt&&questions&&<>
             <div className="zlv-exam-status" role="status"><strong>{submitted?'提出済み':`残り ${Math.floor(remaining/60)}分 ${String(remaining%60).padStart(2,'0')}秒`}</strong><span>受験 {state.attempts.filter(a=>a.examId===exam.id&&a.packVersion===manifest.contentVersion).length}回目</span>{submitted&&<button type="button" onClick={begin}>もう一度受ける</button>}</div>
             {summary&&<div className={"zlv-feedback "+(summary.total&&summary.correct/summary.total*100>=exam.passingPercent?"good":"")}><strong>選択 {summary.correct} / {summary.total}</strong> · 未回答 {summary.unanswered} · {summary.total?Math.round(summary.correct/summary.total*100):0}%（目安 {exam.passingPercent}%）<p>解答を見た記録のない正答 {review.filter(r=>r.status==='correct'&&!r.revealed).length}問 · 解答を見た正答 {review.filter(r=>r.status==='correct'&&r.revealed).length}問。</p><p>実装 {summary.ungradedCode}課題は未実行・未判定。選択の結果と混ぜません。解説を見た問題 {attempt.revealed.length}件。</p></div>}
+            {summary && attempt && navigate && <PracticeFromExam key={attempt.attemptId} exam={exam} rows={review} navigate={navigate} />}
             {summary&&<section className="zlv-exam-review" aria-labelledby="exam-review-title"><div><h4 id="exam-review-title">今回の結果から、次の一歩へ</h4><p>間違えた箇所と未回答を確かめます。実装は選択の得点に含めず、手元での確認に進みます。</p></div><label>見直す問題<select value={reviewFilter} onChange={e=>setReviewFilter(e.target.value as typeof reviewFilter)}><option value="needs">誤答・未回答・実装</option><option value="all">すべて</option><option value="unanswered">未回答だけ</option><option value="revealed">解答を見た問題</option></select></label><ol>{visibleReview.map(row=><li key={row.id}><span className={'exam-result-tag result-'+row.status}>{reviewLabels[row.status]}</span><div><button type="button" onClick={()=>openReview(row.index)}>問題 {row.index+1}：{row.title} →</button>{row.revealed&&<small>解答を見た記録あり</small>}{row.marked&&<small>見直し印あり</small>}{row.practiceHref&&<a href={row.practiceHref} target="_blank" rel="noreferrer">元の問題で練習する ↗</a>}</div></li>)}</ol>{!visibleReview.length&&<p>この条件に当てはまる問題はありません。「すべて」で今回の回答を振り返れます。</p>}<p><a href="/learn?section=today">今日の学習へ →</a>　<a href="/learn?section=concepts">概念図でつながりを確かめる →</a></p></section>}
             {!submitted&&<div className="zlv-exam-answered"><span>選択の回答 {choicesAnswered} / {exam.choiceQuestionIds.length}問 · 実装の下書き {draftsWritten} / {exam.codeQuestionIds.length}課題</span><button type="button" disabled={firstUnanswered<0} onClick={()=>openReview(firstUnanswered)}>未回答の選択へ →</button></div>}
             <nav className="zlv-exam-nav" aria-label="問題へ移動">{questions.map((item,i)=><button type="button" key={item.id} aria-current={i===current?'step':undefined} onClick={()=>setCurrent(i)} className={attempt.selections[item.id]?.length||attempt.drafts[item.id]?.trim()?'is-answered':undefined} aria-label={`問題${i+1} ${exam.codeQuestionIds.includes(item.id)?(attempt.drafts[item.id]?.trim()?'下書きあり':'実装'):(attempt.selections[item.id]?.length?'回答あり':'未回答')}${attempt.marked.includes(item.id)?' 見直し':''}`}>{i+1}{attempt.marked.includes(item.id)?' •':''}</button>)}</nav>

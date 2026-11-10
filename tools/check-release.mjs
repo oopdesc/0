@@ -58,7 +58,7 @@ const pagePayloads = {
   orbit: payload([entryKey, 'src/art/OrbitShowcase.tsx']),
   nebula: payload([entryKey, 'src/art/NebulaExperience.tsx']),
   journey: payload([entryKey,'src/LearningHub.tsx','src/learning-v2/Journey.tsx'],['learning-v2/catalog.json','learning-v2/journey.json']),
-  homeNebula: payload([entryKey, 'src/art/nursery/renderer.ts','src/art/nebula/scene.ts'], ['cosmos/nursery-poster.webp']),
+  homeNebula: payload([entryKey, 'src/art/nebula/scene.ts'], ['cosmos/nebula-poster.webp']),
 };
 // The manifest is a local verification input, not a deployed asset.
 unlinkSync(manifestFile);

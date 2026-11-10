@@ -10,71 +10,6 @@ const Solar = lazy(() =>
     default: m.SolarDiagram,
   })),
 );
-function Nursery({
-  paused,
-  background,
-}: {
-  paused: boolean;
-  background: boolean;
-}) {
-  const canvas = useRef<HTMLCanvasElement>(null),
-    handle = useRef<import("./nursery/renderer").NurseryHandle | null>(null),
-    pause = useRef(paused);
-  pause.current = paused;
-  const [failed, setFailed] = useState(false);
-  useEffect(() => {
-    let alive = true;
-    import("./nursery/renderer")
-      .then(({ createNursery }) => {
-        if (!alive) return;
-        handle.current = createNursery(canvas.current!, {
-          paused: pause.current,
-          background,
-          pointerSurface: background ? document : undefined,
-          onFailure: () => setFailed(true),
-        });
-      })
-      .catch(() => {
-        if (alive) setFailed(true);
-      });
-    return () => {
-      alive = false;
-      handle.current?.dispose();
-      handle.current = null;
-    };
-  }, [background]);
-  useEffect(() => handle.current?.pause(paused), [paused]);
-  return (
-    <div className="sky-nursery">
-      <img src="/cosmos/nursery-poster.webp" alt="" />
-      <canvas
-        ref={canvas}
-        aria-label="星雲の中へ。ドラッグで360度回転。"
-        tabIndex={background ? -1 : 0}
-        onKeyDown={(e) => {
-          const a = (
-            {
-              ArrowLeft: "left",
-              ArrowRight: "right",
-              ArrowUp: "up",
-              ArrowDown: "down",
-              "+": "in",
-              "-": "out",
-              Home: "reset",
-            } as const
-          )[e.key as "Home"];
-          if (a) {
-            e.preventDefault();
-            handle.current?.view(a);
-          }
-        }}
-      />
-      {failed && (
-        <p className="sky-scene-error">この環境では静止画で表示しています。</p>
-      )}
-    </div>
-  );
-}
 function Scene({
   id,
   paused,
@@ -106,9 +41,7 @@ function Scene({
       <Suspense
         fallback={<div className="sky-preparing">宇宙を描いています…</div>}
       >
-        {id === "nursery" ? (
-          <Nursery paused={paused} background={background} />
-        ) : id === "nebula" || id === "milkyway" ? (
+        {id === "nebula" || id === "milkyway" ? (
           <Nebula
             panorama={id === "milkyway"}
             paused={paused}

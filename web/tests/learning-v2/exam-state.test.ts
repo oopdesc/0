@@ -40,7 +40,9 @@ test('exam fingerprint changes when question or answer changes but not evidence 
 });
 
 import {importExamState} from '../../src/learning-v2/examState';
-import {reviewExam} from '../../src/learning-v2/examReview';
+import {planExamPractice, reviewExam} from '../../src/learning-v2/examReview';
+import type {ExamReviewRow} from '../../src/learning-v2/examReview';
+import type {StudyItem} from '../../src/learning-v2/studyPlanner';
 import type {Manifest} from '../../src/learning-v2/types';
 test('submitted exams expose exact mistakes and unanswered work without grading implementation',()=>{
  let s=startExam(emptyExamState(),exam,'fixture-1',now,'review-1','a'.repeat(64));const m={language:exam.language,chunks:[]} as unknown as Manifest;
@@ -57,4 +59,34 @@ test('imported exam histories merge across languages, keep submitted answers and
  const other=startExam(emptyExamState(),{...exam,id:'rust:future-exam',language:'rust'},'future',now,'rust-one','b'.repeat(64));const combined=importExamState(JSON.stringify(other),restored.state);assert.ok(combined.ok);assert.equal(combined.state.attempts.length,2);
  const invalid=structuredClone(current);invalid.attempts[0].examFingerprint='c'.repeat(64);assert.equal(importExamState(JSON.stringify(invalid),submitted).ok,false);assert.equal(submitted.attempts[0].submittedAt,now+2);
  assert.equal(importExamState('{broken',submitted).ok,false);
+});
+
+test('exam practice favors missed concepts and keeps original, related and ungraded work distinct', () => {
+ const item = (id: string, extra: Partial<StudyItem> = {}): StudyItem => ({
+  id, language: 'java', title: id, version: '1', level: 'beginner', writing: false,
+  unit: 0, order: 0, concepts: ['java:loops'], prerequisites: [], ...extra,
+ });
+ const row = (index: number, status: ExamReviewRow['status'], extra: Partial<ExamReviewRow> = {}): ExamReviewRow => ({
+  id: 'exam-' + index, index, status, title: 'Question', marked: false, revealed: false,
+  conceptIds: ['java:loops'], practiceId: null, practiceHref: null, ...extra,
+ });
+ const rows = [
+  row(0, 'correct'),
+  row(1, 'ungraded'),
+  row(2, 'unanswered', { practiceId: 'java:q0001' }),
+  row(3, 'wrong'),
+  row(4, 'unanswered', { practiceId: 'java:q0001' }),
+  row(5, 'wrong', { conceptIds: ['java:unknown'] }),
+  row(6, 'correct', { revealed: true }),
+ ];
+ const selected = planExamPractice(rows, { language: 'java', level: 'beginner' }, {
+  schema: 'zero-study-index/1', concepts: {},
+  items: [
+   item('java:q0001'), item('java:q0002'), item('java:q0003', { writing: true }),
+   item('java:q0004', { level: 'advanced' }), item('rust:q0001', { language: 'rust' }),
+  ],
+ });
+ assert.deepEqual(selected.map(x => [x.row.index, x.item.id, x.sameQuestion]), [
+  [3, 'java:q0002', false], [2, 'java:q0001', true], [6, 'java:q0004', false],
+ ]);
 });

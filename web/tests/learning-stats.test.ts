@@ -4,7 +4,7 @@ import stats from "../src/generated/learning-stats.json";
 import { readFileSync } from "node:fs";
 import { PROBLEMS as supplemental } from "../src/academy/content";
 import { LESSONS } from "../src/orbit/domain/lessons";
-import { ART_EXHIBITS, readExhibit } from "../src/art/exhibits";
+import { ART_EXHIBITS, movedNebula, readExhibit } from "../src/art/exhibits";
 
 test("public counts match the published problems, without counting experiments as questions", () => {
   const packs=['java','rust'].map(language=>JSON.parse(readFileSync(new URL(`../public/learning-v2/${language}/manifest.json`,import.meta.url),'utf8')));
@@ -25,9 +25,12 @@ test("art links survive reloads and preserve older galaxy view links", () => {
   assert.equal(readExhibit("?scene=black-hole"), "galaxy");
   assert.equal(readExhibit("?view=photo&scene=m51"), "observation");
   assert.equal(readExhibit("?model=galaxy"), "galaxy");
-  assert.equal(readExhibit("?exhibit=../../private"), "nebula");
-  assert.equal(readExhibit(""), "nebula");
+  assert.equal(readExhibit("?exhibit=../../private"), "solar");
+  assert.equal(readExhibit(""), "solar");
   assert.equal(readExhibit("?exhibit=celestial"), "galaxy");
-  assert.equal(readExhibit("?exhibit=particles"), "nebula");
+  assert.equal(movedNebula("/art?exhibit=particles"), "/?view=nebula");
+  assert.equal(movedNebula("/art?exhibit=nebula"), "/?view=nebula");
+  assert.equal(movedNebula("/art?exhibit=solar"), null);
+  assert.equal(movedNebula("/?view=nebula"), null);
   assert(!ART_EXHIBITS.some(([id])=>String(id)==="particles"));
 });

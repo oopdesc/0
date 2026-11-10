@@ -1,6 +1,6 @@
 .art-collection {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
   margin: 26px 0 12px;
 }
@@ -99,28 +99,6 @@
   top: 42%;
   filter: blur(5px);
 }
-.art-choice-nebula .art-choice-preview {
-  background:
-    radial-gradient(ellipse at 25% 65%, #a7b4c177, transparent 50%),
-    radial-gradient(ellipse at 70% 25%, #baa77a66, transparent 50%), #0b1220;
-}
-.art-choice-nebula .art-choice-preview b {
-  width: 2px;
-  height: 2px;
-  background: #fff;
-  box-shadow:
-    30px 12px 1px #fff,
-    -42px -17px 2px #b6cfff,
-    -20px 30px 1px #fff,
-    60px -25px 1px #ccc,
-    50px 30px 1px #fff;
-}
-.art-choice-nebula i {
-  display: none;
-}
-
-
-
 .art-collection-note {
   display: flex;
   justify-content: space-between;

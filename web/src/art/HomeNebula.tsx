@@ -1,11 +1,11 @@
 import { DesignButtons, useSky } from "./SkyContext";
 import { useEffect, useRef, useState } from "react";
-import type { NurseryHandle, NurseryStats } from "./nursery/renderer";
+import type { SpaceHandle } from "./nebula/scene";
 
-export default function HomeNebula({ paused, onStartMotion, suspended = false }: { paused: boolean; onStartMotion: () => void; suspended?: boolean }) {
+export default function HomeNebula({ paused, onStartMotion, suspended = false, focusArtwork }: { paused: boolean; onStartMotion: () => void; suspended?: boolean; focusArtwork: boolean }) {
   const sky = useSky();
   const canvas = useRef<HTMLCanvasElement>(null),
-    handle = useRef<NurseryHandle | null>(null),
+    handle = useRef<SpaceHandle | null>(null),
     stage = useRef<HTMLElement>(null);
   const [stopped, setStopped] = useState(false),
     [ready, setReady] = useState(false),
@@ -13,47 +13,71 @@ export default function HomeNebula({ paused, onStartMotion, suspended = false }:
     [version, setVersion] = useState(0),
     [notice, setNotice] = useState(""),
     [image, setImage] = useState("");
-  const [stats, setStats] = useState<NurseryStats | null>(null),
+  const [stats, setStats] = useState({ drawnFrames: 0, pixels: 0, particles: 0 }),
+    [reduced, setReduced] = useState(() => matchMedia("(prefers-reduced-motion: reduce)").matches),
     pause = useRef(paused || stopped);
   pause.current = paused || stopped;
+
+  useEffect(() => {
+    if (focusArtwork) stage.current?.scrollIntoView({ block: "start" });
+  }, [focusArtwork]);
+
   useEffect(() => {
     let alive = true;
     setReady(false);
     setFailed(false);
-    if(suspended) return;
-    import("./nursery/renderer")
-      .then(({ createNursery }) => {
+    if (suspended || !canvas.current) return;
+    const surface = canvas.current;
+    const media = matchMedia("(prefers-reduced-motion: reduce)");
+    const syncMotion = () => {
+      setReduced(media.matches);
+      handle.current?.setReducedMotion(pause.current || media.matches);
+    };
+    media.addEventListener("change", syncMotion);
+    void import("./nebula/scene")
+      .then(({ createSpaceScene }) => {
         if (!alive) return;
-        handle.current = createNursery(canvas.current!, {
-          paused: pause.current,
-          onVisibility: sky.setForegroundActive,
-          onFailure: () => {
-            if (alive) {
+        return createSpaceScene(surface, {
+          quality: "balanced",
+          maxFps: 30,
+          reducedMotion: pause.current || media.matches,
+          onActivity: sky.setForegroundActive,
+          onStats: ({ engine, particles }) => {
+            if (!alive) return;
+            if (engine === "minimal") {
               setFailed(true);
               setReady(false);
-            }
-          },
-          onStats: (s) => {
-            if (alive) {
-              setStats(s);
-              if (s.drawnFrames > 0) setReady(true);
+            } else if (particles > 0) {
+              setStats({
+                drawnFrames: Number(surface.dataset.drawnFrames || 0),
+                pixels: surface.width * surface.height,
+                particles,
+              });
+              setReady(true);
             }
           },
         });
       })
-      .catch(() => {
-        if (alive) setFailed(true);
-      });
+      .then(next => {
+        if (!next) return;
+        if (!alive) next.dispose();
+        else {
+          handle.current = next;
+          syncMotion();
+        }
+      })
+      .catch(() => { if (alive) setFailed(true); });
     return () => {
       alive = false;
+      media.removeEventListener("change", syncMotion);
       handle.current?.dispose();
       handle.current = null;
     };
-  }, [version,suspended]);
-  useEffect(() => handle.current?.pause(paused || stopped), [paused, stopped]);
+  }, [version, suspended, sky.setForegroundActive]);
+  useEffect(() => handle.current?.setReducedMotion(paused || stopped || reduced), [paused, stopped, reduced]);
   function save() {
     try {
-      const url = handle.current?.image();
+      const url = handle.current?.image?.();
       if (!url) return;
       setImage(url);
       const a = document.createElement("a");
@@ -67,26 +91,25 @@ export default function HomeNebula({ paused, onStartMotion, suspended = false }:
       setNotice("画像を保存できませんでした。");
     }
   }
-  const view = (action: Parameters<NurseryHandle["view"]>[0]) =>
-    handle.current?.view(action);
+  const view = (action: Parameters<NonNullable<SpaceHandle["view"]>>[0]) =>
+    handle.current?.view?.(action);
   return (
     <figure
       className={"home-nebula" + (ready && !failed ? " is-ready" : "")}
       ref={stage}
-      data-drawn-frames={stats?.drawnFrames ?? 0}
-      data-gpu-ms={stats?.gpuMs ?? "unavailable"}
-      data-volume-pixels={stats?.volumePixels ?? 0}
-      data-drawing-pixels={stats?.drawingPixels ?? 0}
-      data-fps-cap={stats?.fpsCap ?? 0}
+      id="nebula"
+      data-drawn-frames={ready ? stats.drawnFrames : 0}
+      data-drawing-pixels={ready ? stats.pixels : 0}
+      data-fps-cap={30}
     >
       <div className="home-nebula-frame">
         <img
           className="home-nebula-poster"
-          src="/cosmos/nursery-poster.webp"
+          src="/cosmos/nebula-poster.webp"
           alt={ready ? "" : "青い星雲と、遠い星、かすかな光の線。"}
           aria-hidden={ready}
-          width="739"
-          height="696"
+          width="900"
+          height="699"
           fetchPriority="high"
         />
         <canvas
@@ -96,7 +119,7 @@ export default function HomeNebula({ paused, onStartMotion, suspended = false }:
           role="img"
           aria-label="星雲の立体作品。ドラッグで360度回転し、光を描けます。矢印キー、拡大縮小ボタンも使えます。"
           onKeyDown={(e) => {
-            const keys: Record<string, Parameters<NurseryHandle["view"]>[0]> = {
+            const keys: Record<string, Parameters<NonNullable<SpaceHandle["view"]>>[0]> = {
               ArrowLeft: "left",
               ArrowRight: "right",
               ArrowUp: "up",
@@ -114,17 +137,17 @@ export default function HomeNebula({ paused, onStartMotion, suspended = false }:
         />
         <div className="home-nebula-caption">
           <span>0 / 光と塵のあいだ</span>
-          <strong>星雲の中へ。</strong>
+          <strong>星雲の奥へ</strong>
           <p>ゆっくり回る宇宙を、好きな方向へ。</p>
         </div>
         <div className="home-nebula-status">
           <span>
             <i />
-            {suspended ? "背景・全画面に表示中" : failed || stats?.lowPower
+            {suspended ? "背景・全画面に表示中" : failed
               ? "静止画"
               : !ready
                 ? "星雲を描いています"
-                : stats?.reduced
+                : reduced
                   ? "動きを減らして表示"
                   : paused
                     ? "表示設定で停止中"
@@ -132,30 +155,24 @@ export default function HomeNebula({ paused, onStartMotion, suspended = false }:
                       ? "停止中"
                       : "ゆっくり自動回転"}
           </span>
-          <span>360°回転・光の線を描く</span>
+          <span>{ready ? `${stats.particles.toLocaleString()}粒子 · 360°回転` : "360°回転・光の線を描く"}</span>
         </div>
       </div>
       <figcaption className="home-nebula-controls">
-        <DesignButtons id="nursery"/>
+        <DesignButtons id="nebula"/>
         <div className="home-nebula-controls-main">
           <span>雲の奥を、のぞいてみる。</span>
           {paused ? (
-            <button onClick={() => {setStopped(false); onStartMotion();}} disabled={stats?.reduced || stats?.lowPower}>自動回転を開始</button>
+            <button onClick={() => {setStopped(false); onStartMotion();}} disabled={reduced}>自動回転を開始</button>
           ) : (
             <button
               disabled={
-                !ready || failed || paused || stats?.reduced || stats?.lowPower
+                !ready || failed || reduced
               }
               onClick={() => setStopped((s) => !s)}
               aria-pressed={stopped}
             >
-              {paused
-                ? "設定で停止中"
-                : stats?.reduced || stats?.lowPower
-                  ? "静止表示中"
-                  : stopped
-                    ? "▷ 再開"
-                    : "Ⅱ 停止"}
+              {reduced ? "静止表示中" : stopped ? "▷ 再開" : "Ⅱ 停止"}
             </button>
           )}
         </div>
@@ -174,6 +191,8 @@ export default function HomeNebula({ paused, onStartMotion, suspended = false }:
           >
             →
           </button>
+          <button disabled={!ready || failed} onClick={() => view("up")} aria-label="星雲の視点を上へ">↑</button>
+          <button disabled={!ready || failed} onClick={() => view("down")} aria-label="星雲の視点を下へ">↓</button>
           <button
             disabled={!ready || failed}
             onClick={() => view("in")}
@@ -205,7 +224,7 @@ export default function HomeNebula({ paused, onStartMotion, suspended = false }:
         )}
         <p className="home-nebula-note">
           雲と星の奥行きを描く作品です。天体観測の再現ではありません。
-          <a href="/art?exhibit=nebula">宇宙の作品をもっと見る ↗</a>
+          <a href="/art">宇宙の作品をもっと見る ↗</a>
         </p>
         <details className="home-nebula-making">
           <summary>この星雲は、どう描く？</summary>

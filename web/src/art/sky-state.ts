@@ -1,14 +1,12 @@
 export const SKY_IDS = [
-  "nursery",
+  "nebula",
   "solar",
   "galaxy",
   "orbit",
-  "nebula",
   "milkyway",
 ] as const;
 export type SkyId = (typeof SKY_IDS)[number];
 export const SKY_NAMES: Record<SkyId, string> = {
-  nursery: "星雲の中へ",
   solar: "太陽系と惑星",
   galaxy: "銀河とブラックホール",
   orbit: "光と軌道",
@@ -50,13 +48,15 @@ const paths = new Set([
 export function skyId(x: unknown): x is SkyId {
   return typeof x === "string" && (SKY_IDS as readonly string[]).includes(x);
 }
+const migrateSkyId = (id: unknown) => id === "nursery" ? "nebula" : id;
 export function validateSky(x: unknown): SkyState {
   if (!x || typeof x !== "object" || Array.isArray(x))
     throw Error("背景設定の形式が不正です。");
   const v = x as Record<string, unknown>;
+  const global = migrateSkyId(v.global);
   if (
     v.schema !== 1 ||
-    !(v.global === null || skyId(v.global)) ||
+    !(global === null || skyId(global)) ||
     typeof v.strength !== "number" ||
     !Number.isInteger(v.strength) ||
     v.strength < 8 ||
@@ -69,13 +69,14 @@ export function validateSky(x: unknown): SkyState {
   )
     throw Error("背景設定の値が不正です。");
   const pages: Record<string, SkyId> = {};
-  for (const [k, id] of Object.entries(v.pages)) {
+  for (const [k, savedId] of Object.entries(v.pages)) {
+    const id = migrateSkyId(savedId);
     if (!paths.has(k) || !skyId(id)) throw Error("背景の適用先が不正です。");
     pages[k] = id;
   }
   return {
     schema: 1,
-    global: v.global,
+    global,
     pages,
     strength: v.strength,
     paused: v.paused,

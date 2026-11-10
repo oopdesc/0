@@ -1,15 +1,15 @@
 import * as THREE from "three";
 
-// Fade both poles so the same unobstructed view works from either side of the orbit.
-export const polarFadeGlsl = `
+// Thin distant star points at the poles while the surrounding clouds remain continuous.
+const polarFadeGlsl = `
   float polarFade(vec3 direction) {
     return smoothstep(0.87, 0.996, abs(direction.y));
   }
 `;
 
 /** Procedural sky, viewed from inside: no images, downloads, accounts or remote services. */
-export function farStars(panorama = false, home = false) {
-  const count = panorama ? 6500 : home ? 1700 : 1150,
+export function farStars(panorama = false) {
+  const count = panorama ? 6500 : 1150,
     p = new Float32Array(count * 3),
     sizes = new Float32Array(count),
     colors = new Float32Array(count * 3);

@@ -23,8 +23,6 @@
   background: #050a17;
 }
 .sky-scene canvas,
-.sky-nursery,
-.sky-nursery > img,
 .sky-scene .guest-art,
 .sky-scene .guest-stage,
 .sky-scene .cosmos-canvas {
@@ -36,18 +34,6 @@
   border-radius: 0 !important;
   margin: 0 !important;
   display: block;
-}
-.sky-nursery > img,
-.sky-nursery > canvas {
-  position: absolute;
-  inset: 0;
-  object-fit: cover;
-}
-.sky-nursery > canvas {
-  touch-action: pan-y;
-}
-.sky-nursery > .sky-lace {
-  pointer-events: none;
 }
 .sky-scene .guest-controls,
 .sky-scene .guest-stage-label,

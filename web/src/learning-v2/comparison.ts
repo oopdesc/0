@@ -34,3 +34,13 @@ export function compareLines(
 export function compareOutput(text: string, expected: string[], mode: Comparison = 'exact-lines', tolerance?: number): boolean {
   return compareLines(textToLines(text), expected, mode, tolerance);
 }
+
+export function firstLineDifference(text: string, expected: string[]) {
+  const actual = textToLines(text);
+  for (let i = 0; i < Math.max(actual.length, expected.length); i++) {
+    if (actual[i] !== expected[i]) {
+      return { line: i + 1, actual: actual[i], expected: expected[i] };
+    }
+  }
+  return null;
+}
