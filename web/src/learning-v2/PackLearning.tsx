@@ -283,7 +283,7 @@ export default function PackLearning({ search, view = 'all', navigate }: { searc
       <p className="zlv-build-note">問題はどこからでも選べます。解説を見た後の正答と、自分で思い出せた正答は分けて記録します。</p>
       {unresolved && <div className="zlv-notice">指定された問題「{unresolved}」は見つかりません。一覧から問題を選べます。</div>}
       {requested && resolved && requested !== resolved && <p className="zlv-notice">旧ID「{requested}」は {resolved} に対応します。旧記録はそのまま残し、新しい記述の完了には数えません。</p>}
-      {view === 'diagnostics' ? <Suspense fallback={<p>途中確認を読み込んでいます…</p>}><DiagnosticView manifest={manifest} progress={progress} update={update} /></Suspense> : view === 'exams' ? <>
+      {view === 'diagnostics' ? <Suspense fallback={<p>途中確認を読み込んでいます…</p>}><DiagnosticView key={manifest.language} manifest={manifest} progress={progress} update={update} navigate={navigate} /></Suspense> : view === 'exams' ? <>
         {examError && <div className="zlv-placeholder" role="alert"><p>{examError}</p><button type="button" onClick={() => setReload(x => x + 1)}>読み直す</button></div>}
         {!exams && !examError && <p role="status">試験の一覧を読み込んでいます…</p>}
         {exams && !exams.length && <section className="zlv-empty"><span>試験 / 準備中</span><h3>試験はまだ追加されていません。</h3><p>非公式の独自模試を用意する予定です。通常問題とは別に数え、自由に開ける形にします。</p><a href={href('all', lang)}>問題を選ぶ →</a></section>}

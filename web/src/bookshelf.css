@@ -7,6 +7,12 @@
 .has-sky .books-page {
   padding-inline: clamp(16px, 4vw, 36px);
 }
+.book-work + .book-work {
+  margin-top: 36px;
+}
+.book-work > p:not(.book-credits) {
+  color: var(--muted);
+}
 .book-editions {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr));
@@ -37,7 +43,7 @@
   color: var(--muted);
   font-size: 13px;
 }
-.book-edition h2 {
+.book-edition h3 {
   margin: 4px 0;
   font-size: 17px;
   line-height: 1.4;

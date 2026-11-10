@@ -78,3 +78,23 @@ test('diagnostic reuses indexed normal questions in order without increasing cou
   await assert.rejects(()=>loadDiagnosticQuestions(m,{...d,questionIds:['java:q0002']}));
  } finally {globalThis.fetch=old;}
 });
+
+test('both Rust diagnostic sets load compiler-checked questions without changing the total', async () => {
+ const base = new URL('../../public/learning-v2/rust/', import.meta.url);
+ const manifest = validateManifest(JSON.parse(readFileSync(new URL('manifest.json', base), 'utf8')), 'rust');
+ const originalFetch = globalThis.fetch;
+ globalThis.fetch = (async url => {
+  const path = String(url).replace(/^\/learning-v2\/rust\//, '');
+  return new Response(readFileSync(new URL(path, base), 'utf8'), { status: 200 });
+ }) as typeof fetch;
+ try {
+  const diagnostics = getDiagnostics(manifest);
+  assert.deepEqual(diagnostics.map(d => d.questionIds.length), [7, 6]);
+  for (const diagnostic of diagnostics) {
+   const questions = await loadDiagnosticQuestions(manifest, diagnostic);
+   assert.deepEqual(questions.map(q => q.id), diagnostic.questionIds);
+   assert.ok(questions.every(q => q.evidence.compilerRun && q.conceptIds.length > 0));
+  }
+  assert.equal(manifest.counts.normal, manifest.chunks.flatMap(c => c.ids).length);
+ } finally { globalThis.fetch = originalFetch; }
+});
