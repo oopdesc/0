@@ -51,3 +51,8 @@ web/tsconfig.tsbuildinfo
 !projects/rust/book-api-http/src/
 !projects/rust/book-api-http/src/service.rs
 !projects/rust/book-api-http/src/repository.rs
+
+# Local compiler output is never a build input.
+web/practical/jpa/target/
+web/practical/**/__pycache__/
+tools/__pycache__/

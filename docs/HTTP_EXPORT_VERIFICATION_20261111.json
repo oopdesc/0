@@ -1,0 +1,20 @@
+{
+  "verifiedAtJST": "2026-11-11T15:36:19.075580+09:00",
+  "scope": "GET only; isolated educational Java/H2 and Rust/SQLite loopback servers; expected contracts read from source before testing",
+  "checks": [
+    {
+      "target": "Java/H2",
+      "cases": 4,
+      "passed": 4,
+      "mode": "original target-specific contract, not the common model",
+      "unchecked": "safeError string requestId requirement; original targets differ"
+    },
+    {
+      "target": "Rust/SQLite",
+      "cases": 4,
+      "passed": 4,
+      "mode": "original target-specific contract, not the common model",
+      "unchecked": "safeError string requestId requirement; original targets differ"
+    }
+  ]
+}

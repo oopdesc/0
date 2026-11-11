@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import stats from "../src/generated/learning-stats.json";
 import { readFileSync } from "node:fs";
-import { PROBLEMS as supplemental } from "../src/academy/content";
+import { PROBLEMS as supplemental } from "../src/academy/content/fixture";
 import { LESSONS } from "../src/orbit/domain/lessons";
 import { ART_EXHIBITS, movedNebula, readExhibit } from "../src/art/exhibits";
 

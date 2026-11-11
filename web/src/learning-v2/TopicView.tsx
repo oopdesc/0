@@ -102,6 +102,11 @@ export default function TopicView({
         .toLowerCase()
         .includes(query.normalize("NFKC").toLowerCase().trim()),
   );
+  const showJpa =
+    language === "java" &&
+    "hibernate jpa orm 永続化 データベース 楽観ロック n+1".includes(
+      query.normalize("NFKC").toLowerCase().trim(),
+    );
   return (
     <main className="learning-notebook topic-browser">
       <header>
@@ -225,6 +230,15 @@ export default function TopicView({
             </label>
           </div>
           <div className="topic-cards">
+            {showJpa && (
+              <a href="/learn?section=practice-lab&lab=jpa">
+                <h3>Hibernate / JPA の実装演習</h3>
+                <p>
+                  楽観ロック、N+1、JPQL、トランザクション。実際のORMとDBを使い、4つの不具合を直します。
+                </p>
+                <strong>4つの修正課題 · 実テスト8件 →</strong>
+              </a>
+            )}
             {groups.map((topic) => (
               <a key={topic.id} href={topicHref(topic.id)}>
                 <h3>{topic.title}</h3>
@@ -238,7 +252,7 @@ export default function TopicView({
               </a>
             ))}
           </div>
-          {!groups.length && (
+          {!groups.length && !showJpa && (
             <p>
               一致する分野がありません。検索語を変えるか、
               <a href="/learn?section=catalog">全問題から検索</a>できます。
@@ -248,9 +262,12 @@ export default function TopicView({
             <details className="topic-coverage">
               <summary>Hibernate・JPAを学びたいとき</summary>
               <p>
-                専用の問題は現在未収録です。関連するHTTP・SQL・JDBCの問題と、SQLiteを使う小プロジェクトがあります。
+                N+1・楽観ロック・クエリのパラメータ化・rollbackを実際のHibernateとH2で学べる実装課題があります。通常問題の件数とは分けた教材です。
               </p>
-              <a href={topicHref("java-http-db")}>HTTP・DB・SQLへ →</a>　
+              <a href="/learn?section=practice-lab&lab=jpa">
+                Hibernate/JPAの実装課題へ →
+              </a>
+              　<a href={topicHref("java-http-db")}>HTTP・DB・SQLへ →</a>　
               <a href="/learn?section=projects&lang=java">小プロジェクトへ →</a>
             </details>
           )}

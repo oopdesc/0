@@ -1,7 +1,7 @@
 {
   "schema": "zero-workflow/1",
   "title": "図書検索APIをリリースする",
-  "brief": "利用者がIDで本を1冊検索できるAPIを作る。学習用の共通設計では、IDはASCII数字のみ、先頭0は許可し、数値は1〜2,147,483,647とする。見つかれば200、不正なIDは400、未登録は404、保存先の障害は500。成功JSONはid・title・versionを含み、エラーには内部例外を出さない。既存のJava・Rust小プロジェクトを土台に、この仕様との差も確認する。",
+  "brief": "利用者がIDで本を1冊検索できるAPIを作る。学習用の共通設計では、IDはASCII数字のみ、先頭0は許可し、数値は1〜2,147,483,647とする。見つかれば200、不正なIDは400、未登録は404、保存先の障害は500。成功JSONはid・title・versionを含み、エラーには一般的な説明と空でない文字列のrequestIdを含め、内部例外を出さない。既存のJava・Rust小プロジェクトを土台に、この仕様との差も確認する。",
   "stages": [
     {
       "id": "requirements",
@@ -22,7 +22,7 @@
       "file": "02-basic-design.md",
       "goal": "利用者・他システムから見える入出力と、構成を決める。",
       "template": "# 基本設計\nAPI一覧（メソッド・パス）\n入力と検証ルール\n成功応答の例\nエラー応答とステータス\nデータ項目（型・必須・制約）\n画面／利用側→HTTP→Service→Repository→DB\n非機能条件・ログ・セキュリティ\n要件IDとの対応\n",
-      "example": "GET /api/books/{id} を提供する。入力idは共通設計の数字・範囲のルールに従う。成功例は200と {\"id\":1,\"title\":\"Java\",\"version\":1}。形式や範囲が不正なら400、該当データなしは404、DB障害は500。エラー本文には一般的な説明と照合用requestIdを入れる。Bookはid・title・versionを持つ。処理はHTTP受付→入力検証と業務判断→保存先の検索→JSON応答に分ける。APIのHTTP上の契約は基本設計、個々のメソッドの分岐や戻り値は詳細設計に記載する。",
+      "example": "GET /api/books/{id} を提供する。入力idは共通設計の数字・範囲のルールに従う。成功例は200と {\"id\":1,\"title\":\"Java\",\"version\":1}。形式や範囲が不正なら400、該当データなしは404、DB障害は500。エラー本文には一般的な説明と照合用の空でない文字列requestIdを入れる。Bookはid・title・versionを持つ。処理はHTTP受付→入力検証と業務判断→保存先の検索→JSON応答に分ける。APIのHTTP上の契約は基本設計、個々のメソッドの分岐や戻り値は詳細設計に記載する。",
       "checks": [
         "成功と失敗の外部仕様が決まっている",
         "要件IDとAPI・データ項目の対応がある",
@@ -48,7 +48,7 @@
       "file": "04-implementation-plan.md",
       "goal": "詳細設計に沿ってコードを書き、仕様との差を確認する。",
       "template": "# 実装メモ／コード\n選ぶ言語（Java / Rust）\n変更するファイルと責務\nID検証のコード\n検索処理と戻り値\nHTTP応答への変換\n手元でのビルド・テストコマンド\n設計との差と修正理由\n",
-      "example": "Javaの検証例は static Integer validId(String raw) { if (raw == null || !raw.matches(\"[0-9]+\")) return null; try { int id = Integer.parseInt(raw); return id > 0 ? id : null; } catch (NumberFormatException e) { return null; } }。Rustの検証例は fn valid_id(raw: &str) -> Option<i32> { if raw.is_empty() || !raw.bytes().all(|b| b.is_ascii_digit()) { return None; } raw.parse::<i32>().ok().filter(|id| *id > 0) }。この例はID検証の一部分。小プロジェクトのServiceに組み込み、検索結果・未登録・障害をHTTP層へ返す。既存Rust例のi64のIDと、この演習のi32上限の違いも確認する。",
+      "example": "Javaの検証例は static Integer validId(String raw) { if (raw == null || !raw.matches(\"[0-9]+\")) return null; try { int id = Integer.parseInt(raw); return id > 0 ? id : null; } catch (NumberFormatException e) { return null; } }。Rustの検証例は fn valid_id(raw: &str) -> Option<i32> { if raw.is_empty() || !raw.bytes().all(|b| b.is_ascii_digit()) { return None; } raw.parse::<i32>().ok().filter(|id| *id > 0) }。この例はID検証の一部分。小プロジェクトのServiceに組み込み、検索結果・未登録・障害をHTTP層へ返す。既存の小プロジェクトは別契約。Java/H2は先頭0なし1〜9桁、Java/SQLite・Rust/SQLiteの参考実装は先頭0なし1〜6桁。共通演習へ変える場合は、ID上限だけでなく先頭0・応答フィールドと既存テストも変更対象として確認する。",
       "checks": [
         "詳細設計の各分岐に対応するコードがある",
         "型の上限・空文字・異常入力を考慮した",
@@ -74,7 +74,7 @@
       "file": "06-integration-test-cases.md",
       "goal": "HTTP・Service・Repository・DBの境界を実際につなげて確かめる。",
       "template": "# 結合テスト項目書\n接続する構成\nテストDBと初期データ\nID | 関連要件 | 操作 | HTTP期待値 | JSON期待値 | DBの確認 | 実測結果\nI-01 | R-01 | GET 登録済みID | | | |\nI-02 | R-02 | GET abc | | | |\nI-03 | R-03 | GET 未登録ID | | | |\nI-04 | R-04 | 保存先障害 | | | |\n後片付け・再実行手順\n",
-      "example": "学習専用のSQLiteと初期データを用意する。Javaは127.0.0.1:18080、Rustは127.0.0.1:18082の小プロジェクトで試す。curl -i http://127.0.0.1:18080/api/books/1 でHTTP 200とJSONのid・title・versionを確認。abcは400、未登録IDは404を確認する。保存先障害の500は学習用の差し替え・テスト環境で起こし、内部例外の文字列が応答に含まれないことを確かめる。本番DB・会社の環境は使わず、初期化手順も項目書に残す。",
+      "example": "Javaの小課題ZIPは backend/java-learning-v2（H2、127.0.0.1:18423）。RustのHTTP/SQLiteは projects/rust/book-api-http（127.0.0.1:18082）。まず各教材のREADMEと契約を確認し、curlで登録済みIDの200・abcの400・未登録99の404を確かめる。共通演習のID範囲・先頭0・version付きJSONに合わせる場合は、設計と固定テストも明示して改修する。Javaの別のHTTP/SQLite参考実装 projects/java/book-api-http は18080を使うため、H2教材と取り違えない。障害時500は学習用の差し替えで起こし、内部例外を応答に含めないことを確認する。本番DB・会社環境は使わない。",
       "checks": [
         "各層をつないだ条件とテストデータを記録した",
         "HTTPコードと本文・DB状態の両方を確認した",

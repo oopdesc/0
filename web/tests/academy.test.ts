@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import {PROBLEMS,PROBLEM_BY_ID,issuesOfCurriculum} from "../src/academy/content";
+import {PROBLEMS,PROBLEM_BY_ID,issuesOfCurriculum} from "../src/academy/content/fixture";
 test("published archive fixtures agree with expected results and links",()=>{
  assert.deepEqual(issuesOfCurriculum(),[]);assert(PROBLEMS.length>1000);assert.equal(PROBLEM_BY_ID.size,PROBLEMS.length);
  for(const p of PROBLEMS){if(p.runnable===false){assert.equal(p.verified,undefined,p.id);assert.equal(p.expect,undefined,p.id);assert.ok(p.codeNote,p.id);continue;}

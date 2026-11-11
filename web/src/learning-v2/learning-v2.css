@@ -169,9 +169,14 @@
 
 .zlv-recall-actions { display: flex; flex-wrap: wrap; gap: .6rem; }
 
-.zlv-mobile-picker {
-  display: none;
-}
+.zlv-mobile-picker { display:block; margin-block:0 14px; border:1px solid var(--z-line); border-radius:10px; padding:0 14px; background:var(--z-panel); }
+.zlv-mobile-picker summary,.zlv-unit-directory summary { min-height:44px; align-content:center; cursor:pointer; font-size:13px; font-weight:700; }
+.zlv-mobile-picker > div { display:grid; grid-template-columns:1fr 1fr; gap:12px; padding-block:8px 14px; }
+.zlv-mobile-picker label { display:grid; gap:6px; font-size:12px; min-width:0; }
+.zlv-mobile-picker select { width:100%; min-width:0; min-height:44px; font:inherit; font-size:16px; color:var(--z-fg); background:var(--z-panel); border:1px solid var(--z-line); border-radius:6px; padding:7px; }
+.zlv-unit-directory { border-top:1px solid var(--z-line); margin-top:16px; }
+.zlv-question-top button { min-height:44px; background:var(--z-panel); color:var(--z-blue); border:1px solid var(--z-line); border-radius:7px; padding:8px 12px; }
+@media(min-width:641px) { .zlv--pack .zlv-sidebar { align-self:start; position:sticky; top:16px; max-height:calc(100dvh - 32px); overflow:auto; overscroll-behavior:contain; } }
 @media (max-width: 640px) {
   .zlv.zlv--pack {
     padding-top: 12px;
@@ -211,6 +216,7 @@
   }
   .zlv-mobile-picker > div {
     display: grid;
+    grid-template-columns:1fr;
     gap: 8px;
     padding-bottom: 12px;
   }
@@ -331,3 +337,9 @@
     font-size: 12px;
   }
 }
+
+.zlv-project-picker { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-block:15px; }
+.zlv-project-picker label { display:grid; gap:7px; font-size:13px; min-width:0; }
+.zlv-project-picker select { width:100%; min-width:0; min-height:44px; padding:8px; color:var(--z-fg); background:var(--z-panel); border:1px solid var(--z-line); border-radius:7px; font:inherit; font-size:16px; }
+.zlv-project-picker p { grid-column:1 / -1; margin:0; font-size:12px; }
+@media(max-width:640px) { .zlv-project-picker { grid-template-columns:1fr; } .zlv-projects .zlv-sidebar { display:none; } .zlv-projects > .zlv-topline,.zlv-projects > .zlv-header { display:none; } }

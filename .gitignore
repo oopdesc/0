@@ -14,6 +14,9 @@ projects/java/book-api-http/target/
 projects/java/book-api-http/lib/
 projects/java/book-api-http/*.db*
 projects/rust/book-api-http/target/
+web/practical/jpa/target/
+web/practical/**/__pycache__/
+tools/__pycache__/
 projects/rust/book-api-http/*.db*
 .env
 .env.*

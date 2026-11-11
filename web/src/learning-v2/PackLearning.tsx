@@ -325,11 +325,14 @@ export default function PackLearning({ search, view = 'all', navigate }: { searc
           <aside className="zlv-sidebar" aria-label="単元と問題">
             <div className="zlv-aside-title"><div><span>学習の順路</span><h3>学習の道しるべ</h3></div><b>{String(navigationUnits.findIndex(u=>u.index===selectedUnit) + 1).padStart(2, '0')} / {String(navigationUnits.length).padStart(2, '0')}</b></div>
             <p>おすすめ順に並べています。好きなところから選べます。</p>
-            <div className="zlv-units">{navigationUnits.map((u, i) => <a key={u.path} href={href(view, lang, undefined, u.index)} aria-current={u.index === selectedUnit ? 'step' : undefined}><span className="zlv-unit-num">{String(i + 1).padStart(2, '0')}</span><span><strong>{u.title.replace(/^\d+\s*/, '')}</strong><small>{view === 'writing' ? `コード記述 ${manifest.chunks[u.index].writingIds?.length ?? '—'}問` : u.summary}</small></span><span aria-hidden="true">↗</span></a>)}</div>
+
             <div className="zlv-list-head"><span>この単元の問題</span><b>{visible.length}問</b></div>
             {!questions && !questionError && <p>問題を読み込んでいます…</p>}
             {questions && !visible.length && <p>この単元に{view === 'writing' ? '記述問題は' : '問題は'}ありません。</p>}
             <ol className="zlv-problem-list">{visible.map((q) => <li key={q.id}><a href={href(view, lang, q.id)} aria-current={q.id === current?.id ? 'step' : undefined}><span>{String(q.order).padStart(2, '0')}</span><span>{q.title}<small>{q.writingRequired ? 'コードを書く' : '予測する'}</small></span><span aria-hidden="true">›</span></a></li>)}</ol>
+            <details className="zlv-unit-directory"><summary>ほかの単元を一覧で見る（{navigationUnits.length}単元）</summary>
+            <div className="zlv-units">{navigationUnits.map((u, i) => <a key={u.path} href={href(view, lang, undefined, u.index)} aria-current={u.index === selectedUnit ? 'step' : undefined}><span className="zlv-unit-num">{String(i + 1).padStart(2, '0')}</span><span><strong>{u.title.replace(/^\d+\s*/, '')}</strong><small>{view === 'writing' ? `コード記述 ${manifest.chunks[u.index].writingIds?.length ?? '—'}問` : u.summary}</small></span><span aria-hidden="true">↗</span></a>)}</div>
+            </details>
             <div className="zlv-sidebar-foot">⌁ <span>前提に戻るのも、立派な一歩。</span></div>
           </aside>
           {current && (!focused || current.id === requested) ? <QuestionPanel key={`${current.id}@${current.contentVersion}:${recall}`} q={current} packVersion={manifest.contentVersion} lang={lang} view={view} concepts={concepts} progress={progress} update={update} prev={index > 0 ? allIds[index - 1] : null} next={index >= 0 && index < allIds.length - 1 ? allIds[index + 1] : null} round={focused && round ? round : undefined} recall={recall} advance={advance} /> : otherView && resolved ? (
@@ -504,7 +507,7 @@ export function QuestionPanel({ q, packVersion, lang, view, concepts, progress, 
         })}>{note?.bookmarked ? "保存済み" : "あとで解く"}</button>
       {!q.writingRequired && <a className="zlv-jump-answer" href="#zlv-answer">回答欄へ ↓</a>}
     </div>
-    <div className="zlv-card-title"><div><p>ひとつ、考えてみよう。</p><h3 id="zlv-question-title" ref={heading} tabIndex={inRound ? -1 : undefined}>{recallFirst && !solution ? q.writingRequired ? '条件を満たすコードを書く' : '結果と理由を考える' : q.title}</h3></div></div>
+    <div className="zlv-card-title"><div><p>ひとつ、考えてみよう。</p><h3 id="zlv-question-title" ref={heading} tabIndex={-1}>{recallFirst && !solution ? q.writingRequired ? '条件を満たすコードを書く' : '結果と理由を考える' : q.title}</h3></div></div>
     <p className="zlv-prompt">{q.prompt}</p>
     <PrerequisiteHelp question={q} concepts={concepts} onOpen={() => { setPrerequisiteSeen(true); update(state => markExposure(state, key, 'hint')); }} />
     <div className="zlv-code-head"><span><i /> {q.setup.files[0]?.path ?? 'code'} <small> / {q.setup.languageVersion}</small></span><span>{q.writingRequired ? '編集できます' : '読むコード'}</span></div>
@@ -556,6 +559,7 @@ export function QuestionPanel({ q, packVersion, lang, view, concepts, progress, 
     {record && <div className="zlv-progress">{q.writingRequired?<p>過去の固定テスト合格 {record.codePasses??0} · 固定テストでの差分/エラー {record.codeFailures??0} · 手元での確認（自己記録）{record.manualCodeChecks??0} · 後日の自己確認 {record.recalls}。過去の記録は、現在の編集内容の合格を表しません。</p>:<p>自力の予測正答 {record.blindCorrect} · 当日再挑戦/ヒント後の正答 {record.assistedCorrect} · 誤答 {record.wrong} · 後日の自己確認 {record.recalls}</p>}{record.dueAt && <p>次の復習目安: {new Date(record.dueAt).toLocaleDateString('ja-JP')}（初期案: 1・3・7・14・30日）</p>}{canRecordRecall(record) && <button type="button" onClick={confirmRecall}>後日、自力で説明できた（自己申告）</button>}</div>}
     <QuestionNote note={note} recordKey={key} update={update} />
     {round ? !attempted && advanceAction : <div className="zlv-next"><div>{prev && <a href={href(view, lang, prev)}>← 前の問題</a>}</div><div>{next && <a className="zlv-next-link" href={href(view, lang, next)}>次の問題へ <span>→</span></a>}</div></div>}
+    <p className="zlv-question-top"><button type="button" onClick={() => { heading.current?.scrollIntoView({block:"start",behavior:matchMedia("(prefers-reduced-motion: reduce)").matches ? "instant" : "smooth"}); heading.current?.focus({preventScroll:true}); }}>↑ この問題の先頭へ</button></p>
     {q.relatedIds.length > 0 && <p className="zlv-related">関連する問題: {q.relatedIds.map(id => <a key={id} href={href('all', lang, id)}>{id.replace(`${lang}:`, '')}</a>)}</p>}
   </article>;
 }

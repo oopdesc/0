@@ -16,6 +16,18 @@ export type WorkflowCourse = {
 };
 export const workflowKey = (index: number) =>
   projectDraftKey("java:mission-workflow", "1", index);
+// Draft keys predate named stages. Keep the original order stable so an update
+// cannot attach a learner's saved design to a different stage.
+export const workflowStageIds = [
+  "requirements",
+  "basic",
+  "detail",
+  "implementation",
+  "unit",
+  "integration",
+  "system",
+  "release",
+] as const;
 export type WorkflowDraft = {
   schema: "zero-workflow-draft/1";
   text: string;
@@ -65,7 +77,7 @@ export function validateWorkflow(value: unknown): WorkflowCourse {
     typeof c.brief !== "string" ||
     !Array.isArray(c.stages) ||
     c.stages.length !== 8 ||
-    new Set(c.stages.map((s) => s.id)).size !== 8
+    c.stages.some((s, i) => !s || s.id !== workflowStageIds[i])
   )
     throw Error("実務教材の形式を確認できません。");
   for (const stage of c.stages)
@@ -82,4 +94,54 @@ export function validateWorkflow(value: unknown): WorkflowCourse {
     )
       throw Error("工程の内容を確認できません。");
   return c;
+}
+
+export function workflowStatus(
+  course: WorkflowCourse,
+  drafts: Record<string, { content: string }>,
+) {
+  validateWorkflow(course);
+  return course.stages.map((stage, index) => {
+    const draft = readWorkflowDraft(drafts[workflowKey(index)]?.content, stage);
+    const written = !!draft.text.trim() && draft.text !== stage.template;
+    const checks = draft.checked.filter(Boolean).length;
+    return {
+      id: stage.id,
+      written,
+      checks,
+      reviewed: written && checks === stage.checks.length,
+    };
+  });
+}
+
+export function workflowFiles(
+  course: WorkflowCourse,
+  drafts: Record<string, { content: string }>,
+): Record<string, string> {
+  validateWorkflow(course);
+  const files: Record<string, string> = {};
+  const status: string[] = [];
+  const states = workflowStatus(course, drafts);
+  course.stages.forEach((stage, index) => {
+    const draft = readWorkflowDraft(drafts[workflowKey(index)]?.content, stage);
+    files[stage.file] = draft.text;
+    status.push(
+      `- ${stage.title}: ${states[index].written ? "自分の記入あり" : draft.text === stage.template ? "テンプレート（未編集）" : "未記入"} / 自己レビュー ${states[index].checks}/${stage.checks.length}`,
+    );
+  });
+  files["README.md"] = [
+    "# 実務の流れ・自分の成果物",
+    "",
+    course.title,
+    "",
+    course.brief,
+    "",
+    "## 記入状況",
+    ...status,
+    "",
+    "テンプレートも含みます。自己レビューは自分のチェックであり、自動採点・実行結果・業務経験・リリース承認の証明ではありません。",
+    "実コードで試験し、実際の結果と証跡を追記してください。会社の情報や個人情報を含む状態で公開しないでください。",
+    "",
+  ].join("\n");
+  return files;
 }

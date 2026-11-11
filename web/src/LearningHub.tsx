@@ -10,6 +10,7 @@ const TodayView = lazy(() => import("./learning-v2/TodayView"));
 const NotebookView = lazy(() => import("./learning-v2/NotebookView"));
 const TopicView = lazy(() => import("./learning-v2/TopicView"));
 const WorkflowView = lazy(() => import("./learning-v2/WorkflowView"));
+const PracticeView = lazy(() => import("./learning-v2/PracticeView"));
 const LearningBackup = lazy(() => import("./learning-v2/LearningBackupView"));
 const PackLearning = lazy(() => import("./learning-v2/PackLearning"));
 const FlowView = lazy(() => import("./learning-v2/FlowView"));
@@ -39,6 +40,7 @@ const sections = [
   ["flow", "処理の全体像"],
   ["projects", "小プロジェクト"],
   ["workflow", "実務の流れ"],
+  ["practice-lab", "実務演習室"],
   ["references", "日本語の資料"],
   ["source", "Java・Rustの実装"],
 ] as const;
@@ -159,6 +161,12 @@ export default function LearningHub({
   navigate: (href: string) => void;
 }) {
   const params = new URLSearchParams(search);
+  const [compactMenu, setCompactMenu] = useState(() => {
+    try { return localStorage.getItem('0.learning.compact-menu') !== 'off'; } catch { return true; }
+  });
+  useEffect(() => {
+    try { localStorage.setItem('0.learning.compact-menu', compactMenu ? 'on' : 'off'); } catch { /* Selection still works without persistence. */ }
+  }, [compactMenu]);
   const [legacyHash, setLegacyHash] = useState(() => window.location.hash);
   useEffect(() => {
     const sync = () => setLegacyHash(window.location.hash);
@@ -194,12 +202,22 @@ export default function LearningHub({
   ));
   const sectionLabel = sections.find(([id]) => id === section)?.[1];
   return (
-    <div className={"learning-hub"+(section==="journey"?" hub-journey":"")}>
+    <div className={"learning-hub"+(section==="journey"?" hub-journey":"")+(compactMenu ? " hub-compact-menu" : "")}>
       <section className="hub-heading">
         <span className="eyebrow">ひとつの場所で、仕組みから実装まで</span>
         <h1>Java・Rustの学習</h1>
         <p>処理の流れを追い、コードを動かし、必要な仕様を日本語で調べる。</p>
-        <nav className="hub-desktop-nav" aria-label="学習の内容">{sectionLinks}</nav>
+        <div className="hub-launcher">
+          <label>学び方を切り替える
+            <select value={sections.some(([id]) => id === section) || section === 'backup' ? section : ''} onChange={e => navigate('/learn?section=' + encodeURIComponent(e.target.value))}>
+              {!sections.some(([id]) => id === section) && section !== 'backup' && <option value="" disabled>現在の教材</option>}
+              {sections.map(([id,label]) => <option key={id} value={id}>{label}</option>)}
+              <option value="backup">学習記録のバックアップ</option>
+            </select>
+          </label>
+          <button type="button" className="hub-menu-toggle" aria-controls="hub-learning-menu" aria-expanded={!compactMenu} onClick={() => setCompactMenu(value => !value)}>{compactMenu ? '一覧メニューも開く' : '一覧メニューをたたむ'}</button>
+        </div>
+        <nav id="hub-learning-menu" className="hub-desktop-nav" aria-label="学習の内容">{sectionLinks}</nav>
         <details className="hub-mobile-nav" key={section}>
           <summary>学習メニュー{sectionLabel && <span>{sectionLabel}</span>}</summary>
           <nav aria-label="学習の内容">{sectionLinks}</nav>
@@ -219,6 +237,8 @@ export default function LearningHub({
         <Suspense fallback={<p className="hub-content">分野を読み込んでいます…</p>}><TopicView search={search} navigate={navigate}/></Suspense>
       ) : section === "workflow" ? (
         <Suspense fallback={<p className="hub-content">実務教材を読み込んでいます…</p>}><WorkflowView search={search} navigate={navigate}/></Suspense>
+      ) : section === "practice-lab" ? (
+        <Suspense fallback={<p className="hub-content">実務演習を読み込んでいます…</p>}><PracticeView search={search} navigate={navigate}/></Suspense>
       ) : section === "catalog" ? (
         <Suspense fallback={<p className="hub-content">問題一覧を読み込んでいます…</p>}><QuestionCatalog search={search}/></Suspense>
       ) : section === "concepts" ? (
@@ -244,7 +264,7 @@ export default function LearningHub({
       ) : section === "flow" ? (
           <Suspense fallback={<p className="hub-content">処理の流れを読み込んでいます…</p>}><FlowView search={search} /></Suspense>
       ) : section === "projects" ? (
-        <Suspense fallback={<p className="hub-content">小プロジェクトを読み込んでいます…</p>}><ProjectView search={search} /></Suspense>
+        <Suspense fallback={<p className="hub-content">小プロジェクトを読み込んでいます…</p>}><ProjectView search={search} navigate={navigate}/></Suspense>
       ) : section === "legacy-flow" ? (
         <RequestFlow />
       ) : section === "references" ? (

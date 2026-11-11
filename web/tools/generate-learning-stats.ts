@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { buildJourneyOrder } from "./journey-order";
 import { LESSONS } from "../src/orbit/domain/lessons";
-import { PROBLEMS } from "../src/academy/content";
+import { PROBLEMS } from "../src/academy/content/fixture";
 import { buildLearningInventory } from "./learning-inventory";
 
 const packs = ["java", "rust"].map((language) =>

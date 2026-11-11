@@ -1,0 +1,39 @@
+{
+  "verifiedAtJST": "2026-11-11T15:10:05.435217+09:00",
+  "method": "Real Hibernate ORM 7.4.15.Final + isolated H2 memory databases; javac release17; Maven concurrency2; test fork1; pool2",
+  "results": [
+    {
+      "stage": "starter",
+      "exitCode": 1,
+      "tests": 8,
+      "failures": 4,
+      "errors": 0,
+      "skipped": 0,
+      "failingTests": [
+        "queryParameterIsLiteralData",
+        "authorsAreFetchedWithoutNPlusOne",
+        "staleVersionCannotSilentlyOverwrite",
+        "failureBeforeCommitRollsBackTheChange"
+      ]
+    },
+    {
+      "stage": "solution",
+      "exitCode": 0,
+      "tests": 8,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "failingTests": []
+    }
+  ],
+  "sourceSha256": {
+    "pom.xml": "b065eb4ce6928432285050856b59e3aa33b9e434e4a9a869853249013d0935bb",
+    "README.md": "12a6fc893423dd5f15c6efad120e829134fe1f988c09e6680a8752e031cbac71",
+    "SOLUTION.md": "6a639ac89481db32e1811b3f411e2844926e9162a3d4820b1c0afcfc735c13b0",
+    "src/main/java/zero/jpa/Author.java": "edf3a1ff0bc55ab6f6fb517b746dc09fe2c81aa90096bfdaadbb43a24ba6e84d",
+    "src/main/java/zero/jpa/Book.java": "e7dbf7150e81482b6e836ce5f1b39a93b6c94ac98a83443a568459d7fc48f4bb",
+    "src/main/java/zero/jpa/BookQueries.java": "704413ae2f68a4e722802964d19d9035390cc348384617b7d75376a459d7157e",
+    "src/test/java/zero/jpa/WorkshopTest.java": "192d707c3b577b0bcd597f2c16cdc5071b5a92a9e6d6276dd0e6f80ce5022e69"
+  },
+  "httpOrExternalDatabaseUsed": false
+}

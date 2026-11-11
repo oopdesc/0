@@ -1,0 +1,97 @@
+.practice-page fieldset {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 16px;
+  margin-block: 20px;
+  min-width: 0;
+}
+.practice-page legend {
+  font-size: 13px;
+  padding-inline: 8px;
+}
+.lab-case {
+  border-bottom: 1px solid var(--line);
+  padding-block: 8px;
+}
+.lab-case:last-of-type {
+  border-bottom: 0;
+}
+.lab-inputs,
+.lab-clients {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-block: 12px;
+}
+.practice-page label:not(.lab-check) {
+  display: grid;
+  gap: 7px;
+  font-size: 13px;
+}
+.practice-page input:not([type="checkbox"]):not([type="radio"]) {
+  width: 100%;
+  box-sizing: border-box;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 7px;
+  padding: 10px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: 16px;
+}
+.practice-page .lab-check {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 44px;
+  padding-block: 5px;
+  line-height: 1.7;
+  font-size: 14px;
+}
+.lab-check input {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 4px;
+}
+.lab-clients > div {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 12px;
+}
+.lab-result {
+  border-left: 3px solid var(--accent);
+  padding: 12px 18px;
+  margin-block: 20px;
+  background: var(--panel);
+}
+.lab-result h4 {
+  margin-block: 8px 15px;
+}
+.lab-result li {
+  font-size: 14px;
+  line-height: 1.8;
+  padding-block: 5px;
+  overflow-wrap: anywhere;
+}
+.lab-result pre {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 12px;
+}
+@media (max-width: 600px) {
+  .lab-inputs,
+  .lab-clients {
+    grid-template-columns: 1fr;
+  }
+  .practice-page .workflow-stages {
+    display: flex;
+  }
+  .practice-page fieldset {
+    padding: 12px;
+  }
+  .lab-result {
+    padding: 10px 12px;
+  }
+}

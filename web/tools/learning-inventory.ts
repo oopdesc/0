@@ -1,5 +1,5 @@
 import { readFileSync } from "node:fs";
-import { PROBLEMS } from "../src/academy/content";
+import { PROBLEMS } from "../src/academy/content/fixture";
 import { CONCEPTS } from "../src/academy/content/concepts";
 import { ALL_PROBLEMS, TOPIC_MAP, QUESTION_LABEL } from "../src/problems";
 import type {

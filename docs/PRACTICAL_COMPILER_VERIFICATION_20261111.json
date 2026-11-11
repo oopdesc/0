@@ -1,0 +1,71 @@
+{
+  "verifiedOn": "2026-11-11",
+  "method": "real local javac/java (--release 17) and rustc --test; sequential compilers, test threads <=2",
+  "compilerVersions": {
+    "javac": "javac 21.0.13",
+    "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)"
+  },
+  "checks": [
+    {
+      "name": "java-starter-compile",
+      "exitCode": 0,
+      "expectedSuccess": true,
+      "matchedExpectation": true
+    },
+    {
+      "name": "java-starter-tests",
+      "exitCode": 1,
+      "expectedSuccess": false,
+      "matchedExpectation": true
+    },
+    {
+      "name": "rust-starter-compile",
+      "exitCode": 0,
+      "expectedSuccess": true,
+      "matchedExpectation": true
+    },
+    {
+      "name": "rust-starter-tests",
+      "exitCode": 101,
+      "expectedSuccess": false,
+      "matchedExpectation": true
+    },
+    {
+      "name": "java-solution-compile",
+      "exitCode": 0,
+      "expectedSuccess": true,
+      "matchedExpectation": true
+    },
+    {
+      "name": "java-solution-tests",
+      "exitCode": 0,
+      "expectedSuccess": true,
+      "matchedExpectation": true
+    },
+    {
+      "name": "rust-solution-compile",
+      "exitCode": 0,
+      "expectedSuccess": true,
+      "matchedExpectation": true
+    },
+    {
+      "name": "rust-solution-tests",
+      "exitCode": 0,
+      "expectedSuccess": true,
+      "matchedExpectation": true
+    }
+  ],
+  "solutionTests": {
+    "javaPassed": 8,
+    "rustPassed": 7
+  },
+  "sourceSha256": {
+    "README-START.md": "b1deda5c61196bd435e10e40667faa5abf92e25855f1a8729afda2933b97e66e",
+    "SOLUTION.md": "fc863b3a00de96c2c45c90ffcf43af8e3af676a0e6802fdd183df94fe05a39f8",
+    "java/BookService.java": "dd2a16a909a8ad96a01ec7b07cfd13397d55e188b50e1983b08e0d64c7852a38",
+    "java/WorkplaceTest.java": "1d843f8aa2a16fd536838253ec34d8ac1b1d29fecf9832fb44dec2532b384cf7",
+    "rust/Cargo.toml": "2f732c2dfc9e10c8a94a88287ea9eec5b18903dfaa5071c3dcd21c0fcb05f3d1",
+    "rust/src/lib.rs": "241be6bfbf10d742881fd959baf64a37e2e6f6b13835ac89d22cd373f61b1547"
+  },
+  "httpOrDatabaseTested": false
+}

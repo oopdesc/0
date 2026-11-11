@@ -10,7 +10,7 @@ import {
   searchCatalog,
   validateCatalog,
 } from "../src/learning-v2/catalog";
-import { PROBLEMS } from "../src/academy/content";
+import { PROBLEMS } from "../src/academy/content/fixture";
 const raw = () =>
   JSON.parse(
     readFileSync(
