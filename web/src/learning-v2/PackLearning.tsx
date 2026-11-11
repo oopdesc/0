@@ -253,7 +253,12 @@ export default function PackLearning({ search, view = 'all', navigate }: { searc
     navigate(roundHref(next));
   }
 
-  return <main className={focused ? "zlv zlv--round" : "zlv"} aria-label="共通学習画面">
+  const openQuestion = (next: string) => {
+    if (navigate) navigate(next);
+    else window.location.assign(next);
+  };
+
+  return <main className={focused ? "zlv zlv--pack zlv--round" : "zlv zlv--pack"} aria-label="共通学習画面">
     {params.has('study') && (
       <section className="study-round" aria-label="今回の学習セット">
         <div>
@@ -290,6 +295,23 @@ export default function PackLearning({ search, view = 'all', navigate }: { searc
         {exams && exams.length > 0 && <Suspense fallback={<p>試験を読み込んでいます…</p>}><ExamView key={manifest.language+":"+params.get("exam")+":"+params.get("examQuestion")} manifest={manifest} exams={exams} navigate={navigate} initialExamId={params.get("exam")??undefined} initialQuestionId={params.get("examQuestion")??undefined} /></Suspense>}
       </> : <>
         {questionError && <div className="zlv-placeholder" role="alert"><p>{questionError}</p><button onClick={() => setReload(x => x + 1)}>読み直す</button></div>}
+        {!focused && <details className="zlv-mobile-picker" key={requested ?? lang} open={!requested || undefined}>
+          <summary>単元・問題を選ぶ</summary>
+          <div>
+            <label>単元
+              <select value={selectedUnit} onChange={event => openQuestion(href(view, lang, undefined, Number(event.target.value)))}>
+                {navigationUnits.map(({ index, title }) => <option key={index} value={index}>{title}</option>)}
+              </select>
+            </label>
+            <label>問題
+              <select value={visible.some(question => question.id === current?.id) ? current?.id : ""}
+                disabled={!visible.length} onChange={event => openQuestion(href(view, lang, event.target.value))}>
+                {!visible.some(question => question.id === current?.id) && <option value="" disabled>問題を選ぶ</option>}
+                {visible.map(question => <option key={question.id} value={question.id}>{question.title}</option>)}
+              </select>
+            </label>
+          </div>
+        </details>}
         <div className="zlv-layout">
           <aside className="zlv-sidebar" aria-label="単元と問題">
             <div className="zlv-aside-title"><div><span>学習の順路</span><h3>学習の道しるべ</h3></div><b>{String(navigationUnits.findIndex(u=>u.index===selectedUnit) + 1).padStart(2, '0')} / {String(navigationUnits.length).padStart(2, '0')}</b></div>
@@ -430,16 +452,28 @@ export function QuestionPanel({ q, packVersion, lang, view, concepts, progress, 
     [reordered[index], reordered[target]] = [reordered[target], reordered[index]];
     editPrediction({ ...prediction, order: reordered });
   }
+  const advanceAction = round && <section className="study-round" aria-label="セットを進める">
+      <div>
+        <strong>{attempted ? '取り組みを記録しました' : '回答を記録すると、今回の取り組みに数えます'}</strong>
+        <p>{attempted ? '正誤や自己記録は学習記録で区別しています。' : '飛ばした問題は、次回の候補に残ります。'}</p>
+      </div>
+      <button type="button" className="study-round-action" onClick={() => advance?.(attempted)}>
+        {attempted ? (round.outcomes.length + 1 === round.ids.length ? 'セットを終える →' : '次の一問へ →') : (round.outcomes.length + 1 === round.ids.length ? '飛ばして終了 →' : '飛ばして次へ →')}
+      </button>
+      {attempted && solution && <a href="#zlv-solution">答えと理由へ ↓</a>}
+    </section>;
   return <article className="zlv-card" aria-labelledby="zlv-question-title">
     <p className="zlv-question-links">{!round && <><a href="/learn?section=today">今日の学習へ →</a>　</>}<a href="/learn?section=concepts">概念図を開く →</a></p>
-    <div className="zlv-card-top"><span>問題 {String(q.order).padStart(2, '0')} <i> / </i> {lang.toUpperCase()}</span><span className="zlv-tag">{q.writingRequired ? 'コード記述' : '結果を予測する'}</span></div>
+    <div className="zlv-card-top"><span>問題 {String(q.order).padStart(2, '0')} <i> / </i> {lang.toUpperCase()}</span><span className={q.writingRequired ? "zlv-tag" : "zlv-tag zlv-prediction-tag"}>{q.writingRequired ? 'コード記述' : '結果を予測する'}</span>
+      {!q.writingRequired && <a className="zlv-jump-answer" href="#zlv-answer">回答欄へ ↓</a>}
+    </div>
     <div className="zlv-card-title"><div><p>ひとつ、考えてみよう。</p><h3 id="zlv-question-title" ref={heading} tabIndex={inRound ? -1 : undefined}>{recallFirst && !solution ? q.writingRequired ? '条件を満たすコードを書く' : '結果と理由を考える' : q.title}</h3></div><span aria-hidden="true">✳</span></div>
     <p className="zlv-prompt">{q.prompt}</p>
     <div className="zlv-prereq"><span>この問題の前提</span>{q.prerequisiteConceptIds.length ? q.prerequisiteConceptIds.map(id => <a href="#zlv-concepts" key={id}>{conceptName(id)}</a>) : <em>ここから始められます</em>}</div>
     <div className="zlv-code-head"><span><i /> {q.setup.files[0]?.path ?? 'code'} <small> / {q.setup.languageVersion}</small></span><span>{q.writingRequired ? '編集できます' : '読むコード'}</span></div>
     {q.writingRequired ? <><label className="zlv-sr" htmlFor="zlv-editor">編集するコード</label><textarea id="zlv-editor" className="zlv-editor" spellCheck={false} value={draft} onChange={e => { const value = e.target.value; draftRef.current = value; invalidateLocal(); setDraft(value); update(s => saveDraft(s, key, value)); setFeedback('編集したコードはまだ実行していません。'); }} /><div className="zlv-code-actions"><button type="button" onClick={() => download(q.setup.files.find(f => f.editable)?.path.split('/').pop() || 'Main.java', draft, 'text/plain')}>編集したファイルを保存 ↓</button>{canArchiveExercise(q)&&<button type="button" disabled={archiveBusy} onClick={()=>void exportExercise()}>{archiveBusy?'保存の準備中…':'課題と固定テストを保存 ↓'}</button>}<span>下書きはこのブラウザに保存</span></div></> : <pre className="zlv-code" tabIndex={0}><code>{q.setup.files.map(f => f.content).join('\n')}</code></pre>}
     <details className="zlv-disclosure"><summary>実行の前提・この枠について</summary><p>{q.setup.note}</p><p>入口: <code>{q.setup.entryPoint}</code> / 追加依存: {q.setup.dependencies.length ? q.setup.dependencies.join(', ') : 'なし'}</p></details>
-    {q.writingRequired ? <div className="zlv-write-note"><strong>{localResult ? 'このコードのローカル結果' : 'ここでは未実行・未判定'}</strong><p>公開版はコードをコンパイルしません。下書きや解説を使い、手元のJava／Rustコンパイラで確かめられます。固定コードの結果を編集内容の合格には使いません。</p>{localToken && (q.runnerProfile?.startsWith('java17-') || q.runnerProfile === 'rust2021-fixed-v1') && <div className="zlv-local-grade"><p>自分で起動したローカル版です。自分のコードだけを実行してください。OSによる完全な隔離はありません。</p><button type="button" disabled={grading} onClick={() => void testLocal()}>{grading ? '固定テストを実行中…' : 'このコードを手元でテストする'}</button>{localError && <p role="alert">{localError} 未判定のままです。</p>}{localResult && <section className="zlv-local-result" aria-label="ローカル採点結果" role="status"><p><strong>{({passed:'固定テストに合格',failed:'固定テストで差分あり','compile-error':'コンパイルエラー','runtime-error':'実行時エラー',timeout:'時間または出力の上限',unsupported:'コンパイラまたは課題が未対応','not-run':'未実行'})[localResult.status]}</strong> · 実行したケース {localResult.cases.length}件</p>{localResult.status==='runtime-error'&&<p>AssertionErrorやassertion failedは、固定テストの条件を満たさなかった場合にも出ます。下の「コンパイラなどの情報」で、最初の失敗を確かめてください。</p>}<p>この編集内容と固定テストを照合した一時結果です。有限のテストは仕様全体の証明ではなく、結果は画面を閉じると消えます。編集すると結果を無効にします。</p>{localResult.toolchain && <p>{localResult.toolchain.rustc || localResult.toolchain.javac} / {localResult.toolchain.target} / {localResult.toolchain.java?.split('\n')[0]}</p>}{localResult.cases.length > 0 && <details><summary>ケースごとの実測と期待値</summary><ol>{localResult.cases.map(c => <li key={c.id}><strong>{c.id}: {c.status}</strong><p>実測</p><pre>{c.actual.stdout.join('\n')}</pre><p>期待値</p><pre>{c.expectedComparison.expected.join('\n')}</pre></li>)}</ol></details>}{localResult.diagnostics.length > 0 && <details><summary>コンパイラなどの情報</summary><pre>{localResult.diagnostics.join('\n')}</pre></details>}</section>}</div>}{(q.runnerProfile?.startsWith('java17-') || q.runnerProfile === 'rust2021-fixed-v1') && <details><summary>手元でこの問題を採点する</summary><p>ソース一式を用意し、編集したファイルを <code>{lang === 'rust' ? 'main.rs' : 'Main.java'}</code> として保存。リポジトリのディレクトリで次を実行します。</p><pre><code>{`node contributions/shared-node/cli.mjs ${q.id} ${lang === 'rust' ? 'main.rs' : 'Main.java'}`}</code></pre><p>自分のコードだけを実行してください。これは公開サンドボックスではなく、OSによる完全な隔離もありません。</p></details>}<p>{String(q.extensions?.localGradingDisabledReason || "")}</p></div> : <section className="zlv-answer" aria-label="予測"><div className="zlv-answer-head"><div><span>自分の予測</span><h4>まず、自分で考えてみる。</h4></div><b>01</b></div>
+    {q.writingRequired ? <div className="zlv-write-note"><strong>{localResult ? 'このコードのローカル結果' : 'ここでは未実行・未判定'}</strong><p>公開版はコードをコンパイルしません。下書きや解説を使い、手元のJava／Rustコンパイラで確かめられます。固定コードの結果を編集内容の合格には使いません。</p>{localToken && (q.runnerProfile?.startsWith('java17-') || q.runnerProfile === 'rust2021-fixed-v1') && <div className="zlv-local-grade"><p>自分で起動したローカル版です。自分のコードだけを実行してください。OSによる完全な隔離はありません。</p><button type="button" disabled={grading} onClick={() => void testLocal()}>{grading ? '固定テストを実行中…' : 'このコードを手元でテストする'}</button>{localError && <p role="alert">{localError} 未判定のままです。</p>}{localResult && <section className="zlv-local-result" aria-label="ローカル採点結果" role="status"><p><strong>{({passed:'固定テストに合格',failed:'固定テストで差分あり','compile-error':'コンパイルエラー','runtime-error':'実行時エラー',timeout:'時間または出力の上限',unsupported:'コンパイラまたは課題が未対応','not-run':'未実行'})[localResult.status]}</strong> · 実行したケース {localResult.cases.length}件</p>{localResult.status==='runtime-error'&&<p>AssertionErrorやassertion failedは、固定テストの条件を満たさなかった場合にも出ます。下の「コンパイラなどの情報」で、最初の失敗を確かめてください。</p>}<p>この編集内容と固定テストを照合した一時結果です。有限のテストは仕様全体の証明ではなく、結果は画面を閉じると消えます。編集すると結果を無効にします。</p>{localResult.toolchain && <p>{localResult.toolchain.rustc || localResult.toolchain.javac} / {localResult.toolchain.target} / {localResult.toolchain.java?.split('\n')[0]}</p>}{localResult.cases.length > 0 && <details><summary>ケースごとの実測と期待値</summary><ol>{localResult.cases.map(c => <li key={c.id}><strong>{c.id}: {c.status}</strong><p>実測</p><pre>{c.actual.stdout.join('\n')}</pre><p>期待値</p><pre>{c.expectedComparison.expected.join('\n')}</pre></li>)}</ol></details>}{localResult.diagnostics.length > 0 && <details><summary>コンパイラなどの情報</summary><pre>{localResult.diagnostics.join('\n')}</pre></details>}</section>}</div>}{(q.runnerProfile?.startsWith('java17-') || q.runnerProfile === 'rust2021-fixed-v1') && <details><summary>手元でこの問題を採点する</summary><p>ソース一式を用意し、編集したファイルを <code>{lang === 'rust' ? 'main.rs' : 'Main.java'}</code> として保存。リポジトリのディレクトリで次を実行します。</p><pre><code>{`node contributions/shared-node/cli.mjs ${q.id} ${lang === 'rust' ? 'main.rs' : 'Main.java'}`}</code></pre><p>自分のコードだけを実行してください。これは公開サンドボックスではなく、OSによる完全な隔離もありません。</p></details>}<p>{String(q.extensions?.localGradingDisabledReason || "")}</p></div> : <section className="zlv-answer" id="zlv-answer" tabIndex={-1} aria-label="予測"><div className="zlv-answer-head"><div><span>自分の予測</span><h4>まず、自分で考えてみる。</h4></div><b>01</b></div>
       {choiceMode && !choicesOpen && !typed && <div className="zlv-write-note">
         <p>まず、選択肢を見ずに結果と理由を考えてみましょう。</p>
         <div className="zlv-recall-actions">
@@ -463,11 +497,13 @@ export function QuestionPanel({ q, packVersion, lang, view, concepts, progress, 
       {before && result === null && <p><label><input type="checkbox" checked={uncertain} onChange={e => setUncertain(e.target.checked)} /> この回答は迷った</label></p>}
       <button className="zlv-primary" type="button" disabled={!before || result !== null} onClick={submit}>予測を確定する <span>→</span></button>
     </section>}
-    <div className="zlv-hints"><div><span>ヒント</span><strong>少しだけ、手がかり。</strong></div>{q.hints.slice(0, hints).map(h => <p key={h.id}>{h.text}</p>)}{hints < q.hints.length && <button type="button" onClick={() => { update(s => markExposure(s, key, 'hint')); setHints(x => x + 1); }}>ヒント {hints + 1} を見る <span>＋</span></button>}</div>
+    {q.writingRequired && <p className="zlv-write-note"><button type="button" onClick={()=>{assess(s=>recordManualCodeCheck(s,key));setFeedback('手元で結果を確認した自己記録を残しました。自動採点の合格とは分け、明日の復習候補にします。');}}>手元で実行して確かめた（自己記録）</button><small>このボタンはコンパイルや採点を行いません。下書きとは別に、復習の目安だけを残します。</small></p>}
     {feedback && <p className={`zlv-feedback ${result === true ? 'good' : ''}`} role="status">{feedback}</p>}
+    {attempted && advanceAction}
+    {(!solution || hints > 0) && <div className="zlv-hints"><div><span>ヒント</span><strong>少しだけ、手がかり。</strong></div>{q.hints.slice(0, hints).map(h => <p key={h.id}>{h.text}</p>)}{hints < q.hints.length && <button type="button" onClick={() => { update(s => markExposure(s, key, 'hint')); setHints(x => x + 1); }}>ヒント {hints + 1} を見る <span>＋</span></button>}</div>}
     {result !== null && <button type="button" className="zlv-reveal" onClick={() => { setPrediction(predictionInput(q)); setUncertain(false); setResult(null); setSolution(false); setHints(0); submitted.current = false; setFeedback('解答を隠しました。同じ問題への再挑戦は、初回の予測とは分けて記録します。'); }}>解答を隠してもう一度</button>}
     {!solution && <button className="zlv-reveal" type="button" onClick={showSolution}>解答・考え方を見る <span>↗</span></button>}
-    {solution && <section className="zlv-solution"><span>解答の考え方</span><h4>答えと、たどり方。</h4>
+    {solution && <section className="zlv-solution" id="zlv-solution"><span>解答の考え方</span><h4>答えと、たどり方。</h4>
       {result === false && <PredictionReview question={q} selected={selected} output={text} expectedOutput={typed ? exactOutput ?? undefined : undefined} />}
       {q.answer.mode === 'order' && <ol>{q.answer.correctOrderIds.map(id => <li key={id}><code>{q.answer.orderItems.find(item => item.id === id)?.text ?? id}</code></li>)}</ol>}
       {choiceMode && !typed && <p className="zlv-correct">答え：{q.answer.correctOptionIds.map(id => q.answer.options.find(x => x.id === id)?.text ?? id).join('、')}</p>}
@@ -480,17 +516,8 @@ export function QuestionPanel({ q, packVersion, lang, view, concepts, progress, 
     </section>}
     {q.writingRequired && q.tests.length > 0 && <details className="zlv-tests"><summary>テストの入力と期待値を見る（実測結果ではありません）</summary>{q.tests.flatMap(t => t.cases.map(c => <div key={`${t.id}-${c.id}`}><code>{c.stdin.trim() || '入力なし'}</code><span>→</span><code>{c.expectedStdout.join(' / ') || '出力なし'}</code></div>))}</details>}
     <details className="zlv-evidence"><summary>この教材の検査情報</summary>{q.evidence.compilerRun ? <p>{q.evidence.compilerRun.version} · {q.evidence.compilerRun.status} · {q.evidence.compilerRun.checkedAt}。検査したのは教材の提示コード／模範コードで、あなたの編集内容ではありません。</p> : <p>この問題のコンパイラ実測は未記録です。</p>}<p>仕様確認の記録: {q.evidence.specReviewed ? '記録あり' : '継続中'}。ブラウザ確認: {q.evidence.browserRun ? '記録あり' : '未記録'}。</p></details>
-    {q.writingRequired && <p className="zlv-write-note"><button type="button" onClick={()=>{assess(s=>recordManualCodeCheck(s,key));setFeedback('手元で結果を確認した自己記録を残しました。自動採点の合格とは分け、明日の復習候補にします。');}}>手元で実行して確かめた（自己記録）</button><small>このボタンはコンパイルや採点を行いません。下書きとは別に、復習の目安だけを残します。</small></p>}
     {record && <div className="zlv-progress">{q.writingRequired?<p>過去の固定テスト合格 {record.codePasses??0} · 固定テストでの差分/エラー {record.codeFailures??0} · 手元での確認（自己記録）{record.manualCodeChecks??0} · 後日の自己確認 {record.recalls}。過去の記録は、現在の編集内容の合格を表しません。</p>:<p>自力の予測正答 {record.blindCorrect} · 当日再挑戦/ヒント後の正答 {record.assistedCorrect} · 誤答 {record.wrong} · 後日の自己確認 {record.recalls}</p>}{record.dueAt && <p>次の復習目安: {new Date(record.dueAt).toLocaleDateString('ja-JP')}（初期案: 1・3・7・14・30日）</p>}{canRecordRecall(record) && <button type="button" onClick={confirmRecall}>後日、自力で説明できた（自己申告）</button>}</div>}
-    {round ? <section className="study-round" aria-label="セットを進める">
-      <div>
-        <strong>{attempted ? '取り組みを記録しました' : '回答を記録すると、今回の取り組みに数えます'}</strong>
-        <p>{attempted ? '正誤や自己記録は学習記録で区別しています。' : '飛ばした問題は、次回の候補に残ります。'}</p>
-      </div>
-      <button type="button" className="study-round-action" onClick={() => advance?.(attempted)}>
-        {attempted ? (round.outcomes.length + 1 === round.ids.length ? 'セットを終える →' : '次の一問へ →') : (round.outcomes.length + 1 === round.ids.length ? '飛ばして終了 →' : '飛ばして次へ →')}
-      </button>
-    </section> : <div className="zlv-next"><div>{prev && <a href={href(view, lang, prev)}>← 前の問題</a>}</div><div>{next && <a className="zlv-next-link" href={href(view, lang, next)}>次の問題へ <span>→</span></a>}</div></div>}
+    {round ? !attempted && advanceAction : <div className="zlv-next"><div>{prev && <a href={href(view, lang, prev)}>← 前の問題</a>}</div><div>{next && <a className="zlv-next-link" href={href(view, lang, next)}>次の問題へ <span>→</span></a>}</div></div>}
     {q.relatedIds.length > 0 && <p className="zlv-related">関連する問題: {q.relatedIds.map(id => <a key={id} href={href('all', lang, id)}>{id.replace(`${lang}:`, '')}</a>)}</p>}
   </article>;
 }

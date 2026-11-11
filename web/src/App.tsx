@@ -244,7 +244,7 @@ export default function App() {
       <div className={"site-paper"+(path==="/"?" site-paper-home":"")}><div id="main" tabIndex={-1}>
         {path === "/" ? (
           <main className="home-page">
-            <HomeHero focusArtwork={route === NEBULA_HOME} suspended={!!sky.full || sky.active === "nebula"} paused={state.motion === "paused"||sky.settings} onStartMotion={() => setState({ ...state, motion: "auto" })} />
+            <HomeHero navigate={navigate} focusArtwork={route === NEBULA_HOME} suspended={!!sky.full || sky.active === "nebula"} paused={state.motion === "paused"||sky.settings} onStartMotion={() => setState({ ...state, motion: "auto" })} />
             <section
               className="explore-section"
               aria-labelledby="explore-title"

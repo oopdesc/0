@@ -2,6 +2,7 @@ import type { ProgressOutcome } from "./progress";
 import { readStudyFilter, roundResultLabel, type StudyRound } from "./studyRound";
 import type { StudyIndex } from "./studyPlanner";
 
+export const shortSessionSize = 3;
 export const studyPreferencesKey = "0.learning-v2.today-preferences.v1";
 
 export function dailyStudyFilter(search: string, storage: Pick<Storage, "getItem"> | null) {

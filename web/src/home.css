@@ -497,8 +497,8 @@
 }
 @media (max-width: 540px) {
   .home-hero {
-    padding: 32px 20px 35px;
-    gap: 28px;
+    padding: 18px 18px 30px;
+    gap: 24px;
   }
   .home-eyebrow {
     font-size: 10px;
@@ -506,11 +506,12 @@
   .home-hero h1 {
     font-size: clamp(32px, 8.3vw, 43px);
     letter-spacing: -0.055em;
-    margin: 20px 0;
+    margin: 12px 0;
   }
   .home-hero .home-intro > p {
-    font-size: 12px;
-    line-height: 2;
+    font-size: 13px;
+    line-height: 1.65;
+    margin-bottom: 14px;
   }
   .home-primary,
   .home-secondary {

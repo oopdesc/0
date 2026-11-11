@@ -12,9 +12,25 @@ export default function LearningOverview() {
   const resume = roundResume ?? (last ? `/learn?section=drill&lang=${last.language}&q=${encodeURIComponent(last.id)}` : '/learn?section=drill&lang=java&q=java%3Aq0001');
   return <main className="zlv zlv-landing">
     <div className="zlv-topline"><span>0 / はじめに</span><span>知る、試す、また戻ってくる。</span></div>
-    <div className="zlv-landing-hero"><div><span className="zlv-kicker">学びを積み重ねる <span>✳</span></span><h2>わからないから、<br /><em>はじめよう。</em></h2><p>ひとつ予測して、ひとつ理由を知る。<br />小さな「わかった」を、自分の手で重ねていく場所です。</p><a className="zlv-landing-primary" href={resume}>{roundResume ? '学習セットの続きへ' : last ? '前回の問題へ戻る' : 'はじめての一問へ'} <span>→</span></a></div><div className="zlv-landing-note"><span>自分の学習ノート</span><b>01 <i>—</i> 03</b><p>読む。<br />考える。<br />自分でやってみる。</p><small>順番は自由。いつでも戻れます。</small><div aria-hidden="true">✳</div></div></div>
+    <div className="zlv-landing-hero">
+      <div>
+        <span className="zlv-kicker">学びを積み重ねる <span>✳</span></span>
+        <h2>わからないから、<br /><em>はじめよう。</em></h2>
+        <p>ひとつ予測して、ひとつ理由を知る。<br />小さな「わかった」を、自分の手で重ねていく場所です。</p>
+        <div className="zlv-landing-actions">
+          <a className="zlv-landing-primary" href={resume}>
+            {roundResume ? '学習セットの続きへ' : last ? '前回の問題へ戻る' : 'はじめての一問へ'} <span aria-hidden="true">→</span>
+          </a>
+          <a className="zlv-landing-today" href="/learn?section=today">今日の学習へ <span aria-hidden="true">→</span></a>
+        </div>
+      </div>
+      <div className="zlv-landing-note">
+        <span>自分の学習ノート</span><b>01 <i>—</i> 03</b>
+        <p>読む。<br />考える。<br />自分でやってみる。</p><small>順番は自由。いつでも戻れます。</small>
+        <div aria-hidden="true">✳</div>
+      </div>
+    </div>
     <QuestionInventory/>
-    <p className="zlv-write-note"><a href="/learn?section=today">今日の復習と、次の一問を選ぶ →</a></p>
     <p className="zlv-write-note"><a href="/learn?section=concepts">概念図から全体を見渡す →</a>　学ぶ前にも、復習にも。JavaとRustのつながりを図で確かめられます。</p>
     <p className="zlv-archive">以下は通常問題集の掲載件数と試験の本数です。サイト全体の重複除外数は上にまとめています。</p>
     <div className="zlv-landing-counts"><p><strong>{stats.java.toLocaleString('ja-JP')}</strong><span>Javaの問題<br /><small>うち記述 {stats.javaWriting}問</small></span></p><p><strong>{stats.rust.toLocaleString('ja-JP')}</strong><span>Rustの問題<br /><small>うち記述 {stats.rustWriting}問</small></span></p><p><strong>{stats.exams}</strong><span>Java・Rustの試験<br /><small>通常問題とは別集計</small></span></p></div>

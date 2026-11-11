@@ -16,11 +16,10 @@ import {
   saveProgress,
 } from "./progress";
 import { confirmStudyRoundReplacement, readStudyFilter, readStudyRound, roundHref, roundResultLabel, startStudyRound, todayHref } from "./studyRound";
-import { completedStudy, dailyStudyFilter, followUpLimit, studyPreferencesKey } from "./studySession";
+import { completedStudy, dailyStudyFilter, followUpLimit, shortSessionSize, studyPreferencesKey } from "./studySession";
 import { applicationExamples, applicationHistory, planApplications } from "./applicationPractice";
 import "./today.css";
 import "./study-round.css";
-const shortSessionSize = 3;
 const reviewDate = new Intl.DateTimeFormat("ja-JP", { month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" });
 const levels = { beginner: "初級", intermediate: "中級", advanced: "上級" };
 const reasons = {
@@ -242,11 +241,6 @@ export default function TodayView({ search, navigate }: { search: string; naviga
               weekday: "long",
             })}
           </span>
-          <strong>
-            続ける場所は、
-            <br />
-            自分で選べる。
-          </strong>
           <a href="/learn?section=concepts">学びの地図を開く ↗</a>
         </div>
       </header>
@@ -266,7 +260,7 @@ export default function TodayView({ search, navigate }: { search: string; naviga
               見直し{completed.followUpIds.length}問を解き直す →
             </button>
           )}
-          {completed && completed.rows.length > 0 && <details className="study-round-review" open={round.purpose ? true : undefined}>
+          {completed && completed.rows.length > 0 && <details className="study-round-review">
             <summary>問題ごとの結果（{completed.rows.length}問）</summary>
             {completed.followUpIds.length > 0 && <p>誤答や実装の差分、迷った正答、補助あり正答、飛ばした問題の順に、元の問題を最大{followUpLimit}問選びます。</p>}
             <ul>{completed.rows.map(({ item, label }) => <li key={item.id}><a href={studyHref(item)}>{item.title}</a> · {label}</li>)}</ul>
@@ -306,8 +300,206 @@ export default function TodayView({ search, navigate }: { search: string; naviga
       {!index && !error && <p role="status">学習の索引を読み込んでいます…</p>}
       {summary && (
         <>
+          <nav className="study-jumps" aria-label="今日の学習のページ内移動">
+            <a href="#study-queue-title">問題・学習条件</a>
+            <a href="#study-metrics">記録・復習予定</a>
+            {applications && <a href="#application-title">応用チェック</a>}
+          </nav>
+          <section className="study-queue" aria-labelledby="study-queue-title">
+            <div className="study-section-head">
+              <div>
+                <p className="study-kicker">
+                  復習 → 見直し → 続き → 新しい問題
+                </p>
+                <h3 id="study-queue-title">次に取り組む一問</h3>
+              </div>
+              <p>この一覧以外の問題も、いつでも開けます。</p>
+            </div>
+            <details className="study-topics study-config">
+              <summary>学習条件 <span>{language === "all" ? "JavaとRust" : language === "java" ? "Java" : "Rust"} · {limit}問</span></summary>
+              <div className="study-filters" onChange={() => setConditionsNotice("")}>
+                <label>
+                  言語
+                  <select
+                    value={language}
+                    onChange={(e) => {
+                      const next = e.target.value as StudyFilter["language"];
+                      setLanguage(next);
+                      if (next !== "all" && concept && !concept.startsWith(next + ":")) setConcept(undefined);
+                      setSkipped(new Set());
+                    }}
+                  >
+                    <option value="all">JavaとRust</option>
+                    <option value="java">Java</option>
+                    <option value="rust">Rust</option>
+                  </select>
+                </label>
+                <label>
+                  段階
+                  <select
+                    value={level}
+                    onChange={(e) => {
+                      setLevel(e.target.value as StudyFilter["level"]);
+                      setSkipped(new Set());
+                    }}
+                  >
+                    <option value="all">すべての段階</option>
+                    <option value="beginner">初級</option>
+                    <option value="intermediate">中級</option>
+                    <option value="advanced">上級</option>
+                  </select>
+                </label>
+                <label>
+                  取り組み方
+                  <select
+                    value={kind}
+                    onChange={(e) => {
+                      setKind(e.target.value as StudyFilter["kind"]);
+                      setSkipped(new Set());
+                    }}
+                  >
+                    <option value="all">予測と実装</option>
+                    <option value="prediction">結果を予測する</option>
+                    <option value="code">コードを書く</option>
+                  </select>
+                </label>
+                <label>
+                  今回の問題数
+                  <select
+                    value={limit}
+                    onChange={(e) => {
+                      setLimit(Number(e.target.value));
+                      setSkipped(new Set());
+                    }}
+                  >
+                    <option value={5}>5問</option>
+                    <option value={10}>10問</option>
+                    <option value={20}>20問</option>
+                  </select>
+                </label>
+                <label className="study-check">
+                  <input
+                    type="checkbox"
+                    checked={includeNew}
+                    onChange={(e) => {
+                      setIncludeNew(e.target.checked);
+                      setSkipped(new Set());
+                    }}
+                  />
+                  未学習も含める
+                </label>
+              </div>
+              <div className="study-round-start">
+                <button type="button" onClick={saveStudyPreferences}>この条件を次回も使う</button>
+                <button type="button" onClick={resetStudyPreferences}>条件を標準に戻す</button>
+                {conditionsNotice && <span role="status">{conditionsNotice}</span>}
+              </div>
+            </details>
+            <details className="study-topics" open={activeConcept ? true : undefined}>
+              <summary>最後の回答から、テーマを選んで復習</summary>
+              {topics.length ? (
+                <ul aria-label="復習するテーマ">
+                  {topics.map(topic => (
+                    <li key={topic.id}>
+                      <button type="button" aria-pressed={activeConcept === topic.id} onClick={() => {
+                        setConditionsNotice("");
+                        setConcept(topic.id);
+                        setLanguage(topic.language);
+                        setLevel("all");
+                        setKind("all");
+                        setIncludeNew(true);
+                        setSkipped(new Set());
+                      }}>{topic.name}</button>
+                      <span>{topic.language === "java" ? "Java" : "Rust"} · 誤答・実装の差分 {topic.wrong}問 · 迷った正答 {topic.tentative}問 · 補助あり正答 {topic.assisted}問</span>
+                    </li>
+                  ))}
+                </ul>
+              ) : <p>誤答、迷った正答、ヒントを使った正答から、見直すテーマを表示します。</p>}
+              {activeConcept && <p>
+                選択中：<strong>{index?.concepts[activeConcept].name}</strong>{" "}
+                <button type="button" onClick={() => { setConcept(undefined); setSkipped(new Set()); }}>テーマの絞り込みを解除</button>
+              </p>}
+            </details>
+            <p className="study-method">
+              復習時期が来た問題に自力で正答すると、次の間隔が1・3・7・14・30日の順に延びます。前提の確認は自由です。
+            </p>
+            {shown.length > 0 && <div className="study-round-start">
+              <button type="button" className="study-round-action" onClick={() => beginRound()}>この{shown.length}問を始める →</button>
+              <span>{activeRound ? "新しいセットを始めると、前の続きは置き換わります。学習記録は残ります。" : "一問ずつ進めます。途中で閉じても、このブラウザから再開できます。"}</span>
+            </div>}
+            {shown.length > 0 && <details className="study-topics study-candidates">
+              <summary>候補{shown.length}問を見る</summary>
+              <ol className="study-list">
+                {shown.map((p, i) => (
+                  <li key={p.item.id}>
+                    <span className="study-number">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <div className="study-item">
+                      <div>
+                        <span
+                          className={"study-reason study-reason--" + p.reason}
+                        >
+                          {reasons[p.reason]}
+                        </span>
+                        <span>
+                          {p.item.language === "java" ? "Java" : "Rust"} ·{" "}
+                          {levels[p.item.level]} ·{" "}
+                          {p.item.writing ? "実装" : "予測"}
+                        </span>
+                      </div>
+                      <a className="study-title" href={studyHref(p.item)}>
+                        {p.item.title}
+                        <span aria-hidden="true"> ↗</span>
+                      </a>
+                      {p.prerequisiteNames.length > 0 && (
+                        <details>
+                          <summary>
+                            先に確かめると役立つこと（{p.prerequisiteNames.length}
+                            ）
+                          </summary>
+                          <p>{p.prerequisiteNames.join(" / ")}</p>
+                          <a href="/learn?section=concepts">
+                            概念図で全体を見渡す →
+                          </a>
+                        </details>
+                      )}
+                    </div>
+                    <button
+                      className="study-skip"
+                      onClick={() =>
+                        setSkipped((old) => new Set([...old, p.item.id]))
+                      }
+                      aria-label={p.item.title + "を今回の一覧から外す"}
+                    >
+                      今回は飛ばす
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            </details>}
+            {!shown.length && (
+              <div className="study-empty">
+                <h4>今の条件では、候補がありません。</h4>
+                <p>
+                  今日の復習がない場合は、未学習を含めるか、単元から気になる問題を選べます。学習済みの問題も自由に開けます。
+                </p>
+                <a href="/learn?section=drill">単元から選ぶ →</a>
+              </div>
+            )}
+            {skipped.size > 0 && (
+              <p className="study-method">
+                今回の一覧から{skipped.size}
+                問を外しました。学習済みにはしていません。{" "}
+                <button onClick={() => setSkipped(new Set())}>
+                  一覧に戻す
+                </button>
+              </p>
+            )}
+          </section>
           <section
             className="study-metrics"
+            id="study-metrics"
             aria-label="このブラウザの学習記録"
           >
             <article>
@@ -382,192 +574,6 @@ export default function TodayView({ search, navigate }: { search: string; naviga
               {applications.ready.length > 0 && <button type="button" onClick={beginApplications}>応用チェックを始める →</button>}
             </div>
           </section>}
-          <section className="study-queue" aria-labelledby="study-queue-title">
-            <div className="study-section-head">
-              <div>
-                <p className="study-kicker">
-                  復習 → 見直し → 続き → 新しい問題
-                </p>
-                <h3 id="study-queue-title">次に取り組む一問</h3>
-              </div>
-              <p>この一覧以外の問題も、いつでも開けます。</p>
-            </div>
-            <div className="study-filters" onChange={() => setConditionsNotice("")}>
-              <label>
-                言語
-                <select
-                  value={language}
-                  onChange={(e) => {
-                    const next = e.target.value as StudyFilter["language"];
-                    setLanguage(next);
-                    if (next !== "all" && concept && !concept.startsWith(next + ":")) setConcept(undefined);
-                    setSkipped(new Set());
-                  }}
-                >
-                  <option value="all">JavaとRust</option>
-                  <option value="java">Java</option>
-                  <option value="rust">Rust</option>
-                </select>
-              </label>
-              <label>
-                段階
-                <select
-                  value={level}
-                  onChange={(e) => {
-                    setLevel(e.target.value as StudyFilter["level"]);
-                    setSkipped(new Set());
-                  }}
-                >
-                  <option value="all">すべての段階</option>
-                  <option value="beginner">初級</option>
-                  <option value="intermediate">中級</option>
-                  <option value="advanced">上級</option>
-                </select>
-              </label>
-              <label>
-                取り組み方
-                <select
-                  value={kind}
-                  onChange={(e) => {
-                    setKind(e.target.value as StudyFilter["kind"]);
-                    setSkipped(new Set());
-                  }}
-                >
-                  <option value="all">予測と実装</option>
-                  <option value="prediction">結果を予測する</option>
-                  <option value="code">コードを書く</option>
-                </select>
-              </label>
-              <label>
-                今回の問題数
-                <select
-                  value={limit}
-                  onChange={(e) => {
-                    setLimit(Number(e.target.value));
-                    setSkipped(new Set());
-                  }}
-                >
-                  <option value={5}>5問</option>
-                  <option value={10}>10問</option>
-                  <option value={20}>20問</option>
-                </select>
-              </label>
-              <label className="study-check">
-                <input
-                  type="checkbox"
-                  checked={includeNew}
-                  onChange={(e) => {
-                    setIncludeNew(e.target.checked);
-                    setSkipped(new Set());
-                  }}
-                />
-                未学習も含める
-              </label>
-            </div>
-            <div className="study-round-start">
-              <button type="button" onClick={saveStudyPreferences}>この条件を次回も使う</button>
-              <button type="button" onClick={resetStudyPreferences}>条件を標準に戻す</button>
-              {conditionsNotice && <span role="status">{conditionsNotice}</span>}
-            </div>
-            <details className="study-topics" open={activeConcept ? true : undefined}>
-              <summary>最後の回答から、テーマを選んで復習</summary>
-              {topics.length ? (
-                <ul aria-label="復習するテーマ">
-                  {topics.map(topic => (
-                    <li key={topic.id}>
-                      <button type="button" aria-pressed={activeConcept === topic.id} onClick={() => {
-                        setConditionsNotice("");
-                        setConcept(topic.id);
-                        setLanguage(topic.language);
-                        setLevel("all");
-                        setKind("all");
-                        setIncludeNew(true);
-                        setSkipped(new Set());
-                      }}>{topic.name}</button>
-                      <span>{topic.language === "java" ? "Java" : "Rust"} · 誤答・実装の差分 {topic.wrong}問 · 迷った正答 {topic.tentative}問 · 補助あり正答 {topic.assisted}問</span>
-                    </li>
-                  ))}
-                </ul>
-              ) : <p>誤答、迷った正答、ヒントを使った正答から、見直すテーマを表示します。</p>}
-              {activeConcept && <p>
-                選択中：<strong>{index?.concepts[activeConcept].name}</strong>{" "}
-                <button type="button" onClick={() => { setConcept(undefined); setSkipped(new Set()); }}>テーマの絞り込みを解除</button>
-              </p>}
-            </details>
-            <p className="study-method">
-              復習時期が来た問題に自力で正答すると、次の間隔が1・3・7・14・30日の順に延びます。前提の確認は自由です。
-            </p>
-            {shown.length > 0 && <div className="study-round-start">
-              <button type="button" className="study-round-action" onClick={() => beginRound()}>この{shown.length}問を始める →</button>
-              <span>{activeRound ? "新しいセットを始めると、前の続きは置き換わります。学習記録は残ります。" : "一問ずつ進めます。途中で閉じても、このブラウザから再開できます。"}</span>
-            </div>}
-            <ol className="study-list">
-              {shown.map((p, i) => (
-                <li key={p.item.id}>
-                  <span className="study-number">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <div className="study-item">
-                    <div>
-                      <span
-                        className={"study-reason study-reason--" + p.reason}
-                      >
-                        {reasons[p.reason]}
-                      </span>
-                      <span>
-                        {p.item.language === "java" ? "Java" : "Rust"} ·{" "}
-                        {levels[p.item.level]} ·{" "}
-                        {p.item.writing ? "実装" : "予測"}
-                      </span>
-                    </div>
-                    <a className="study-title" href={studyHref(p.item)}>
-                      {p.item.title}
-                      <span aria-hidden="true"> ↗</span>
-                    </a>
-                    {p.prerequisiteNames.length > 0 && (
-                      <details>
-                        <summary>
-                          先に確かめると役立つこと（{p.prerequisiteNames.length}
-                          ）
-                        </summary>
-                        <p>{p.prerequisiteNames.join(" / ")}</p>
-                        <a href="/learn?section=concepts">
-                          概念図で全体を見渡す →
-                        </a>
-                      </details>
-                    )}
-                  </div>
-                  <button
-                    className="study-skip"
-                    onClick={() =>
-                      setSkipped((old) => new Set([...old, p.item.id]))
-                    }
-                    aria-label={p.item.title + "を今回の一覧から外す"}
-                  >
-                    今回は飛ばす
-                  </button>
-                </li>
-              ))}
-            </ol>
-            {!shown.length && (
-              <div className="study-empty">
-                <h4>今の条件では、候補がありません。</h4>
-                <p>
-                  今日の復習がない場合は、未学習を含めるか、単元から気になる問題を選べます。学習済みの問題も自由に開けます。
-                </p>
-                <a href="/learn?section=drill">単元から選ぶ →</a>
-              </div>
-            )}
-            {skipped.size > 0 && (
-              <p className="study-method">
-                今回の一覧から{skipped.size}
-                問を外しました。学習済みにはしていません。{" "}
-                <button onClick={() => setSkipped(new Set())}>
-                  一覧に戻す
-                </button>
-              </p>
-            )}
-          </section>
           <section className="study-understand">
             <div>
               <p className="study-kicker">理解の確かめ方</p>

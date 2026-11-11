@@ -423,3 +423,50 @@
 .study-topics li span { color: var(--st-muted); }
 .study-topics button { min-height: 40px; text-align: start; }
 .study-topics button[aria-pressed="true"] { border-color: currentColor; color: var(--st-blue); }
+
+.study-jumps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin-block: 12px;
+}
+.study-jumps a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 13px;
+}
+.study-home :is(#study-queue-title, #study-metrics, #application-title) {
+  scroll-margin-top: 8px;
+}
+.study-config summary span {
+  margin-inline-start: 8px;
+  color: var(--st-muted);
+  font-weight: 400;
+}
+.study-config .study-filters {
+  margin-bottom: 0;
+}
+.study-candidates .study-list {
+  margin-bottom: 0;
+}
+@media (max-width: 640px) {
+  .study-home {
+    padding-top: 14px;
+  }
+  .study-heading h2 {
+    font-size: 29px;
+    margin-block: 0 4px;
+  }
+  .study-heading p {
+    margin-block: 0;
+    font-size: 13px;
+    line-height: 1.65;
+  }
+  .study-heading p br {
+    display: none;
+  }
+  .study-day {
+    padding-block: 7px 0;
+  }
+}

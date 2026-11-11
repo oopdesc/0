@@ -180,23 +180,23 @@ export default function LearningHub({
   useEffect(() => {
     if (section === "legacy-practice" && mode === "code") store.navigate(exercise);
   }, [section, mode, exercise]);
+  const sectionLinks = sections.map(([id, label]) => (
+    <a key={id} href={"/learn?section=" + id} aria-current={section === id ? "page" : undefined}>
+      {label}
+    </a>
+  ));
+  const sectionLabel = sections.find(([id]) => id === section)?.[1];
   return (
     <div className={"learning-hub"+(section==="journey"?" hub-journey":"")}>
       <section className="hub-heading">
         <span className="eyebrow">ひとつの場所で、仕組みから実装まで</span>
         <h1>Java・Rustの学習</h1>
         <p>処理の流れを追い、コードを動かし、必要な仕様を日本語で調べる。</p>
-        <nav aria-label="学習の内容">
-          {sections.map(([id, label]) => (
-            <a
-              key={id}
-              href={"/learn?section=" + id}
-              aria-current={section === id ? "page" : undefined}
-            >
-              {label}
-            </a>
-          ))}
-        </nav>
+        <nav className="hub-desktop-nav" aria-label="学習の内容">{sectionLinks}</nav>
+        <details className="hub-mobile-nav" key={section}>
+          <summary>学習メニュー{sectionLabel && <span>{sectionLabel}</span>}</summary>
+          <nav aria-label="学習の内容">{sectionLinks}</nav>
+        </details>
       </section>
       {section === "journey" ? (
         <Suspense fallback={<p className="hub-content">カリキュラムを読み込んでいます…</p>}><Journey search={search}/></Suspense>
