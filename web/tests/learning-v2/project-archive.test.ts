@@ -7,6 +7,7 @@ const bundle=JSON.parse(readFileSync(new URL('../../public/learning-v2/java/exam
 
 test('project download is a real ZIP of the matching starter and fixed test sources', () => {
  const out=unzipSync(makeProjectArchive(bundle,'java:mission-books-id'));
+ assert.ok(strFromU8(out['COPYRIGHT.txt']).includes('商用転用には事前の許諾'));
  assert.ok(strFromU8(out['README-START.md']).includes('展開先のルートで実行'));
  assert.ok(strFromU8(out['backend/java-learning-v2/src/main/java/zero/learning/BookService.java']).includes('UnsupportedOperationException("TODO")'));
  assert.ok(strFromU8(out['backend/java-learning-v2/src/test/java/zero/learning/BookFlowTest.java']).includes('validateIds'));

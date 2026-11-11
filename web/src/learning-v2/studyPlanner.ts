@@ -1,6 +1,7 @@
 import type { Lang, Level } from "./types";
 import type { Progress, ProgressRecord } from "./progress";
 import { currentDraft, recordKey } from "./progress";
+import { findStudyTopic, inStudyTopic } from "./topics";
 export type StudyItem = {
   id: string;
   language: Lang;
@@ -26,6 +27,7 @@ export type StudyFilter = {
   limit: number;
   includeNew: boolean;
   concept?: string;
+  topic?: string;
 };
 export type PlannedItem = {
   item: StudyItem;
@@ -319,6 +321,8 @@ export function planStudy(
   now = Date.now(),
   excluded?: ReadonlySet<string>,
 ): PlannedItem[] {
+  const topic = findStudyTopic(filter.topic);
+  if (filter.topic && !topic) return [];
   const known = new Set<string>();
   for (const q of index.items) {
     const r = state.records[itemKey(q)];
@@ -334,6 +338,7 @@ export function planStudy(
   for (const q of index.items) {
     if (
       excluded?.has(q.id) ||
+      (topic && !inStudyTopic(topic, q)) ||
       (filter.concept && !q.concepts.includes(filter.concept)) ||
       (filter.language !== "all" && q.language !== filter.language) ||
       (filter.level !== "all" && q.level !== filter.level) ||

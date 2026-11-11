@@ -8,6 +8,8 @@ const Journey = lazy(() => import("./learning-v2/Journey"));
 const QuestionCatalog = lazy(() => import("./learning-v2/QuestionCatalog"));
 const TodayView = lazy(() => import("./learning-v2/TodayView"));
 const NotebookView = lazy(() => import("./learning-v2/NotebookView"));
+const TopicView = lazy(() => import("./learning-v2/TopicView"));
+const WorkflowView = lazy(() => import("./learning-v2/WorkflowView"));
 const LearningBackup = lazy(() => import("./learning-v2/LearningBackupView"));
 const PackLearning = lazy(() => import("./learning-v2/PackLearning"));
 const FlowView = lazy(() => import("./learning-v2/FlowView"));
@@ -25,6 +27,7 @@ const sections = [
   ["overview", "学習の入口"],
   ["journey", "レベルアップの道"],
   ["today", "今日の学習"],
+  ["topics", "分野から学ぶ"],
   ["notebook", "学習ノート"],
   ["concepts", "概念図"],
   ["catalog", "全問題から探す"],
@@ -35,6 +38,7 @@ const sections = [
   ["exams", "試験"],
   ["flow", "処理の全体像"],
   ["projects", "小プロジェクト"],
+  ["workflow", "実務の流れ"],
   ["references", "日本語の資料"],
   ["source", "Java・Rustの実装"],
 ] as const;
@@ -211,6 +215,10 @@ export default function LearningHub({
         <Suspense fallback={<p className="hub-content">学習バックアップを読み込んでいます…</p>}><LearningBackup /></Suspense>
       ) : section === "notebook" ? (
         <Suspense fallback={<p className="hub-content">学習ノートを読み込んでいます…</p>}><NotebookView search={search} navigate={navigate}/></Suspense>
+      ) : section === "topics" ? (
+        <Suspense fallback={<p className="hub-content">分野を読み込んでいます…</p>}><TopicView search={search} navigate={navigate}/></Suspense>
+      ) : section === "workflow" ? (
+        <Suspense fallback={<p className="hub-content">実務教材を読み込んでいます…</p>}><WorkflowView search={search} navigate={navigate}/></Suspense>
       ) : section === "catalog" ? (
         <Suspense fallback={<p className="hub-content">問題一覧を読み込んでいます…</p>}><QuestionCatalog search={search}/></Suspense>
       ) : section === "concepts" ? (

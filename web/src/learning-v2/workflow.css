@@ -1,0 +1,132 @@
+.workflow-page {
+  max-width: 1120px;
+  margin: auto;
+  padding: 28px clamp(16px, 4vw, 36px) 50px;
+  color: var(--text);
+}
+.workflow-page h2 {
+  font-size: clamp(26px, 4vw, 40px);
+  letter-spacing: -0.035em;
+  line-height: 1.5;
+  margin: 0 0 12px;
+}
+.workflow-page p {
+  line-height: 1.9;
+  font-size: 14px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.workflow-stage-picker {
+  display: grid;
+  gap: 8px;
+  margin-block: 20px;
+  font-size: 13px;
+}
+.workflow-page select,
+.workflow-page button {
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 9px 13px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+}
+.workflow-stages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-block: 20px;
+}
+.workflow-stages button {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.workflow-stages button[aria-current="step"] {
+  border-color: var(--accent);
+  color: var(--accent);
+  font-weight: 700;
+}
+.workflow-stages span {
+  color: var(--muted);
+  font-size: 11px;
+}
+.workflow-brief,
+.workflow-example {
+  border-block: 1px solid var(--line);
+  padding-block: 10px;
+  margin-block: 20px;
+}
+.workflow-page summary {
+  min-height: 44px;
+  align-content: center;
+  cursor: pointer;
+  font-size: 14px;
+}
+.workflow-editor h3 {
+  font-size: 25px;
+  margin-block: 20px 10px;
+}
+.workflow-editor > label {
+  display: block;
+  font-size: 13px;
+  margin-block: 15px 10px;
+}
+.workflow-editor textarea {
+  width: 100%;
+  min-height: 260px;
+  resize: vertical;
+  padding: 16px;
+  font:
+    16px/1.8 ui-monospace,
+    monospace;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  box-sizing: border-box;
+}
+.workflow-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-block: 16px;
+}
+.workflow-page a {
+  color: var(--accent);
+  font-size: 13px;
+  text-underline-offset: 4px;
+}
+.workflow-page .workflow-save {
+  font-size: 12px;
+  color: var(--muted);
+}
+.workflow-editor fieldset {
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 16px;
+  margin-block: 20px;
+}
+.workflow-editor fieldset label {
+  display: flex;
+  align-items: start;
+  gap: 10px;
+  padding-block: 12px;
+  font-size: 14px;
+  line-height: 1.7;
+}
+.workflow-editor fieldset input {
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+@media (max-width: 640px) {
+  .workflow-stages {
+    display: none;
+  }
+  .workflow-page {
+    padding-top: 20px;
+  }
+}

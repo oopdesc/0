@@ -1,5 +1,6 @@
 import { currentDraft, type Progress, type ProgressOutcome } from "./progress";
 import { itemKey, type StudyFilter, type StudyIndex, type StudyItem } from "./studyPlanner";
+import { findStudyTopic, inStudyTopic } from "./topics";
 
 const DAY = 86_400_000;
 export const applicationExamples = {
@@ -22,12 +23,15 @@ export function planApplications(
   language: StudyFilter["language"],
   kind: "prediction" | "code",
   now = Date.now(),
+  topicId?: string,
 ) {
+  const topic = findStudyTopic(topicId);
   const items = new Map(index.items.map(item => [item.id, item]));
   const candidates: { source: StudyItem; item: StudyItem; readyAt: number }[] = [];
   for (const [from, to] of index.applications ?? []) {
     const source = items.get(from), item = items.get(to);
     if (!source || !item || item.writing !== (kind === "code") ||
+        (topicId && (!topic || !inStudyTopic(topic, item))) ||
         (language !== "all" && item.language !== language)) continue;
     const prior = state.records[itemKey(source)];
     const first = prior?.firstCorrectAt ?? (prior?.lastOutcome === "correct" ? prior.lastAttemptAt : null);

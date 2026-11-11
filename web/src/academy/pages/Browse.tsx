@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from '../lib/router';
 import { PROBLEMS, FAMILIES } from '../content';
 import { CONCEPTS } from '../content/concepts';
@@ -15,6 +15,9 @@ export function BrowsePage() {
   const [concept, setConcept] = useState('all');
   const [q, setQ] = useState('');
   const [onlyDue, setOnlyDue] = useState(false);
+  const [page, setPage] = useState(0);
+  const results = useRef<HTMLParagraphElement>(null);
+  useEffect(() => setPage(0), [lang, family, level, kind, concept, q, onlyDue]);
 
   const rows = useMemo(() => {
     const needle = q.trim().toLowerCase();
@@ -35,6 +38,17 @@ export function BrowsePage() {
 
   const fams = FAMILIES.filter((f) => lang === 'all' || f.lang === lang);
   const concepts = CONCEPTS.filter((c) => (lang === 'all' || c.lang === lang) && (family === 'all' || c.family === family));
+  const pageSize = 30;
+  const pages = Math.max(1, Math.ceil(rows.length / pageSize));
+  const currentPage = Math.min(page, pages - 1);
+  const start = currentPage * pageSize;
+  function turnPage(next: number) {
+    setPage(next);
+    requestAnimationFrame(() => {
+      results.current?.scrollIntoView({ block: "start" });
+      results.current?.focus({ preventScroll: true });
+    });
+  }
 
   return (
     <div className="page">
@@ -106,10 +120,10 @@ export function BrowsePage() {
         </label>
       </div>
 
-      <p className="filters__count">{rows.length} 問</p>
+      <p className="filters__count" ref={results} tabIndex={-1}>{rows.length} 問 · {rows.length ? start + 1 : 0}〜{Math.min(rows.length, start + pageSize)}問を表示</p>
 
       <ul className="problemlist problemlist--dense">
-        {rows.map((p) => {
+        {rows.slice(start, start + pageSize).map((p) => {
           const st = progressOf(p.concepts[0], state);
           return (
             <li key={p.id}>
@@ -124,6 +138,11 @@ export function BrowsePage() {
           );
         })}
       </ul>
+      {pages > 1 && <nav className="supplemental-pages" aria-label="補充問題一覧のページ">
+        <button className="btn" type="button" disabled={currentPage === 0} onClick={() => turnPage(currentPage - 1)}>前の30問</button>
+        <span>{currentPage + 1} / {pages}</span>
+        <button className="btn" type="button" disabled={currentPage === pages - 1} onClick={() => turnPage(currentPage + 1)}>次の30問</button>
+      </nav>}
       {rows.length === 0 && <p className="note">条件に合う問題がありません。フィルタを緩めてください。</p>}
     </div>
   );

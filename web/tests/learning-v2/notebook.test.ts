@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { notebookItems } from "../../src/learning-v2/notebook";
+import { notebookItems, notebookText } from "../../src/learning-v2/notebook";
 import {
   emptyProgress,
   exportProgress,
@@ -111,7 +111,12 @@ test("the notebook follows the last result and retains bookmarks across content 
     now + 1,
   );
   assert.equal(questionNotes(newer).get("java:q0001")?.content, "");
-  const sameTimeUpdate = saveLearningNote(saved, key, { bookmarked: false, content: "" }, now);
+  const sameTimeUpdate = saveLearningNote(
+    saved,
+    key,
+    { bookmarked: false, content: "" },
+    now,
+  );
   assert.equal(questionNotes(sameTimeUpdate).get("java:q0001")?.content, "");
 });
 
@@ -138,4 +143,22 @@ test("combined backup restores notes and bookmarks with practice records", () =>
   assert.equal(result.counts.notes, 1);
   const restored = JSON.parse(destination.get(STORAGE_KEY)!);
   assert.deepEqual(restored.notes[key], saved.notes![key]);
+});
+
+test("the readable notebook export includes only selected questions with the actual memo and link", () => {
+  const state = saveLearningNote(
+    emptyProgress(),
+    key,
+    { content: "自分の説明\n二行目", bookmarked: true },
+    now,
+  );
+  const text = notebookText(
+    notebookItems(index, state, now),
+    "https://example.test",
+  );
+  assert.match(text, /1問/);
+  assert.match(text, /自分の説明\n二行目/);
+  assert.match(text, /https:\/\/example\.test\/learn\?section=drill/);
+  assert.match(text, /あとで解く/);
+  assert.doesNotMatch(text, /自力で正答/);
 });

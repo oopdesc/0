@@ -1,4 +1,5 @@
 import { strToU8, zipSync } from 'fflate';
+import { siteUseNotice } from "../site-use-notice";
 
 type BundleFile = { path: string; content: string };
 type Bundle = { schema: 'zero-starter-bundle/1'; missionId: string; files: BundleFile[] };
@@ -21,6 +22,7 @@ export function makeProjectArchive(input: unknown, expectedMission: string): Uin
   }
   const bundle = input as Bundle;
   if (!bundle.files.some(f => f.path === 'README-START.md')) throw new Error('開始手順がありません。');
+  data["COPYRIGHT.txt"] = strToU8(siteUseNotice);
   return zipSync(data, { level: 6, mtime: new Date('2026-10-28T00:00:00Z') });
 }
 

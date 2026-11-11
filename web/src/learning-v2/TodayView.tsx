@@ -18,6 +18,7 @@ import {
 import { confirmStudyRoundReplacement, readStudyFilter, readStudyRound, roundHref, roundResultLabel, startStudyRound, todayHref } from "./studyRound";
 import { completedStudy, dailyStudyFilter, followUpLimit, shortSessionSize, studyPreferencesKey } from "./studySession";
 import { applicationExamples, applicationHistory, planApplications } from "./applicationPractice";
+import { findStudyTopic } from "./topics";
 import "./today.css";
 import "./study-round.css";
 const reviewDate = new Intl.DateTimeFormat("ja-JP", { month: "numeric", day: "numeric", hour: "numeric", minute: "2-digit" });
@@ -60,6 +61,7 @@ export default function TodayView({ search, navigate }: { search: string; naviga
   const [limit, setLimit] = useState(defaults.limit);
   const [includeNew, setIncludeNew] = useState(defaults.includeNew);
   const [concept, setConcept] = useState(defaults.concept);
+  const [topic, setTopic] = useState(defaults.topic);
   const [conditionsNotice, setConditionsNotice] = useState("");
   const [applicationKind, setApplicationKind] = useState<"prediction" | "code">("prediction");
   const [applicationNotice, setApplicationNotice] = useState("");
@@ -97,20 +99,20 @@ export default function TodayView({ search, navigate }: { search: string; naviga
         ? planStudy(
             index,
             saved.state,
-            { language, level, kind, limit, includeNew, concept: activeConcept },
+            { language, level, kind, limit, includeNew, concept: activeConcept, topic },
             now,
             skipped,
           )
         : [],
-    [index, saved.state, language, level, kind, limit, includeNew, now, skipped, activeConcept],
+    [index, saved.state, language, level, kind, limit, includeNew, now, skipped, activeConcept, topic],
   );
   const shortSession = shown.slice(0, shortSessionSize);
   const dueOnly = shown.filter(({ reason }) => reason === "due").slice(0, 5);
   const summary = useMemo(() => index ? studySummary(index, saved.state, now) : null, [index, saved.state, now]);
   const delayed = useMemo(() => index ? delayedReviewSummary(index, saved.state) : null, [index, saved.state]);
   const topics = useMemo(() => index ? studyTopics(index, saved.state, language).slice(0, 5) : [], [index, saved.state, language]);
-  const applications = useMemo(() => index ? planApplications(index, saved.state, language, applicationKind, now) : null,
-    [index, saved.state, language, applicationKind, now]);
+  const applications = useMemo(() => index ? planApplications(index, saved.state, language, applicationKind, now, topic) : null,
+    [index, saved.state, language, applicationKind, now, topic]);
   const applicationResults = useMemo(() => index ? applicationHistory(index, saved.state) : null, [index, saved.state]);
   const nextUpdateAt = Math.min(applications?.next ?? Infinity, summary?.nextReviewAt ?? Infinity);
   useEffect(() => {
@@ -124,7 +126,7 @@ export default function TodayView({ search, navigate }: { search: string; naviga
   function beginRound(questions = shown) {
     if (!confirmStudyRoundReplacement()) return;
     const started = startStudyRound(questions.map(p => p.item.id),
-      { language, level, kind, limit, includeNew, concept: activeConcept });
+      { language, level, kind, limit, includeNew, concept: activeConcept, topic });
     if (started) navigate(roundHref(started));
     else setRoundNotice("このブラウザではセットを保存できません。一覧から一問ずつ開けます。");
   }
@@ -142,20 +144,20 @@ export default function TodayView({ search, navigate }: { search: string; naviga
   }
   function beginApplications() {
     if (!index || !confirmStudyRoundReplacement()) return;
-    const candidates = planApplications(index, readState().state, language, applicationKind);
+    const candidates = planApplications(index, readState().state, language, applicationKind, Date.now(), topic);
     if (!candidates.ready.length) {
       setSaved(readState());
       setApplicationNotice("この端末の記録が更新されました。今の候補を確認してください。");
       return;
     }
     const started = startStudyRound(candidates.ready.map(({ item }) => item.id),
-      { language, level, kind, limit, includeNew, concept: activeConcept }, "application");
+      { language, level, kind, limit, includeNew, concept: activeConcept, topic }, "application");
     if (started) navigate(roundHref(started));
     else setApplicationNotice("学習セットを保存できませんでした。");
   }
   function saveStudyPreferences() {
     try {
-      localStorage.setItem(studyPreferencesKey, todayHref({ language, level, kind, limit, includeNew, concept: activeConcept }).split("?")[1]);
+      localStorage.setItem(studyPreferencesKey, todayHref({ language, level, kind, limit, includeNew, concept: activeConcept, topic }).split("?")[1]);
       setConditionsNotice("次に「今日の学習」を開くと、この条件から始まります。");
     } catch {
       setConditionsNotice("このブラウザでは条件を保存できません。");
@@ -169,6 +171,7 @@ export default function TodayView({ search, navigate }: { search: string; naviga
     setLimit(standard.limit);
     setIncludeNew(standard.includeNew);
     setConcept(undefined);
+    setTopic(undefined);
     setSkipped(new Set());
     try {
       localStorage.removeItem(studyPreferencesKey);
@@ -243,8 +246,10 @@ export default function TodayView({ search, navigate }: { search: string; naviga
           </span>
           <a href="/learn?section=concepts">学びの地図を開く ↗</a>
           <a href="/learn?section=notebook">保存した問題・メモを見直す →</a>
+          <a href="/learn?section=topics">分野から選ぶ →</a>
         </div>
       </header>
+      {topic && <div className="study-notice">選択中の分野 · <strong>{findStudyTopic(topic)?.title ?? topic}</strong> <button type="button" onClick={() => setTopic(undefined)}>分野の絞り込みを解除</button></div>}
       {round && (
         <section className="study-round" aria-label={activeRound ? "中断した学習" : "前回の学習結果"}>
           <div>
@@ -326,6 +331,7 @@ export default function TodayView({ search, navigate }: { search: string; naviga
                     onChange={(e) => {
                       const next = e.target.value as StudyFilter["language"];
                       setLanguage(next);
+                      if (next !== "all" && findStudyTopic(topic)?.language !== next) setTopic(undefined);
                       if (next !== "all" && concept && !concept.startsWith(next + ":")) setConcept(undefined);
                       setSkipped(new Set());
                     }}
@@ -405,6 +411,7 @@ export default function TodayView({ search, navigate }: { search: string; naviga
                       <button type="button" aria-pressed={activeConcept === topic.id} onClick={() => {
                         setConditionsNotice("");
                         setConcept(topic.id);
+                        setTopic(undefined);
                         setLanguage(topic.language);
                         setLevel("all");
                         setKind("all");

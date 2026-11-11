@@ -176,6 +176,7 @@ writeFileSync(
   path.join(root, "web/src/generated/site-sources.json"),
   JSON.stringify(files) + "\n",
 );
+writeFileSync(path.join(root, "web/public/learning-v2/site-sources.json"), JSON.stringify(files) + "\n");
 console.log(
   `Embedded ${files.length} Java/Rust learning source files from the explicit public list.`,
 );

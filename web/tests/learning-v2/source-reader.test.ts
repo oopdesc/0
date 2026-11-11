@@ -5,6 +5,8 @@ import { readFileSync } from "node:fs";
 import sources from "../../src/generated/site-sources.json";
 
 test("embedded Java/Rust files and reading cues match the current source", () => {
+  const deployed = JSON.parse(readFileSync(new URL("../../public/learning-v2/site-sources.json", import.meta.url), "utf8"));
+  assert.deepEqual(deployed, sources);
   assert.equal(sources.length, 6);
   for (const source of sources) {
     assert.match(

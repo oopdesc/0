@@ -2812,3 +2812,5 @@ summary:focus-visible {
   padding: 1px 5px;
   background: var(--panel-2);
 }
+.supplemental-pages { display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:12px; margin:24px 0; }
+.supplemental-pages button { min-height:44px; }

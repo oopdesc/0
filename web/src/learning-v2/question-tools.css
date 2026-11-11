@@ -1,0 +1,203 @@
+.question-tools {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  margin-block: 8px 14px;
+  font-size: 12px;
+}
+.question-tools > button,
+.question-tools summary {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px;
+  border: 1px solid var(--z-line);
+  border-radius: 8px;
+  background: var(--z-panel);
+  color: var(--z-fg);
+  cursor: pointer;
+  font: inherit;
+}
+.question-tools > button[aria-pressed="true"] {
+  border-color: var(--z-blue);
+  color: var(--z-blue);
+}
+.question-tools details {
+  position: relative;
+}
+.question-tools details > div {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 5;
+  width: max-content;
+  max-width: 260px;
+  padding: 12px 16px;
+  background: var(--z-panel);
+  border: 1px solid var(--z-line);
+  border-radius: 10px;
+  box-shadow: 0 8px 25px #0002;
+}
+.question-tools label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+}
+.question-tools small {
+  color: var(--z-muted);
+}
+.question-prerequisites {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 10px;
+  margin-block: 8px 16px;
+}
+.question-prerequisites > span {
+  color: var(--z-muted);
+  font-size: 11px;
+}
+.question-prerequisites > button {
+  min-height: 44px;
+  border: 1px solid var(--z-line);
+  border-radius: 7px;
+  background: var(--z-panel);
+  color: var(--z-blue);
+  padding: 7px 10px;
+  font: inherit;
+  font-size: 12px;
+}
+.question-prerequisites > em {
+  color: var(--z-muted);
+  font-size: 12px;
+  font-style: normal;
+}
+.prerequisite-dialog {
+  width: min(600px, calc(100vw - 32px));
+  max-height: calc(100dvh - 40px);
+  overflow: auto;
+  padding: clamp(16px, 4vw, 28px);
+  border: 1px solid var(--z-line);
+  border-radius: 16px;
+  background: var(--z-panel);
+  color: var(--z-fg);
+}
+.prerequisite-dialog::backdrop {
+  background: #081321b8;
+}
+.prerequisite-dialog header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.prerequisite-dialog header > span {
+  font-size: 12px;
+  color: var(--z-muted);
+}
+.prerequisite-dialog h3 {
+  font-size: 23px;
+  line-height: 1.5;
+  margin: 20px 0 12px;
+}
+.prerequisite-dialog p {
+  line-height: 1.8;
+  font-size: 14px;
+}
+.prerequisite-dialog .prerequisite-note {
+  color: var(--z-muted);
+  font-size: 12px;
+}
+.prerequisite-dialog pre {
+  max-height: 250px;
+  overflow: auto;
+  padding: 14px;
+  border-radius: 8px;
+  background: var(--z-code);
+  color: #edf5ff;
+  font-size: 13px;
+  line-height: 1.8;
+}
+.prerequisite-dialog button,
+.prerequisite-dialog > a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 12px;
+  margin: 4px 6px 4px 0;
+  border: 1px solid var(--z-line);
+  border-radius: 8px;
+  background: var(--z-panel);
+  color: var(--z-blue);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.question-return {
+  padding: 10px 14px;
+  margin: 0 0 14px;
+  border: 1px solid var(--z-line);
+  border-radius: 9px;
+  font-size: 13px;
+  background: var(--z-panel);
+}
+.question-return a {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  color: var(--z-blue);
+}
+html[data-question-wrap="true"] .zlv .zlv-code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+html[data-question-text="large"]
+  .zlv
+  :is(.zlv-prompt, .zlv-options, .zlv-code, .zlv-solution) {
+  font-size: 17px !important;
+  line-height: 1.9;
+}
+html[data-question-focus="true"] :is(.site-header, .site-footer, .hub-heading) {
+  display: none;
+}
+html[data-question-focus="true"]
+  .zlv--pack
+  > :is(
+    .zlv-topline,
+    .zlv-header,
+    .zlv-toolbar,
+    .zlv-build-note,
+    .zlv-records,
+    .zlv-archive,
+    .zlv-concepts,
+    .zlv-mobile-picker
+  ) {
+  display: none;
+}
+html[data-question-focus="true"] .zlv--pack .zlv-sidebar {
+  display: none;
+}
+html[data-question-focus="true"] .zlv-layout {
+  display: block;
+}
+html[data-question-focus="true"] .zlv {
+  max-width: 980px;
+  padding-top: 16px;
+}
+html[data-question-focus="true"] .zlv--pack .zlv-question-links {
+  display: block;
+}
+@media (max-width: 640px) {
+  .question-tools {
+    gap: 8px;
+  }
+  .question-tools details > div {
+    right: auto;
+    left: 0;
+  }
+  html[data-question-focus="true"] .zlv {
+    padding-top: 6px;
+  }
+}

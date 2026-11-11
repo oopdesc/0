@@ -84,6 +84,7 @@ export function exerciseFiles(
   if (test.testFiles.some((f) => bytes(f.content) > 65536))
     throw Error("固定テストが大きすぎます。");
   const files: Record<string, string> = {
+    "COPYRIGHT.txt": siteUseNotice,
     [q.setup.files[0].path]: source,
     "exercise.json":
       JSON.stringify(
@@ -170,3 +171,4 @@ export async function buildExerciseArchive(
     { level: 6 },
   );
 }
+import { siteUseNotice } from "../site-use-notice";

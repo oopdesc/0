@@ -7,7 +7,7 @@ export const studyPreferencesKey = "0.learning-v2.today-preferences.v1";
 
 export function dailyStudyFilter(search: string, storage: Pick<Storage, "getItem"> | null) {
   const params = new URLSearchParams(search);
-  if (["lang", "level", "kind", "limit", "new", "concept"].some(key => params.has(key))) {
+  if (["lang", "level", "kind", "limit", "new", "concept", "topic"].some(key => params.has(key))) {
     return readStudyFilter(params);
   }
   try {

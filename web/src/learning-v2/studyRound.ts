@@ -1,5 +1,6 @@
 import type { StudyFilter } from "./studyPlanner";
 import type { ProgressOutcome } from "./progress";
+import { findStudyTopic } from "./topics";
 
 export const STUDY_ROUND_KEY = "0.learning-v2.round.v1";
 const questionId = /^(?:java|rust):q[0-9]{4,8}$/;
@@ -31,6 +32,7 @@ export function readStudyFilter(params: URLSearchParams): StudyFilter {
   const language = params.get("lang"), level = params.get("level"), kind = params.get("kind");
   const limit = Number(params.get("limit"));
   const concept = params.get("concept");
+  const topic = findStudyTopic(params.get("topic"));
   return {
     language: language === "java" || language === "rust" ? language : "all",
     level: level === "beginner" || level === "intermediate" || level === "advanced" ? level : "all",
@@ -38,6 +40,7 @@ export function readStudyFilter(params: URLSearchParams): StudyFilter {
     limit: limit === 5 || limit === 20 ? limit : 10,
     includeNew: params.get("new") !== "0",
     ...(concept && topicId.test(concept) ? { concept } : {}),
+    ...(topic ? { topic: topic.id } : {}),
   };
 }
 
@@ -49,6 +52,7 @@ export function todayHref(filter: StudyFilter) {
   if (filter.limit !== 10) params.set("limit", String(filter.limit));
   if (!filter.includeNew) params.set("new", "0");
   if (filter.concept && topicId.test(filter.concept)) params.set("concept", filter.concept);
+  if (filter.topic) params.set("topic", filter.topic);
   if (params.size === 1) params.set("lang", "all");
   return "/learn?" + params.toString();
 }
@@ -74,6 +78,7 @@ export function parseStudyRound(raw: string | null): StudyRound | null {
       !["all", "beginner", "intermediate", "advanced"].includes(filter.level) ||
       !["all", "code", "prediction"].includes(filter.kind) ||
       (filter.concept !== undefined && (typeof filter.concept !== "string" || !topicId.test(filter.concept))) ||
+      (filter.topic !== undefined && (typeof filter.topic !== "string" || !/^(java|rust)-[a-z-]{1,50}$/.test(filter.topic))) ||
       ![5, 10, 20].includes(filter.limit) || typeof filter.includeNew !== "boolean")
     throw Error("学習セットの内容が不正です。");
   return {
@@ -81,7 +86,7 @@ export function parseStudyRound(raw: string | null): StudyRound | null {
     ...(purpose ? { purpose } : {}),
     ...(results ? { results } : {}),
     filter: { language: filter.language, level: filter.level, kind: filter.kind, limit: filter.limit, includeNew: filter.includeNew,
-      ...(filter.concept ? { concept: filter.concept } : {}) },
+      ...(filter.concept ? { concept: filter.concept } : {}), ...(filter.topic ? { topic: filter.topic } : {}) },
   };
 }
 

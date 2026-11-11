@@ -1,8 +1,37 @@
-import { useLayoutEffect, useMemo, useRef, useState } from "react";
-import sources from "./generated/site-sources.json";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import type sourceFiles from "./generated/site-sources.json";
 import "./source-reader.css";
 
 export default function SourceReader() {
+  const [files, setFiles] = useState<typeof sourceFiles | null>(null);
+  const [error, setError] = useState("");
+  const [retry, setRetry] = useState(0);
+  useEffect(() => {
+    const controller = new AbortController();
+    setError("");
+    async function load() {
+      const response = await fetch("/learning-v2/site-sources.json", { signal: controller.signal });
+      if (!response.ok) throw Error("実装のソースを取得できません。");
+      const raw = await response.text();
+      if (raw.length > 128000) throw Error("掲載ソースのサイズを確認できません。");
+      const value = JSON.parse(raw);
+      if (!Array.isArray(value) || value.length !== 6 || value.some(file =>
+        !file || typeof file.id !== "string" || typeof file.path !== "string" ||
+        typeof file.content !== "string" || typeof file.title !== "string" ||
+        !["java", "rust"].includes(file.language) || !Array.isArray(file.cues) ||
+        file.cues.some((cue: {line: number; title: string; explanation: string}) =>
+          !cue || !Number.isInteger(cue.line) || cue.line < 1 || typeof cue.title !== "string" || typeof cue.explanation !== "string")))
+        throw Error("掲載ソースの形式を確認できません。");
+      if (!controller.signal.aborted) setFiles(value as typeof sourceFiles);
+    }
+    load().catch(error => { if (!controller.signal.aborted) setError(error instanceof Error ? error.message : "掲載ソースを読み取れません。"); });
+    return () => controller.abort();
+  }, [retry]);
+  if (error) return <p role="alert">{error} <button type="button" onClick={() => setRetry(n => n + 1)}>読み直す</button></p>;
+  return files ? <SourceFiles sources={files} /> : <p role="status">Java・Rustの実装を読み込んでいます…</p>;
+}
+
+function SourceFiles({sources}: {sources: typeof sourceFiles}) {
   const [id, setId] = useState(sources[0].id);
   const source = sources.find((file) => file.id === id) ?? sources[0];
   const [cue, setCue] = useState<number | null>(null);
@@ -168,6 +197,7 @@ export default function SourceReader() {
       </div>
       {notice && <p role="status">{notice}</p>}
       <p className="source-footnote">
+        現行サイトの独自部分の転載・再配布・商用転用には、事前の許諾が必要です。個人の学習に利用できます。{" "}
         掲載ソースは公開ビルド時に元ファイルから取得しています。Javaの演習・Rustの銀河模型と、手元で動かすHTTP・DBプロジェクトを収録しています。{" "}
         <a href="/rights">利用条件</a>
       </p>

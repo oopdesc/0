@@ -6,7 +6,7 @@ import {
   roundHref,
   startStudyRound,
 } from "./studyRound";
-import { notebookItems } from "./notebook";
+import { notebookItems, notebookLabels, notebookText } from "./notebook";
 import "./notebook.css";
 
 const filters = [
@@ -16,13 +16,6 @@ const filters = [
   ["draft", "書きかけ"],
   ["all", "すべての記録"],
 ] as const;
-const labels: Record<string, string> = {
-  wrong: "予測の誤答",
-  tentative: "迷いがあった正答",
-  assisted: "解説・ヒント後の正答",
-  "code-failed": "固定テストで差分",
-  "self-check": "手元での自己確認",
-};
 function read() {
   try {
     return loadProgress(localStorage);
@@ -155,6 +148,19 @@ export default function NotebookView({
     if (round) navigate(roundHref(round));
     else setNotice("セットを保存できません。一覧の問題から一問ずつ開けます。");
   }
+  function downloadNotes() {
+    const url = URL.createObjectURL(
+      new Blob([notebookText(shown, location.origin)], {
+        type: "text/plain;charset=utf-8",
+      }),
+    );
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "0-learning-notes.txt";
+    link.click();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    setNotice("この一覧の問題リンクとメモを、テキストに保存しました。");
+  }
   return (
     <main className="learning-notebook" aria-labelledby="notebook-title">
       <header>
@@ -234,6 +240,11 @@ export default function NotebookView({
         </div>
       )}
       {notice && <p role="status">{notice}</p>}
+      {shown.length > 0 && (
+        <button type="button" onClick={downloadNotes}>
+          この一覧とメモをテキストで保存 ↓
+        </button>
+      )}
       {index && !shown.length && (
         <section className="notebook-empty">
           <h3>
@@ -252,7 +263,7 @@ export default function NotebookView({
               <span>{entry.item.language === "java" ? "Java" : "Rust"}</span>
               <span>{entry.item.writing ? "コード記述" : "結果を予測"}</span>
               {entry.weak && (
-                <span>{labels[entry.record?.lastOutcome ?? ""]}</span>
+                <span>{notebookLabels[entry.record?.lastOutcome ?? ""]}</span>
               )}
               {entry.due && <span>復習の時期</span>}
               {entry.note?.bookmarked && <span>あとで解く</span>}
