@@ -64,7 +64,8 @@
   gap: 10px;
   align-items: center;
 }
-.workflow-stages button[aria-current="step"] {
+.workflow-stages button[aria-current="step"],
+.workflow-stages button[aria-current="page"] {
   border-color: var(--accent);
   color: var(--accent);
   font-weight: 700;
