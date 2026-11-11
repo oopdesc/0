@@ -12,6 +12,7 @@ web/tsconfig.tsbuildinfo
 !tools/
 !tools/check-release.mjs
 !tools/build-problem-java.mjs
+!tools/build-source-reader.mjs
 !backend/
 !backend/rust/
 !backend/rust/Cargo.toml
@@ -36,3 +37,17 @@ web/tsconfig.tsbuildinfo
 !frontend/java-problems/src/main/java/cosmic/
 !frontend/java-problems/src/main/java/cosmic/browser/
 !frontend/java-problems/src/main/java/cosmic/browser/Problems.java
+!projects/
+!projects/java/
+!projects/java/book-api-http/
+!projects/java/book-api-http/src/
+!projects/java/book-api-http/src/learning/
+!projects/java/book-api-http/src/learning/books/
+!projects/java/book-api-http/src/learning/books/http/
+!projects/java/book-api-http/src/learning/books/http/BookService.java
+!projects/java/book-api-http/src/learning/books/http/JdbcBookRepository.java
+!projects/rust/
+!projects/rust/book-api-http/
+!projects/rust/book-api-http/src/
+!projects/rust/book-api-http/src/service.rs
+!projects/rust/book-api-http/src/repository.rs

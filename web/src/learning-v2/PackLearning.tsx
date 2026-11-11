@@ -3,6 +3,9 @@ import { lazy, Suspense, useEffect, useMemo, useRef, useState } from 'react';
 import { compareOutput } from './comparison';
 import { PredictionReview } from './PredictionReview';
 import { ReasoningPractice } from './ReasoningPractice';
+import QuestionNote from './QuestionNote';
+import { questionNotes } from './progress';
+import { saveLearningNote } from './progress';
 import { predictionInput, predictionContent, predictionOutputLimit, recallOutput } from './predictionDraft';
 import { loadAliases, loadChunk, loadConcepts, loadExams, loadManifest } from './loader';
 import { localGradeToken, runLocalGrade } from './localGrade';
@@ -273,7 +276,7 @@ export default function PackLearning({ search, view = 'all', navigate }: { searc
     {roundNotice && <p role="status" className="zlv-notice">{roundNotice}</p>}
     <div className="zlv-topline"><span>0 / 学習のノート</span><span>自分の速さで、何度でも</span></div>
     <header className="zlv-header">
-      <div><span className="zlv-kicker">手を動かして学ぶ <span>✳</span></span><h2>{view === 'exams' ? '試験で、理解を確かめる。' : view === 'diagnostics' ? 'これまでを、振り返る。' : view === 'writing' ? '小さく書いて、確かめる。' : 'ひとつずつ、わかるまで。'}</h2><p>予測して、理由を追って、自分の手で試す。どこからでも始められます。</p></div>
+      <div><span className="zlv-kicker">手を動かして学ぶ</span><h2>{view === 'exams' ? '試験で、理解を確かめる。' : view === 'diagnostics' ? 'これまでを、振り返る。' : view === 'writing' ? '小さく書いて、確かめる。' : 'ひとつずつ、わかるまで。'}</h2><p>予測して、理由を追って、自分の手で試す。どこからでも始められます。</p></div>
       <div className="zlv-summary" aria-live="polite"><span>選択中の教材</span><strong>{manifest ? manifest.counts.normal.toLocaleString() : '—'}<small> 問</small></strong><p>{lang === 'java' ? 'Java' : 'Rust'} {manifest ? ` / 記述 ${manifest.counts.writing}問` : ' / 読込中または未提供'}</p></div>
     </header>
     <div className="zlv-toolbar">
@@ -340,6 +343,7 @@ export default function PackLearning({ search, view = 'all', navigate }: { searc
 type Update = (fn: (s: Progress) => Progress) => void;
 export function QuestionPanel({ q, packVersion, lang, view, concepts, progress, update, prev, next, round, recall, advance }: { q: Question; packVersion: string; lang: Lang; view: View; concepts: Concept[]; progress: Progress; update: Update; prev: string | null; next: string | null; round?: StudyRound; recall?: boolean; advance?: (attempted: boolean) => void }) {
   const key = recordKey(q.id, q.contentVersion, q.writingRequired ? 'code' : 'prediction');
+  const note = useMemo(() => questionNotes(progress).get(q.id), [progress, q.id]);
   const [prediction, setPrediction] = useState(() => predictionInput(q, currentDraft(progress, key)?.content));
   const [restored] = useState(() => predictionContent(q, prediction) !== "");
   const { selected, text, order, typed } = prediction;
@@ -465,9 +469,14 @@ export function QuestionPanel({ q, packVersion, lang, view, concepts, progress, 
   return <article className="zlv-card" aria-labelledby="zlv-question-title">
     <p className="zlv-question-links">{!round && <><a href="/learn?section=today">今日の学習へ →</a>　</>}<a href="/learn?section=concepts">概念図を開く →</a></p>
     <div className="zlv-card-top"><span>問題 {String(q.order).padStart(2, '0')} <i> / </i> {lang.toUpperCase()}</span><span className={q.writingRequired ? "zlv-tag" : "zlv-tag zlv-prediction-tag"}>{q.writingRequired ? 'コード記述' : '結果を予測する'}</span>
+      <button className="question-bookmark" type="button" aria-pressed={note?.bookmarked ?? false}
+        onClick={() => update(state => {
+          const latest = questionNotes(state).get(q.id);
+          return saveLearningNote(state, key, { content: latest?.content ?? "", bookmarked: !latest?.bookmarked });
+        })}>{note?.bookmarked ? "保存済み" : "あとで解く"}</button>
       {!q.writingRequired && <a className="zlv-jump-answer" href="#zlv-answer">回答欄へ ↓</a>}
     </div>
-    <div className="zlv-card-title"><div><p>ひとつ、考えてみよう。</p><h3 id="zlv-question-title" ref={heading} tabIndex={inRound ? -1 : undefined}>{recallFirst && !solution ? q.writingRequired ? '条件を満たすコードを書く' : '結果と理由を考える' : q.title}</h3></div><span aria-hidden="true">✳</span></div>
+    <div className="zlv-card-title"><div><p>ひとつ、考えてみよう。</p><h3 id="zlv-question-title" ref={heading} tabIndex={inRound ? -1 : undefined}>{recallFirst && !solution ? q.writingRequired ? '条件を満たすコードを書く' : '結果と理由を考える' : q.title}</h3></div></div>
     <p className="zlv-prompt">{q.prompt}</p>
     <div className="zlv-prereq"><span>この問題の前提</span>{q.prerequisiteConceptIds.length ? q.prerequisiteConceptIds.map(id => <a href="#zlv-concepts" key={id}>{conceptName(id)}</a>) : <em>ここから始められます</em>}</div>
     <div className="zlv-code-head"><span><i /> {q.setup.files[0]?.path ?? 'code'} <small> / {q.setup.languageVersion}</small></span><span>{q.writingRequired ? '編集できます' : '読むコード'}</span></div>
@@ -517,6 +526,7 @@ export function QuestionPanel({ q, packVersion, lang, view, concepts, progress, 
     {q.writingRequired && q.tests.length > 0 && <details className="zlv-tests"><summary>テストの入力と期待値を見る（実測結果ではありません）</summary>{q.tests.flatMap(t => t.cases.map(c => <div key={`${t.id}-${c.id}`}><code>{c.stdin.trim() || '入力なし'}</code><span>→</span><code>{c.expectedStdout.join(' / ') || '出力なし'}</code></div>))}</details>}
     <details className="zlv-evidence"><summary>この教材の検査情報</summary>{q.evidence.compilerRun ? <p>{q.evidence.compilerRun.version} · {q.evidence.compilerRun.status} · {q.evidence.compilerRun.checkedAt}。検査したのは教材の提示コード／模範コードで、あなたの編集内容ではありません。</p> : <p>この問題のコンパイラ実測は未記録です。</p>}<p>仕様確認の記録: {q.evidence.specReviewed ? '記録あり' : '継続中'}。ブラウザ確認: {q.evidence.browserRun ? '記録あり' : '未記録'}。</p></details>
     {record && <div className="zlv-progress">{q.writingRequired?<p>過去の固定テスト合格 {record.codePasses??0} · 固定テストでの差分/エラー {record.codeFailures??0} · 手元での確認（自己記録）{record.manualCodeChecks??0} · 後日の自己確認 {record.recalls}。過去の記録は、現在の編集内容の合格を表しません。</p>:<p>自力の予測正答 {record.blindCorrect} · 当日再挑戦/ヒント後の正答 {record.assistedCorrect} · 誤答 {record.wrong} · 後日の自己確認 {record.recalls}</p>}{record.dueAt && <p>次の復習目安: {new Date(record.dueAt).toLocaleDateString('ja-JP')}（初期案: 1・3・7・14・30日）</p>}{canRecordRecall(record) && <button type="button" onClick={confirmRecall}>後日、自力で説明できた（自己申告）</button>}</div>}
+    <QuestionNote note={note} recordKey={key} update={update} />
     {round ? !attempted && advanceAction : <div className="zlv-next"><div>{prev && <a href={href(view, lang, prev)}>← 前の問題</a>}</div><div>{next && <a className="zlv-next-link" href={href(view, lang, next)}>次の問題へ <span>→</span></a>}</div></div>}
     {q.relatedIds.length > 0 && <p className="zlv-related">関連する問題: {q.relatedIds.map(id => <a key={id} href={href('all', lang, id)}>{id.replace(`${lang}:`, '')}</a>)}</p>}
   </article>;

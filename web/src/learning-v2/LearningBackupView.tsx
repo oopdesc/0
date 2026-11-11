@@ -7,7 +7,7 @@ import { resumeStudyRound } from "./studyRound";
 import "./today.css";
 
 function describe(counts: ReturnType<typeof backupCounts>) {
-  return `練習の記録 ${counts.practice}件 · 下書き ${counts.drafts}件 · 模試 ${counts.exams}回 · レベルアップの記録 ${counts.journey}件 · 学習セットの残り ${counts.remaining}問`;
+  return `練習の記録 ${counts.practice}件 · 下書き ${counts.drafts}件 · 学習ノート ${counts.notes}件 · 模試 ${counts.exams}回 · レベルアップの記録 ${counts.journey}件 · 学習セットの残り ${counts.remaining}問`;
 }
 
 function loadCurrent() {

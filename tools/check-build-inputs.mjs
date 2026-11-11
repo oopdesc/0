@@ -10,9 +10,11 @@ const java = read('web/src/java-manifest.json');
 const problemJava = read('web/src/problems/java-manifest.json');
 const wasm = read('web/src/wasm-manifest.json');
 const media = read('web/src/media-manifest.json');
+const sourceReader = read('web/src/generated/site-sources.json');
 const required = [...new Set([
   'package.json', 'package-lock.json', 'vercel.json', 'tools/check-release.mjs',
   'web/package.json', 'web/package-lock.json', 'web/index.html', 'web/vite.config.ts',
+  'tools/build-source-reader.mjs', 'web/src/generated/site-sources.json', ...sourceReader.map(file => file.path),
   'web/src/java-manifest.json', 'web/src/wasm-manifest.json', 'web/src/media-manifest.json',
   java.path, ...Object.keys(java.sourceHashes), ...Object.keys(wasm.sourceHashes),
   'web/src/problems/java-manifest.json', problemJava.path, ...Object.keys(problemJava.sourceHashes),

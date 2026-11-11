@@ -55,6 +55,8 @@ const pagePayloads = {
   learning: payload([entryKey, 'src/LearningHub.tsx']),
   today: payload([entryKey, 'src/LearningHub.tsx', 'src/learning-v2/TodayView.tsx'], ['learning-v2/study-index.json']),
   learningBackup: payload([entryKey, 'src/LearningHub.tsx', 'src/learning-v2/LearningBackupView.tsx']),
+  notebook: payload([entryKey, 'src/LearningHub.tsx', 'src/learning-v2/NotebookView.tsx'], ['learning-v2/study-index.json']),
+  sourceReader: payload([entryKey, 'src/LearningHub.tsx', 'src/Secondary.tsx', 'src/SourceReader.tsx']),
   questions: payload([entryKey, 'src/LearningHub.tsx', 'src/learning-v2/PackLearning.tsx']),
   exams: payload([entryKey, 'src/LearningHub.tsx', 'src/learning-v2/PackLearning.tsx', 'src/learning-v2/ExamView.tsx']),
   catalog: payload([entryKey, 'src/LearningHub.tsx', 'src/learning-v2/QuestionCatalog.tsx'], ['learning-v2/catalog.json']),

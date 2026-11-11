@@ -1,10 +1,11 @@
 import { ThemeButton } from "./DisplayPreferences";
 import Bookshelf from "./Bookshelf";
-import { useRef, useState } from "react";
+import { lazy, Suspense, useRef, useState } from "react";
 import type { SavedState } from "./state";
 import { LESSON_IDS } from "./lesson-ids";
 import { exportProgress, importProgress, mergeProgress } from "./progress";
 type Props = { state: SavedState; update: (state: SavedState) => void };
+const SourceReader = lazy(() => import("./SourceReader"));
 function Code() {
   const [results, setResults] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState<string | null>(null);
@@ -44,6 +45,7 @@ function Code() {
           このサイト自体が、3つの言語をつなぐ教材です。小さな変更をひとつずつ、既存のEclipseから。
         </p>
       </div>
+      <Suspense fallback={<p>Java・Rustの実装を読み込んでいます…</p>}><SourceReader /></Suspense>
       <div className="architecture">
         <article>
           <span>01</span>

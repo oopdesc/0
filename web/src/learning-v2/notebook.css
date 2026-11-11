@@ -1,0 +1,219 @@
+.learning-notebook {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 28px clamp(16px, 4vw, 36px) 50px;
+  color: var(--text);
+}
+.learning-notebook h2 {
+  margin: 0 0 12px;
+  font-size: clamp(28px, 5vw, 42px);
+  letter-spacing: -0.04em;
+}
+.learning-notebook header p {
+  line-height: 1.8;
+  color: var(--muted);
+}
+.learning-notebook header > a {
+  display: inline-block;
+  padding: 12px 0;
+  font-size: 13px;
+}
+.notebook-search {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin: 18px 0;
+}
+.notebook-search label {
+  display: grid;
+  gap: 7px;
+  font-size: 12px;
+}
+.notebook-search label:first-child {
+  flex: 1;
+  min-width: 180px;
+}
+.notebook-search input,
+.notebook-search select {
+  width: 100%;
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 10px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: 14px;
+}
+.notebook-filters,
+.notebook-pages {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.learning-notebook button {
+  min-height: 44px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 9px 12px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.notebook-filters button[aria-pressed="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--bg);
+}
+.notebook-filters span {
+  margin-left: 5px;
+  font-variant-numeric: tabular-nums;
+}
+.notebook-start {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  margin: 18px 0;
+}
+.notebook-start p {
+  font-size: 13px;
+  color: var(--muted);
+}
+.notebook-start button {
+  background: #245fbd;
+  border-color: #245fbd;
+  color: white;
+}
+.learning-notebook button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.notebook-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  border-top: 1px solid var(--line);
+}
+.notebook-list li {
+  border-bottom: 1px solid var(--line);
+  padding: 20px 0;
+}
+.notebook-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  font-size: 12px;
+  color: var(--muted);
+}
+.notebook-list h3 {
+  font-size: 17px;
+  line-height: 1.7;
+  margin: 7px 0;
+}
+.notebook-list h3 a {
+  color: var(--text);
+  text-underline-offset: 4px;
+}
+.notebook-memo {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  line-height: 1.8;
+  padding: 12px 16px;
+  border-left: 3px solid var(--line);
+  background: var(--panel);
+  font-size: 14px;
+}
+.notebook-list small,
+.notebook-footnote {
+  color: var(--muted);
+  font-size: 12px;
+}
+.notebook-empty {
+  padding: 24px 0;
+}
+.notebook-empty p {
+  line-height: 1.8;
+}
+.notebook-pages {
+  align-items: center;
+  justify-content: center;
+  margin: 25px 0;
+  font-size: 13px;
+}
+.question-bookmark {
+  margin-left: auto;
+  min-height: 44px;
+  padding: 7px 10px;
+  border: 1px solid var(--z-line);
+  border-radius: 7px;
+  background: var(--z-panel);
+  color: var(--z-fg);
+  font: inherit;
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.zlv-card-top:has(.question-bookmark) {
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.question-bookmark[aria-pressed="true"] {
+  color: var(--z-blue);
+  border-color: var(--z-blue);
+}
+.question-note {
+  margin: 20px 0;
+  border-block: 1px solid var(--z-line);
+  padding: 12px 0;
+}
+.question-note summary {
+  cursor: pointer;
+  min-height: 44px;
+  align-content: center;
+  font-size: 13px;
+}
+.question-note > label {
+  display: block;
+  font-size: 12px;
+  margin: 10px 0 8px;
+}
+.question-note > textarea {
+  width: 100%;
+  resize: vertical;
+  border: 1px solid var(--z-line);
+  padding: 12px;
+  border-radius: 8px;
+  background: var(--z-panel);
+  color: var(--z-fg);
+  font: inherit;
+  font-size: 16px;
+  line-height: 1.7;
+  box-sizing: border-box;
+}
+.question-note > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+  margin: 10px 0;
+}
+.question-note button {
+  min-height: 44px;
+  border: 1px solid var(--z-line);
+  padding: 8px 14px;
+  border-radius: 7px;
+  background: var(--z-panel);
+  color: var(--z-fg);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+}
+.question-note small,
+.question-note a {
+  font-size: 12px;
+}

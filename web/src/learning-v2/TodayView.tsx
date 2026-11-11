@@ -242,6 +242,7 @@ export default function TodayView({ search, navigate }: { search: string; naviga
             })}
           </span>
           <a href="/learn?section=concepts">学びの地図を開く ↗</a>
+          <a href="/learn?section=notebook">保存した問題・メモを見直す →</a>
         </div>
       </header>
       {round && (

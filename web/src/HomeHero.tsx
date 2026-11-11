@@ -86,6 +86,7 @@ export default function HomeHero({ paused, onStartMotion, suspended, focusArtwor
         <div className="home-quick-links">
           <a href="/learn?section=journey">全{stats.unique.total.toLocaleString()}問を一本の道で →</a>
           <a href="/learn?section=today">今日の学習 →</a>
+          <a href="/learn?section=notebook">学習ノート →</a>
           {last && !roundResume && <a href={`/learn?section=drill&lang=${last.language}&q=${encodeURIComponent(last.id)}`}>最近の問題 →</a>}
           <a href="/learn?section=concepts">概念図 →</a>
           <a href="/learn?section=exams">試験 {stats.exams}本 →</a>

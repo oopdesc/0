@@ -275,6 +275,15 @@
 .zlv a.zlv-jump-answer {
   display: none;
 }
+.zlv-landing-note > a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  color: #b9dfff;
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 5px;
+}
 @media (max-width: 640px) {
   .zlv--pack > .zlv-build-note,
   .zlv--pack .zlv-question-links,

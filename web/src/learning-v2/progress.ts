@@ -10,7 +10,8 @@ type ApplicationResult = { at: number; outcome: Exclude<ProgressOutcome, 'self-r
 export type ProgressRecord = { updatedAt: number; blindCorrect: number; assistedCorrect: number; wrong: number; lastAttemptAt: number | null; hintsAt: number | null; solutionAt: number | null; recalls: number; reviewStep: number; dueAt: number | null; codePasses?:number; codeFailures?:number; manualCodeChecks?:number; lastOutcome?:ProgressOutcome; firstCorrectAt?:number; delayed?:DelayedPrediction; application?:ApplicationResult };
 export type Draft = { content: string; updatedAt: number };
 export type LegacyEntry = { source: 'academy' | 'practice'; id: string; targetId: string | null; lastAt: number };
-export type Progress = { schema: 'zero-learning-progress/1'; records: Record<string, ProgressRecord>; drafts: Record<string, Draft>; legacy: Record<string, LegacyEntry> };
+export type LearningNote = { content: string; bookmarked: boolean; updatedAt: number };
+export type Progress = { schema: 'zero-learning-progress/1'; records: Record<string, ProgressRecord>; drafts: Record<string, Draft>; legacy: Record<string, LegacyEntry>; notes?: Record<string, LearningNote> };
 export const emptyProgress = (): Progress => ({ schema: 'zero-learning-progress/1', records: {}, drafts: {}, legacy: {} });
 export const recordKey = (id: string, version: string, step: 'prediction' | 'code') => `${id}@${version}#${step}`;
 const validKey = (s: string) => /^(?:java|rust):(?:q[0-9]{4,}|[A-Za-z0-9_-]{1,80}:q[0-9]{1,8})@[A-Za-z0-9._-]{1,64}#(?:prediction|code)$/.test(s);
@@ -47,6 +48,16 @@ function parseV2(data: unknown): Progress {
   if (!object(data) || data.schema !== 'zero-learning-progress/1' || !object(data.records) || !object(data.drafts) || !object(data.legacy)) throw new Error('学習記録の形式が違います。');
   if (Object.keys(data.records).length > MAX_RECORDS || Object.keys(data.drafts).length > MAX_DRAFTS || Object.keys(data.legacy).length > MAX_RECORDS) throw new Error('記録の件数が上限を超えています。');
   const result = emptyProgress();
+  if (data.notes !== undefined) {
+    if (!object(data.notes) || Object.keys(data.notes).length > MAX_RECORDS) throw Error('学習ノートの形式または件数が不正です。');
+    result.notes = {};
+    for (const [key, value] of Object.entries(data.notes)) {
+      if (!validKey(key) || !object(value) || typeof value.content !== 'string' ||
+          value.content.length > 2000 || typeof value.bookmarked !== 'boolean' || !timestamp(value.updatedAt))
+        throw Error('学習ノートの内容が不正です。');
+      result.notes[key] = { content: value.content, bookmarked: value.bookmarked, updatedAt: value.updatedAt as number };
+    }
+  }
   for (const [key, value] of Object.entries(data.records)) {
     if (!validKey(key) || !object(value) || !timestamp(value.updatedAt) || !counter(value.blindCorrect) || !counter(value.assistedCorrect) || !counter(value.wrong) || !counter(value.recalls) || !Number.isInteger(value.reviewStep) || (value.reviewStep as number) < 0 || (value.reviewStep as number) >= INTERVALS.length || !nullableTime(value.lastAttemptAt) || !nullableTime(value.hintsAt) || !nullableTime(value.solutionAt) || !nullableTime(value.dueAt, 366) || !['codePasses','codeFailures','manualCodeChecks'].every(k=>value[k]===undefined||counter(value[k])) || !(value.lastOutcome===undefined||outcomes.includes(String(value.lastOutcome)))) throw new Error(`記録 ${key} が不正です。`);
     result.records[key] = { updatedAt: value.updatedAt as number, blindCorrect: value.blindCorrect as number, assistedCorrect: value.assistedCorrect as number, wrong: value.wrong as number, lastAttemptAt: value.lastAttemptAt as number | null, hintsAt: value.hintsAt as number | null, solutionAt: value.solutionAt as number | null, recalls: value.recalls as number, reviewStep: value.reviewStep as number, dueAt: value.dueAt as number | null, ...(value.codePasses!==undefined?{codePasses:value.codePasses as number}:{}), ...(value.codeFailures!==undefined?{codeFailures:value.codeFailures as number}:{}), ...(value.manualCodeChecks!==undefined?{manualCodeChecks:value.manualCodeChecks as number}:{}), ...(value.lastOutcome!==undefined?{lastOutcome:value.lastOutcome as ProgressRecord['lastOutcome']}:{}) };
@@ -106,6 +117,14 @@ export function currentDraft(state: Progress, key: string): Draft | undefined {
 }
 export function mergeProgress(current: Progress, incoming: Progress): Progress {
   const next: Progress = { schema: current.schema, records: { ...current.records }, drafts: { ...current.drafts }, legacy: { ...current.legacy } };
+  if (current.notes || incoming.notes) {
+    next.notes = { ...current.notes };
+    for (const [key, note] of Object.entries(incoming.notes ?? {})) {
+      const old = next.notes[key];
+      if (!old || note.updatedAt > old.updatedAt) next.notes[key] = note;
+    }
+    if (Object.keys(next.notes).length > MAX_RECORDS) throw Error('統合後の学習ノートが上限を超えます。');
+  }
   for (const [key, value] of Object.entries(incoming.records)) {
     const old = next.records[key];
     if (!old) { next.records[key] = value; continue; }
@@ -218,6 +237,22 @@ export function recordRecall(state: Progress, key: string, now = Date.now()): Pr
 export function saveDraft(state: Progress, key: string, content: string, now = Date.now()): Progress {
   if (!validDraftKey(key) || new TextEncoder().encode(content).byteLength > 65536) return state;
   return { ...state, drafts: { ...state.drafts, [key]: { content, updatedAt: now } } };
+}
+export function questionNotes(progress: Progress) {
+  const latest = new Map<string, LearningNote>();
+  for (const [key, note] of Object.entries(progress.notes ?? {})) {
+    const id = key.split("@")[0];
+    if (note.updatedAt > (latest.get(id)?.updatedAt ?? -1)) latest.set(id, note);
+  }
+  return latest;
+}
+export function saveLearningNote(state: Progress, key: string, patch: Partial<Pick<LearningNote, 'content' | 'bookmarked'>>, now = Date.now()): Progress {
+  if (!validKey(key) || !timestamp(now)) return state;
+  const old = questionNotes(state).get(key.split("@")[0]) ?? { content: '', bookmarked: false, updatedAt: 0 };
+  const note = { ...old, ...patch, updatedAt: Math.max(now, old.updatedAt + 1) };
+  if (note.content.length > 2000 || (note.content === old.content && note.bookmarked === old.bookmarked)) return state;
+  // Keep a cleared note's timestamp so importing an older backup cannot restore deleted text.
+  return { ...state, notes: { ...state.notes, [key]: note } };
 }
 export function recordApplication(state: Progress, key: string, startedAt: number | undefined) {
   const record = state.records[key];

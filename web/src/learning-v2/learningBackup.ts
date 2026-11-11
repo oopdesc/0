@@ -42,6 +42,7 @@ export function backupCounts(backup: LearningBackup) {
   return {
     practice: Object.keys(backup.practice.records).length,
     drafts: Object.values(backup.practice.drafts).filter(draft => draft.content !== "").length,
+    notes: Object.values(backup.practice.notes ?? {}).filter(note => note.content || note.bookmarked).length,
     exams: backup.exams.attempts.length,
     journey: Object.keys(backup.journey.records).length,
     remaining: backup.round ? backup.round.ids.length - backup.round.outcomes.length : 0,

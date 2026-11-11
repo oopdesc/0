@@ -402,6 +402,7 @@ export default function App() {
               GitHub ↗
             </a>
             <a href="/books">oopdesc の著作</a>
+            <a href="/learn?section=source">Java・Rustの実装を読む</a>
             <a href="/contact">このサイトについて</a>
             <a href="/privacy">プライバシー</a>
             <a href="/accessibility">アクセシビリティ</a>
